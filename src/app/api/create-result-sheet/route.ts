@@ -225,19 +225,48 @@ function createJwt(credentials: ServiceAccountCredentials) {
   return `${unsignedToken}.${base64Url(signature)}`;
 }
 
+function normalizeServiceAccountCredentials(
+  credentials: ServiceAccountCredentials
+) {
+  return {
+    ...credentials,
+    private_key: credentials.private_key.replace(/\\n/g, "\n"),
+  };
+}
+
 async function loadServiceAccountCredentials() {
+  const credentialJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+
+  if (credentialJson) {
+    try {
+      return normalizeServiceAccountCredentials(
+        JSON.parse(credentialJson) as ServiceAccountCredentials
+      );
+    } catch (error) {
+      throw new Error(
+        `GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
   const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   if (!credentialPath) {
-    throw new Error("GOOGLE_APPLICATION_CREDENTIALS is not configured.");
+    throw new Error(
+      "GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_APPLICATION_CREDENTIALS is not configured."
+    );
   }
 
   const resolvedPath = path.isAbsolute(credentialPath)
     ? credentialPath
-    : path.join(process.cwd(), credentialPath);
+    : path.join(/* turbopackIgnore: true */ process.cwd(), credentialPath);
   const credentialText = await readFile(resolvedPath, "utf8");
 
-  return JSON.parse(credentialText) as ServiceAccountCredentials;
+  return normalizeServiceAccountCredentials(
+    JSON.parse(credentialText) as ServiceAccountCredentials
+  );
 }
 
 async function getAccessToken() {
