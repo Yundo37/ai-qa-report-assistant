@@ -89,6 +89,13 @@ export type QaIssueOverviewSummary = {
   remaining: QaIssueOverviewSection;
 };
 
+export type QaAnalysisContext = {
+  testSheetTitles: string[];
+  scopeKeywords: string[];
+  failPatterns: string[];
+  blockedPatterns: string[];
+};
+
 export type AnalysisSummaryState = {
   resultSpreadsheetId: string;
   qaTotal: CountSummary;
@@ -101,4 +108,6 @@ export type AnalysisSummaryState = {
   rcProgress: RcProgressSummary;
   qaIssueOverview: QaIssueOverviewSummary;
   qaFollowUps: string[];
+  inferredTargetVersion: string;
+  qaAnalysisContext: QaAnalysisContext;
 } | null;

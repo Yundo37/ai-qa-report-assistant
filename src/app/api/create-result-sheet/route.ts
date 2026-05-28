@@ -61,6 +61,10 @@ type QaIssueOverviewSummary = {
 type CreateResultSheetRequest = {
   spreadsheetId?: string;
   reportTitle?: string;
+  version?: string;
+  rcVersion?: string;
+  qaStartDateTime?: string;
+  qaEndDateTime?: string | null;
   qaSummary?: CountSummary;
   testSheets?: TestSheetSummary[];
   jiraFilteredSummary?: CountSummary;
@@ -180,9 +184,11 @@ const COLOR = {
 const TEMPLATE_SPREADSHEET_ID = "1B28oDAC73giOgrc4vq0hY9PS8LyycLymu1Kxe2dSPFA";
 const TEMPLATE_QA_RESULT_SHEET_ID = 552320580;
 const TEMPLATE_QA_RESULT_SHEET_NAME = "TEMPLATE_QA_RESULT";
-const TEMPLATE_ISSUE_START_ROW = 36;
+const TEMPLATE_QA_SUMMARY_START_ROW = 13;
+const TEMPLATE_QA_SUMMARY_MAX_LINES = 8;
+const TEMPLATE_ISSUE_START_ROW = 41;
 const TEMPLATE_ISSUE_BODY_CAPACITY = 3;
-const TEMPLATE_COMMENT_TITLE_ROW = 41;
+const TEMPLATE_COMMENT_TITLE_ROW = 46;
 const TEMPLATE_COMMENT_BODY_CAPACITY = 6;
 
 type QaJudgmentState = "안정" | "주의 필요" | "위험";
@@ -285,17 +291,71 @@ function formatDisplayTimestamp() {
   return `${year}.${month}.${day} ${hour}:${minute}`;
 }
 
+function normalizeRcVersion(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) return "";
+  if (/^\d+$/.test(trimmedValue)) return `RC${trimmedValue}`;
+
+  return trimmedValue.replace(/\brc\s*(\d+)\b/gi, "RC$1");
+}
+
+function createHeroTargetVersionLabel(body: CreateResultSheetRequest) {
+  const normalizedVersion = body.version?.trim() ?? "";
+  const normalizedRcVersion = normalizeRcVersion(body.rcVersion ?? "");
+  const userTargetVersion = [normalizedVersion, normalizedRcVersion]
+    .filter(Boolean)
+    .join(" ");
+
+  return userTargetVersion || body.rcProgress?.rcLabel || "Version TBD";
+}
+
+function formatHeroDate(value: string | null | undefined) {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) return "";
+
+  const dateMatch = trimmedValue.match(/^(\d{4})[-.](\d{1,2})[-.](\d{1,2})/);
+
+  if (!dateMatch) return trimmedValue;
+
+  const [, year, month, day] = dateMatch;
+
+  return `${year}.${month.padStart(2, "0")}.${day.padStart(2, "0")}`;
+}
+
+function createHeroQaPeriodLabel(body: CreateResultSheetRequest) {
+  const startDate = formatHeroDate(body.qaStartDateTime);
+  const endDate = formatHeroDate(body.qaEndDateTime) || "현재";
+
+  if (!startDate) return `QA 기간 ${endDate}`;
+
+  return `QA 기간 ${startDate} ~ ${endDate}`;
+}
+
 function sanitizeSheetTitle(title: string) {
-  return title
-    .replace(/[\[\]\*\?\/\\:]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 40);
+  return (
+    title
+      .replace(/QA\s*결과\s*리포트/gi, "")
+      .replace(/결과\s*리포트/gi, "")
+      .replace(/Result\s*Report/gi, "")
+      .replace(/QA\s*Dashboard/gi, "")
+      .replace(/더미\s*결과/gi, "더미")
+      .replace(/[\[\]\*\?\/\\:]/g, "")
+      .replace(/\s+/g, "")
+      .trim() || "Release"
+  ).slice(0, 72);
 }
 
 function createSheetName(reportTitle: string) {
-  const safeTitle = sanitizeSheetTitle(reportTitle || "QA Release Dashboard");
-  return `QA_Dashboard_${safeTitle}_${formatTimestamp()}`.slice(0, 100);
+  const timestamp = formatTimestamp();
+  const safeTitle = sanitizeSheetTitle(reportTitle || "Release");
+
+  return `QA_${safeTitle}_${timestamp}`.slice(0, 100);
+}
+
+function createSheetUrl(spreadsheetId: string, sheetId: number) {
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${sheetId}`;
 }
 
 function quoteSheetName(sheetName: string) {
@@ -429,12 +489,16 @@ function createFollowUpCategory(followUp: string) {
 
 function getAiInsightLines(body: CreateResultSheetRequest) {
   const lines =
-    body.aiAnalysisText?.trim().split(/\r?\n/).filter(Boolean) ??
-    body.reportPreviewLines ??
+    body.aiAnalysisText
+      ?.trim()
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean) ??
+    body.reportPreviewLines?.map((line) => line.trim()).filter(Boolean) ??
     [];
 
   if (lines.length > 0) {
-    return lines.slice(0, 5);
+    return lines.slice(0, TEMPLATE_QA_SUMMARY_MAX_LINES);
   }
 
   return [
@@ -1542,39 +1606,26 @@ function createTemplateSystemAnalysisState({
   return "안정";
 }
 
-function createTemplateSystemAnalysisLines({
+function createTemplateRiskMessage({
   state,
-  highRemainingCount,
-  blockedCount,
   remainingCount,
-  nextEventCount,
   remainingPrioritySummary,
 }: {
   state: QaJudgmentState;
-  highRemainingCount: number;
-  blockedCount: number;
   remainingCount: number;
-  nextEventCount: number;
   remainingPrioritySummary: RcPrioritySummary;
 }) {
   const lowRiskRemainingCount =
     (remainingPrioritySummary.Low ?? 0) +
     (remainingPrioritySummary.Lowest ?? 0);
-  const riskMessage =
-    state === "위험"
-      ? "운영/QA 리스크 관리 필요"
-      : state === "주의 필요"
-        ? "배포 후 확인 및 운영 모니터링 필요"
-        : remainingCount > 0 && remainingCount === lowRiskRemainingCount
-          ? "Low Remaining만 존재 / 운영 영향 낮음"
-          : "추가 차단 리스크 없음";
 
-  return [
-    `시스템 분석 결과: ${state}`,
-    `High 우선순위 잔여 ${highRemainingCount}건`,
-    `Blocked ${blockedCount}건 / NextEvent ${nextEventCount}건`,
-    riskMessage,
-  ];
+  if (state === "위험") return "운영/QA 리스크 관리 필요";
+  if (state === "주의 필요") return "배포 후 확인 및 운영 모니터링 필요";
+  if (remainingCount > 0 && remainingCount === lowRiskRemainingCount) {
+    return "Low Remaining만 존재 / 운영 영향 낮음";
+  }
+
+  return "추가 차단 리스크 없음";
 }
 
 function createTemplateJudgmentReasonLines({
@@ -1623,7 +1674,15 @@ function createTemplateQaSummaryLines(
     .filter(Boolean);
 
   if (aiLines && aiLines.length > 0) {
-    return aiLines.slice(0, 3);
+    return aiLines.slice(0, TEMPLATE_QA_SUMMARY_MAX_LINES);
+  }
+
+  const previewLines = body.reportPreviewLines
+    ?.map((line) => line.trim())
+    .filter(Boolean);
+
+  if (previewLines && previewLines.length > 0) {
+    return previewLines.slice(0, TEMPLATE_QA_SUMMARY_MAX_LINES);
   }
 
   const reportTitle = body.reportTitle?.trim() || "기능 QA";
@@ -1716,6 +1775,20 @@ function estimateWrappedRowHeight(
   return clampNumber(22 + lineCount * 16, minHeight, maxHeight);
 }
 
+function estimateQaSummaryRowHeight(text: string) {
+  const lineCount = estimateWrappedLineCount(text, 94);
+
+  if (lineCount <= 1) {
+    return 34;
+  }
+
+  if (lineCount === 2) {
+    return 48;
+  }
+
+  return 58;
+}
+
 function createTemplateValues(
   sheetName: string,
   body: CreateResultSheetRequest
@@ -1765,12 +1838,9 @@ function createTemplateValues(
     nextEventCount,
     remainingPrioritySummary: effectiveRemainingPrioritySummary,
   });
-  const systemAnalysisLines = createTemplateSystemAnalysisLines({
+  const systemRiskMessage = createTemplateRiskMessage({
     state,
-    highRemainingCount,
-    blockedCount,
     remainingCount,
-    nextEventCount,
     remainingPrioritySummary: effectiveRemainingPrioritySummary,
   });
   const judgmentReasonLines = createTemplateJudgmentReasonLines({
@@ -1859,10 +1929,10 @@ function createTemplateValues(
     commentRows: actualCommentRows,
     commentExtraRows,
     commentCategoryOffsets,
-    qaSummaryRowHeights: [0, 1, 2].map((index) =>
-      qaSummaryLines[index]
-        ? estimateWrappedRowHeight(qaSummaryLines[index], 82, 34, 88)
-        : 24
+    qaSummaryRowHeights: Array.from(
+      { length: TEMPLATE_QA_SUMMARY_MAX_LINES },
+      (_, index) =>
+        qaSummaryLines[index] ? estimateQaSummaryRowHeight(qaSummaryLines[index]) : 6
     ),
     commentRowHeights:
       commentRows.length > 0
@@ -1933,100 +2003,110 @@ function createTemplateValues(
       },
       {
         range: `${quoteSheetName(sheetName)}!E3`,
-        values: [
-          [
-            `${body.rcProgress?.rcLabel || "Version TBD"}  |  최종 업데이트 ${formatDisplayTimestamp()}  |  QA 담당자 TBD`,
-          ],
-        ],
+        values: [[`${createHeroTargetVersionLabel(body)} | ${createHeroQaPeriodLabel(body)}`]],
       },
       {
         range: `${quoteSheetName(sheetName)}!E4`,
-        values: [[systemAnalysisLines.join("\n")]],
+        values: [[`최종 업데이트 ${formatDisplayTimestamp()} | QA 담당자 TBD`]],
+      },
+      {
+        range: `${quoteSheetName(sheetName)}!E5`,
+        values: [
+          [
+            [
+              `시스템 분석 결과: ${state}`,
+              `High 우선순위 잔여 ${highRemainingCount}건`,
+              `Blocked ${blockedCount}건 / NextEvent ${nextEventCount}건`,
+              systemRiskMessage,
+            ].join("\n"),
+          ],
+        ],
       },
       {
         range: `${quoteSheetName(sheetName)}!A7:A10`,
         values: judgmentReasonLines.map((line) => [`- ${line}`]),
       },
       {
-        range: `${quoteSheetName(sheetName)}!A13:A15`,
-        values: [0, 1, 2].map((index) => [
-          qaSummaryLines[index] ? `- ${qaSummaryLines[index]}` : "",
-        ]),
+        range: `${quoteSheetName(sheetName)}!A13:A20`,
+        values: Array.from(
+          { length: TEMPLATE_QA_SUMMARY_MAX_LINES },
+          (_, index) => [qaSummaryLines[index]?.trim() ?? ""]
+        ),
       },
       {
-        range: `${quoteSheetName(sheetName)}!A19`,
+        range: `${quoteSheetName(sheetName)}!A24`,
         values: [[totalTc]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!E19`,
+        range: `${quoteSheetName(sheetName)}!E24`,
         values: [[passCount]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I19`,
+        range: `${quoteSheetName(sheetName)}!I24`,
         values: [[failCount]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A20`,
+        range: `${quoteSheetName(sheetName)}!A25`,
         values: [["Blocked"]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!E20`,
+        range: `${quoteSheetName(sheetName)}!E25`,
         values: [["잔여 이슈"]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I20`,
+        range: `${quoteSheetName(sheetName)}!I25`,
         values: [["High Risk"]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A21`,
+        range: `${quoteSheetName(sheetName)}!A26`,
         values: [[blockedCount]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!E21`,
+        range: `${quoteSheetName(sheetName)}!E26`,
         values: [[remainingCount]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I21`,
+        range: `${quoteSheetName(sheetName)}!I26`,
         values: [[highRemainingCount]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A26:D26`,
+        range: `${quoteSheetName(sheetName)}!A31:D31`,
         values: [priorityValues(issueOverview.created)],
       },
       {
-        range: `${quoteSheetName(sheetName)}!E26:H26`,
+        range: `${quoteSheetName(sheetName)}!E31:H31`,
         values: [priorityValues(issueOverview.resolved)],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I26:L26`,
+        range: `${quoteSheetName(sheetName)}!I31:L31`,
         values: [priorityValues(issueOverview.remaining)],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A27`,
+        range: `${quoteSheetName(sheetName)}!A32`,
         values: [[`대응 대상 이슈 ${issueOverview.created.total}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!E27`,
+        range: `${quoteSheetName(sheetName)}!E32`,
         values: [[`수정 완료 이슈 ${issueOverview.resolved.total}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I27`,
+        range: `${quoteSheetName(sheetName)}!I32`,
         values: [[`현재 Remaining ${issueOverview.remaining.total}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A32`,
+        range: `${quoteSheetName(sheetName)}!A37`,
         values: [[`${highRemainingCount}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!D32`,
+        range: `${quoteSheetName(sheetName)}!D37`,
         values: [[`${remainingCount}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!G32`,
+        range: `${quoteSheetName(sheetName)}!G37`,
         values: [[`${blockedCount}건`]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!J32`,
+        range: `${quoteSheetName(sheetName)}!J37`,
         values: [[`${nextEventCount}건`]],
       },
       ...issueValueUpdates,
@@ -2041,35 +2121,35 @@ function createTemplateValues(
         values: commentRows.length > 0 ? commentRows : [["- 특이사항 없습니다."]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!A26`,
+        range: `${quoteSheetName(sheetName)}!A31`,
         values: [[issueOverview.created.prioritySummary.Highest]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!B26`,
+        range: `${quoteSheetName(sheetName)}!B31`,
         values: [[issueOverview.created.prioritySummary.High]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!C26`,
+        range: `${quoteSheetName(sheetName)}!C31`,
         values: [[issueOverview.created.prioritySummary.Medium]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!D26`,
+        range: `${quoteSheetName(sheetName)}!D31`,
         values: [[issueOverview.created.prioritySummary.Low]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!I26`,
+        range: `${quoteSheetName(sheetName)}!I31`,
         values: [[remainingPrioritySummary.Highest]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!J26`,
+        range: `${quoteSheetName(sheetName)}!J31`,
         values: [[remainingPrioritySummary.High]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!K26`,
+        range: `${quoteSheetName(sheetName)}!K31`,
         values: [[remainingPrioritySummary.Medium]],
       },
       {
-        range: `${quoteSheetName(sheetName)}!L26`,
+        range: `${quoteSheetName(sheetName)}!L31`,
         values: [[remainingPrioritySummary.Low]],
       },
     ] satisfies ValueUpdate[],
@@ -2331,13 +2411,15 @@ async function prepareCopiedTemplateDynamicRows(
     }
   }
 
-  for (let row = 0; row < 3; row += 1) {
-    const rowIndex = 12 + row;
+  for (let row = 0; row < TEMPLATE_QA_SUMMARY_MAX_LINES; row += 1) {
+    const rowIndex = TEMPLATE_QA_SUMMARY_START_ROW - 1 + row;
+    const hasSummaryLine = (layout.qaSummaryRowHeights[row] ?? 6) > 8;
+
     requests.push(
       createRowHeightRequest(
         copiedSheetId,
         rowIndex,
-        layout.qaSummaryRowHeights[row] ?? 34
+        layout.qaSummaryRowHeights[row] ?? 6
       ),
       createTemplateRepeatCellRequest(
         copiedSheetId,
@@ -2345,7 +2427,7 @@ async function prepareCopiedTemplateDynamicRows(
         rowIndex + 1,
         0,
         COLUMN_COUNT,
-        COLOR.mutedBlue,
+        hasSummaryLine ? COLOR.mutedBlue : COLOR.background,
         COLOR.muted,
         false,
         11,
@@ -2568,16 +2650,16 @@ async function clearCopiedTemplateValues(
       },
       body: JSON.stringify({
         ranges: [
-          `${quotedSheetName}!E2:E4`,
+          `${quotedSheetName}!E2:E5`,
           `${quotedSheetName}!A7:A10`,
-          `${quotedSheetName}!A13:A15`,
-          `${quotedSheetName}!A19:I21`,
-          `${quotedSheetName}!A26:L27`,
-          `${quotedSheetName}!A32:J32`,
+          `${quotedSheetName}!A13:A20`,
+          `${quotedSheetName}!A24:I26`,
+          `${quotedSheetName}!A31:L32`,
+          `${quotedSheetName}!A37:J37`,
           ...(!hasHighPriorityIssues
             ? [`${quotedSheetName}!A${TEMPLATE_ISSUE_START_ROW - 1}:L${TEMPLATE_ISSUE_START_ROW - 1}`]
             : []),
-          `${quotedSheetName}!A36:L120`,
+          `${quotedSheetName}!A${TEMPLATE_ISSUE_START_ROW}:L120`,
         ],
       }),
     }
@@ -2711,7 +2793,9 @@ async function clearCopiedTemplateErrorValues(
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as CreateResultSheetRequest;
-    const spreadsheetId = body.spreadsheetId?.trim();
+    const sourceSpreadsheetId = body.spreadsheetId?.trim();
+    const resultSpreadsheetId = process.env.RESULT_SPREADSHEET_ID?.trim();
+    const spreadsheetId = resultSpreadsheetId || sourceSpreadsheetId;
 
     console.log("Create Result Sheet API received rcProgress:", body.rcProgress);
     console.log("Create Result Sheet API received rcProgress field:", {
@@ -2730,7 +2814,7 @@ export async function POST(request: Request) {
 
     if (!spreadsheetId) {
       return NextResponse.json(
-        { error: "spreadsheetId is required." },
+        { error: "RESULT_SPREADSHEET_ID or spreadsheetId is required." },
         { status: 400 }
       );
     }
@@ -2769,6 +2853,8 @@ export async function POST(request: Request) {
       templateSpreadsheetId: TEMPLATE_SPREADSHEET_ID,
       templateSheetName: TEMPLATE_QA_RESULT_SHEET_NAME,
       templateSheetId: TEMPLATE_QA_RESULT_SHEET_ID,
+      sourceSpreadsheetId,
+      resultSpreadsheetId: spreadsheetId,
       copiedSheetId,
       sheetName,
       copiedSheetState: templateValues.copiedSheetState,
@@ -2781,7 +2867,12 @@ export async function POST(request: Request) {
       summaryRowIndex: templateValues.dynamicLayout.extraIssueRow,
     });
 
-    return NextResponse.json({ sheetName });
+    return NextResponse.json({
+      sheetName,
+      sheetId: copiedSheetId,
+      spreadsheetId,
+      sheetUrl: createSheetUrl(spreadsheetId, copiedSheetId),
+    });
   } catch (error) {
     console.error("Create result sheet route error:", error);
 

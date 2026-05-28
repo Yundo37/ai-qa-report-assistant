@@ -40,10 +40,12 @@ import type {
   CsvRecord,
   LabelMatchMode,
   MessageState,
+  QaAnalysisContext,
   QaIssueOverviewSummary,
   RcProgressSummary,
   SheetInput,
   SpreadsheetInfo,
+  SpreadsheetSheetInfo,
 } from "@/types/report";
 
 const MAX_TEST_SHEETS = 50;
@@ -51,6 +53,134 @@ const MAX_JIRA_LABELS = 8;
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) =>
   index.toString().padStart(2, "0")
 );
+const JIRA_TARGET_VERSION_FIELDS = [
+  "Version",
+  "Versions",
+  "Fix Version",
+  "Fix versions",
+  "Fix Version/s",
+  "FixVersions",
+  "Fix version",
+  "Fix version/s",
+  "Affects Version",
+  "Affects versions",
+  "Affects Version/s",
+  "Affected Version",
+  "Affected versions",
+  "RC",
+  "RC Version",
+  "RC 버전",
+  "Target Version",
+  "Target version",
+  "Release",
+  "Release Version",
+  "릴리즈",
+  "릴리즈 버전",
+  "버전",
+  "대상 버전",
+  "대상버전",
+  "수정 버전",
+  "수정버전",
+  "영향 버전",
+  "영향버전",
+];
+
+type QuickScenarioPreset = {
+  featureName: string;
+  version: string;
+  rcVersion: string;
+  spreadsheetUrl: string;
+  testSheetTitles: string[];
+  jiraSheetTitle: string;
+  startDate: string;
+  startHour: string;
+  startMinute: string;
+  endDate: string;
+  endHour: string;
+  endMinute: string;
+  labels: string[];
+  labelMatchMode: LabelMatchMode;
+};
+
+const MAIN_FEATURE_SCENARIO = {
+  featureName: "커뮤니티 미션 이벤트",
+  version: "2.0.0",
+  rcVersion: "RC2",
+  spreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
+  testSheetTitles: [
+    "메인피쳐1 TC",
+    "메인피쳐2 TC",
+    "메인피쳐3 TC",
+    "메인피쳐4 TC",
+  ],
+  jiraSheetTitle: "지라 데이터",
+  startDate: "2026-05-01",
+  startHour: "09",
+  startMinute: "30",
+  endDate: "2026-05-11",
+  endHour: "20",
+  endMinute: "00",
+  labels: ["커뮤니티미션"],
+  labelMatchMode: "ANY",
+} satisfies QuickScenarioPreset;
+const SUB_FEATURE_SCENARIO = {
+  featureName: "알림 우선순위 정책 개선",
+  version: "2.0.0",
+  rcVersion: "RC3",
+  spreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1gl3yDCtZn71XeFEa3JSyOu7UrMluLO3x8ezN9Ag96eI/edit?gid=982602155#gid=982602155",
+  testSheetTitles: ["서브피쳐1 TC", "서브피쳐2 TC"],
+  jiraSheetTitle: "지라 데이터",
+  startDate: "2026-05-08",
+  startHour: "19",
+  startMinute: "00",
+  endDate: "2026-05-13",
+  endHour: "13",
+  endMinute: "00",
+  labels: ["알림"],
+  labelMatchMode: "ANY",
+} satisfies QuickScenarioPreset;
+const STABLE_DUMMY_SCENARIO = {
+  featureName: "더미 결과 : 안정",
+  version: "",
+  rcVersion: "",
+  spreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1KrAeYbhgiTpp4v-9ibcdKnTGkoyI_jk9qfGhLwOe68Y/edit?gid=846682949#gid=846682949",
+  testSheetTitles: ["Dummy_TC_안정"],
+  jiraSheetTitle: "Dummy_Jira_안정",
+  startDate: "2026-05-20",
+  startHour: "00",
+  startMinute: "00",
+  endDate: "2026-05-22",
+  endHour: "17",
+  endMinute: "00",
+  labels: ["안정", "더미"],
+  labelMatchMode: "ALL",
+} satisfies QuickScenarioPreset;
+const CAUTION_DUMMY_SCENARIO = {
+  featureName: "더미 결과 : 주의 필요",
+  version: "",
+  rcVersion: "",
+  spreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1KrAeYbhgiTpp4v-9ibcdKnTGkoyI_jk9qfGhLwOe68Y/edit?gid=2000456795#gid=2000456795",
+  testSheetTitles: ["Dummy_TC_주의필요"],
+  jiraSheetTitle: "Dummy_Jira_주의필요",
+  startDate: "2026-05-20",
+  startHour: "00",
+  startMinute: "00",
+  endDate: "",
+  endHour: "00",
+  endMinute: "00",
+  labels: ["주의필요", "더미"],
+  labelMatchMode: "ALL",
+} satisfies QuickScenarioPreset;
+const QUICK_SCENARIO_PRESETS = {
+  메인피쳐: MAIN_FEATURE_SCENARIO,
+  서브피쳐: SUB_FEATURE_SCENARIO,
+  "더미:안정": STABLE_DUMMY_SCENARIO,
+  "더미:주의필요": CAUTION_DUMMY_SCENARIO,
+} satisfies Record<string, QuickScenarioPreset>;
 
 function logSummary(title: string, summary: CountSummary) {
   console.log(title);
@@ -74,6 +204,167 @@ function normalizeMinute(minute: string) {
 function buildAnalysisDateTime(date: string, hour: string, minute: string) {
   if (!date.trim()) return null;
   return `${date} ${hour}:${normalizeMinute(minute)}`;
+}
+
+function createReportTitle(featureName: string) {
+  return `${featureName.trim()} QA 결과 리포트`;
+}
+
+function isJiraSheetTitle(title: string) {
+  return /jira|지라/i.test(title);
+}
+
+function buildGoogleSpreadsheetTabUrl(spreadsheetId: string, gid: string) {
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?gid=${gid}`;
+}
+
+function normalizeRcVersion(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) return "";
+  if (/^\d+$/.test(trimmedValue)) return `RC${trimmedValue}`;
+
+  return trimmedValue.replace(/\brc\s*(\d+)\b/gi, "RC$1");
+}
+
+function normalizeTargetVersion(value: string) {
+  return normalizeRcVersion(value).replace(/\s+/g, " ").trim();
+}
+
+function createTargetVersionDisplay({
+  version,
+  rcVersion,
+  inferredTargetVersion,
+}: {
+  version: string;
+  rcVersion: string;
+  inferredTargetVersion: string;
+}) {
+  const normalizedVersion = version.trim();
+  const normalizedRcVersion = normalizeRcVersion(rcVersion);
+  const userTargetVersion = [normalizedVersion, normalizedRcVersion]
+    .filter(Boolean)
+    .join(" ");
+
+  if (userTargetVersion) {
+    return userTargetVersion;
+  }
+
+  if (inferredTargetVersion) {
+    return `${inferredTargetVersion} (Auto inferred)`;
+  }
+
+  return "Version TBD";
+}
+
+function inferTargetVersionFromJiraIssues(records: CsvRecord[]) {
+  const counts = new Map<string, number>();
+
+  records.forEach((record) => {
+    JIRA_TARGET_VERSION_FIELDS.forEach((fieldName) => {
+      const rawValue = record[fieldName]?.trim();
+
+      if (!rawValue) return;
+
+      rawValue
+        .split(/[;,\n]/)
+        .map(normalizeTargetVersion)
+        .filter(Boolean)
+        .forEach((value) => {
+          counts.set(value, (counts.get(value) ?? 0) + 1);
+        });
+    });
+  });
+
+  return (
+    Array.from(counts.entries()).sort(
+      (first, second) =>
+        second[1] - first[1] || first[0].localeCompare(second[0])
+    )[0]?.[0] ?? ""
+  );
+}
+
+const QA_SCOPE_FIELDS = [
+  "Title",
+  "Feature",
+  "Category_1",
+  "Category_2",
+  "Category_3",
+  "Category 1",
+  "Category 2",
+  "Category 3",
+  "대분류",
+  "중분류",
+  "소분류",
+];
+const QA_PATTERN_FIELDS = [
+  "Summary",
+  "Test Case",
+  "TC",
+  "Case",
+  "Description",
+  "Expected Result",
+  "Category_1",
+  "Category_2",
+  "Category_3",
+  "대분류",
+  "중분류",
+  "소분류",
+];
+
+function getRecordValueByFields(record: CsvRecord, fieldNames: string[]) {
+  for (const fieldName of fieldNames) {
+    const value = record[fieldName]?.trim();
+
+    if (value) return value;
+  }
+
+  return "";
+}
+
+function createTopValues(values: string[], limit: number) {
+  const counts = values.reduce<Map<string, number>>((summary, value) => {
+    const normalizedValue = value.trim().replace(/\s+/g, " ");
+
+    if (!normalizedValue) return summary;
+
+    summary.set(normalizedValue, (summary.get(normalizedValue) ?? 0) + 1);
+    return summary;
+  }, new Map());
+
+  return Array.from(counts.entries())
+    .sort(
+      (first, second) =>
+        second[1] - first[1] || first[0].localeCompare(second[0])
+    )
+    .slice(0, limit)
+    .map(([value]) => value);
+}
+
+function createQaAnalysisContext(
+  records: CsvRecord[],
+  testSheetTitles: string[]
+): QaAnalysisContext {
+  const scopeKeywords = records.flatMap((record) =>
+    QA_SCOPE_FIELDS.map((fieldName) => record[fieldName]?.trim() ?? "").filter(
+      Boolean
+    )
+  );
+  const failPatternValues = records
+    .filter((record) => record["QA Check"]?.trim().toLowerCase() === "fail")
+    .map((record) => getRecordValueByFields(record, QA_PATTERN_FIELDS))
+    .filter(Boolean);
+  const blockedPatternValues = records
+    .filter((record) => record["QA Check"]?.trim().toLowerCase() === "blocked")
+    .map((record) => getRecordValueByFields(record, QA_PATTERN_FIELDS))
+    .filter(Boolean);
+
+  return {
+    testSheetTitles,
+    scopeKeywords: createTopValues(scopeKeywords, 8),
+    failPatterns: createTopValues(failPatternValues, 8),
+    blockedPatterns: createTopValues(blockedPatternValues, 5),
+  };
 }
 
 function openDatePicker(input: HTMLInputElement) {
@@ -163,6 +454,8 @@ function createFallbackQaIssueOverview(
 
 export default function Home() {
   const [reportTitle, setReportTitle] = useState("");
+  const [reportVersion, setReportVersion] = useState("");
+  const [reportRcVersion, setReportRcVersion] = useState("");
   const [testSheets, setTestSheets] = useState<SheetInput[]>([
     { url: "", isEditing: true },
   ]);
@@ -170,6 +463,11 @@ export default function Home() {
     url: "",
     isEditing: true,
   });
+  const [autoLinkedJiraSheet, setAutoLinkedJiraSheet] = useState<{
+    spreadsheetId: string;
+    gid: string;
+    title: string;
+  } | null>(null);
   const [jiraAnalysisStartDate, setJiraAnalysisStartDate] = useState("");
   const [jiraAnalysisStartHour, setJiraAnalysisStartHour] = useState("00");
   const [jiraAnalysisStartMinute, setJiraAnalysisStartMinute] =
@@ -191,10 +489,12 @@ export default function Home() {
   >([[]]);
   const [expandedTestSheetSelections, setExpandedTestSheetSelections] =
     useState<boolean[]>([false]);
+  const [applyingQuickScenario, setApplyingQuickScenario] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
   const [aiAnalysisText, setAiAnalysisText] = useState("");
   const [isCreatingResultSheet, setIsCreatingResultSheet] = useState(false);
+  const [resultSheetUrl, setResultSheetUrl] = useState("");
   const [resultSheetMessage, setResultSheetMessage] =
     useState<MessageState>(null);
   const analysisSummaryRef = useRef<HTMLElement | null>(null);
@@ -214,6 +514,104 @@ export default function Home() {
     spreadsheetMetadata.sheets.forEach((sheet) => {
       console.log(`  - ${sheet.title}`);
     });
+  };
+
+  const resetReportState = () => {
+    setMessage(null);
+    setAnalysisSummary(null);
+    setAiAnalysisText("");
+    setResultSheetMessage(null);
+    setResultSheetUrl("");
+  };
+
+  const applyQuickScenario = async (
+    scenarioName: string,
+    scenario: QuickScenarioPreset
+  ) => {
+    if (applyingQuickScenario) return;
+
+    setApplyingQuickScenario(scenarioName);
+    resetReportState();
+    setReportTitle("");
+    setReportVersion("");
+    setReportRcVersion("");
+    setTestSheets([{ url: "", isEditing: true }]);
+    setTestSheetMetadataList([null]);
+    setSelectedTestSheetGids([[]]);
+    setExpandedTestSheetSelections([false]);
+    setJiraIssueSheet({ url: "", isEditing: true });
+    setAutoLinkedJiraSheet(null);
+    setJiraAnalysisStartDate("");
+    setJiraAnalysisStartHour("00");
+    setJiraAnalysisStartMinute("00");
+    setJiraAnalysisEndDate("");
+    setJiraAnalysisEndHour("00");
+    setJiraAnalysisEndMinute("00");
+    setJiraLabels([""]);
+    setLabelMatchMode("ANY");
+
+    try {
+      const parsedSheet = parseGoogleSheetUrl(scenario.spreadsheetUrl);
+
+      if (!parsedSheet.spreadsheetId) {
+        throw new Error(
+          `${scenarioName} Spreadsheet URL에서 spreadsheetId를 찾을 수 없습니다.`
+        );
+      }
+
+      const spreadsheetMetadata = await fetchSpreadsheetInfo(parsedSheet.spreadsheetId);
+      const selectedGids = spreadsheetMetadata.sheets
+        .filter((sheet) => scenario.testSheetTitles.includes(sheet.title))
+        .map((sheet) => sheet.gid);
+      const jiraSheet =
+        spreadsheetMetadata.sheets.find(
+          (sheet) => sheet.title === scenario.jiraSheetTitle
+        ) ?? spreadsheetMetadata.sheets.find((sheet) => isJiraSheetTitle(sheet.title));
+
+      setReportTitle(scenario.featureName);
+      setReportVersion(scenario.version);
+      setReportRcVersion(scenario.rcVersion);
+      setTestSheets([{ url: scenario.spreadsheetUrl, isEditing: false }]);
+      setTestSheetMetadataList([spreadsheetMetadata]);
+      setSelectedTestSheetGids([selectedGids]);
+      setExpandedTestSheetSelections([false]);
+      setJiraAnalysisStartDate(scenario.startDate);
+      setJiraAnalysisStartHour(scenario.startHour);
+      setJiraAnalysisStartMinute(scenario.startMinute);
+      setJiraAnalysisEndDate(scenario.endDate);
+      setJiraAnalysisEndHour(scenario.endHour);
+      setJiraAnalysisEndMinute(scenario.endMinute);
+      setJiraLabels(scenario.labels);
+      setLabelMatchMode(scenario.labelMatchMode);
+      logSpreadsheetInfo(spreadsheetMetadata);
+
+      if (jiraSheet) {
+        setJiraIssueSheet({
+          url: buildGoogleSpreadsheetTabUrl(parsedSheet.spreadsheetId, jiraSheet.gid),
+          isEditing: false,
+        });
+        setAutoLinkedJiraSheet({
+          spreadsheetId: parsedSheet.spreadsheetId,
+          gid: jiraSheet.gid,
+          title: jiraSheet.title,
+        });
+      } else {
+        setJiraIssueSheet({ url: "", isEditing: true });
+      }
+    } catch (error) {
+      console.error("Quick Scenario Apply Error:", error);
+      setMessage({
+        type: "error",
+        title: "Quick Scenario 적용에 실패했습니다.",
+        items: [
+          error instanceof Error
+            ? error.message
+            : `${scenarioName} 시나리오를 불러오는 중 오류가 발생했습니다.`,
+        ],
+      });
+    } finally {
+      setApplyingQuickScenario("");
+    }
   };
 
   const loadTestSheetMetadata = async (index: number, url: string) => {
@@ -249,15 +647,57 @@ export default function Home() {
     }
   };
 
-  const toggleSelectedTestSheetGid = (index: number, gid: string) => {
+  const toggleSelectedTestSheetGid = (
+    index: number,
+    sheet: SpreadsheetSheetInfo
+  ) => {
+    const parsedSheet = parseGoogleSheetUrl(testSheets[index]?.url ?? "");
+
+    if (isJiraSheetTitle(sheet.title) && parsedSheet.spreadsheetId) {
+      setSelectedTestSheetGids((currentSelectedGids) => {
+        const updatedSelectedGids = [...currentSelectedGids];
+        const currentGids = updatedSelectedGids[index] ?? [];
+        updatedSelectedGids[index] = currentGids.filter(
+          (selectedGid) => selectedGid !== sheet.gid
+        );
+        return updatedSelectedGids;
+      });
+      setJiraIssueSheet({
+        url: buildGoogleSpreadsheetTabUrl(parsedSheet.spreadsheetId, sheet.gid),
+        isEditing: false,
+      });
+      setAutoLinkedJiraSheet({
+        spreadsheetId: parsedSheet.spreadsheetId,
+        gid: sheet.gid,
+        title: sheet.title,
+      });
+      return;
+    }
+
     setSelectedTestSheetGids((currentSelectedGids) => {
       const updatedSelectedGids = [...currentSelectedGids];
       const currentGids = updatedSelectedGids[index] ?? [];
-      updatedSelectedGids[index] = currentGids.includes(gid)
-        ? currentGids.filter((selectedGid) => selectedGid !== gid)
-        : [...currentGids, gid];
+      updatedSelectedGids[index] = currentGids.includes(sheet.gid)
+        ? currentGids.filter((selectedGid) => selectedGid !== sheet.gid)
+        : [...currentGids, sheet.gid];
       return updatedSelectedGids;
     });
+  };
+
+  const getAutoLinkedJiraSheetForTestSheet = (url: string) => {
+    const parsedSheet = parseGoogleSheetUrl(url);
+
+    if (
+      !parsedSheet.spreadsheetId ||
+      autoLinkedJiraSheet?.spreadsheetId !== parsedSheet.spreadsheetId
+    ) {
+      return null;
+    }
+
+    return {
+      gid: autoLinkedJiraSheet.gid,
+      title: autoLinkedJiraSheet.title,
+    };
   };
 
   const toggleTestSheetSelectionExpanded = (index: number) => {
@@ -354,6 +794,7 @@ export default function Home() {
   const runGenerateReport = async () => {
     setAnalysisSummary(null);
     setResultSheetMessage(null);
+    setResultSheetUrl("");
 
     const validTestSheetEntries = testSheets
       .map((sheet, index) => ({ url: sheet.url.trim(), index }))
@@ -375,7 +816,10 @@ export default function Home() {
     );
     const missingItems: string[] = [];
 
-    if (!reportTitle.trim()) missingItems.push("Report Title을 입력해주세요.");
+    const featureName = reportTitle.trim();
+    const generatedReportTitle = createReportTitle(featureName);
+
+    if (!featureName) missingItems.push("Feature Name을 입력해주세요.");
     if (validTestSheetUrls.length === 0) {
       missingItems.push("Test Sheets URL을 1개 이상 입력해주세요.");
     }
@@ -445,7 +889,8 @@ export default function Home() {
     }
 
     const reportInput = {
-      reportTitle: reportTitle.trim(),
+      reportTitle: generatedReportTitle,
+      featureName,
       testSheets: parsedTestSheets,
       jiraIssueSheet: parsedJiraIssueSheet,
       jiraAnalysisPeriod: {
@@ -536,6 +981,10 @@ export default function Home() {
       });
       const qaTotalSummary = createQaSummary(allParsedTestSheetData);
       const qaFollowUps = extractQaFollowUps(allParsedTestSheetData);
+      const qaAnalysisContext = createQaAnalysisContext(
+        allParsedTestSheetData,
+        selectedTestSheets.map((sheet) => sheet.title)
+      );
       const testSheetSummaries = parsedTestSheetDataList.map(
         (parsedTestSheetData, index) => ({
           title: selectedTestSheets[index].title,
@@ -643,6 +1092,8 @@ export default function Home() {
           createJiraFilteredSummary(filteredJiraIssues);
         const remainingIssues = createRemainingIssues(filteredJiraIssues);
         const qaIssueOverview = createQaIssueOverviewSummary(filteredJiraIssues);
+        const inferredTargetVersion =
+          inferTargetVersionFromJiraIssues(filteredJiraIssues);
         const rcProgress = createRcProgressSummary(filteredJiraIssues, {
           reportTitle: reportInput.reportTitle,
           startDateTime: jiraAnalysisStartDateTime ?? "",
@@ -660,11 +1111,15 @@ export default function Home() {
           rcProgress,
           qaIssueOverview,
           qaFollowUps,
+          inferredTargetVersion,
+          qaAnalysisContext,
         };
         console.log("Remaining Count Summary:", jiraFilteredSummary.Remaining ?? 0);
         console.log("Remaining Issue List Length:", remainingIssues.length);
         console.log("Remaining Issue Sample:", remainingIssues.slice(0, 5));
         console.log("QA Issue Overview Summary:", qaIssueOverview);
+        console.log("QA Analysis Context:", qaAnalysisContext);
+        console.log("Inferred Target Version:", inferredTargetVersion || "Version TBD");
         console.log("RC QA Progress Summary Immediately After Create:", rcProgress);
         console.log("Analysis Summary Payload Before setAnalysisSummary:", nextAnalysisSummary);
         hasNoMatchingJiraIssues = filteredJiraIssues.length === 0;
@@ -704,7 +1159,7 @@ export default function Home() {
         type: "success",
         title: "Feature Report 입력값과 Google Sheet 데이터 확인이 완료되었습니다.",
         items: [
-          `Report Title: ${reportInput.reportTitle}`,
+          `Feature Name: ${reportInput.featureName}`,
           `Test Sheets: ${reportInput.testSheets.length}개`,
           "Jira Issue Sheet: 입력 완료",
           `Jira Reference Labels: ${reportInput.jiraLabels.length}개`,
@@ -738,6 +1193,11 @@ export default function Home() {
           jiraFilteredSummary: analysisSummary.jiraFiltered,
           jiraStatusSummary: analysisSummary.jiraStatus,
           jiraPrioritySummary: analysisSummary.jiraPriority,
+          reportTitle: createReportTitle(reportTitle),
+          testSheets: analysisSummary.testSheets,
+          remainingIssues: analysisSummary.remainingIssues,
+          qaFollowUps: analysisSummary.qaFollowUps,
+          qaAnalysisContext: analysisSummary.qaAnalysisContext,
         }),
       });
 
@@ -761,6 +1221,7 @@ export default function Home() {
     if (!analysisSummary || isCreatingResultSheet) return;
     setIsCreatingResultSheet(true);
     setResultSheetMessage(null);
+    setResultSheetUrl("");
 
     try {
       const rcProgressForRequest =
@@ -771,7 +1232,19 @@ export default function Home() {
       const didUseRcProgressFallback = !analysisSummary.rcProgress;
       const createResultSheetPayload = {
         spreadsheetId: analysisSummary.resultSpreadsheetId,
-        reportTitle: reportTitle.trim(),
+        reportTitle: createReportTitle(reportTitle),
+        version: reportVersion.trim(),
+        rcVersion: reportRcVersion.trim(),
+        qaStartDateTime: buildAnalysisDateTime(
+          jiraAnalysisStartDate,
+          jiraAnalysisStartHour,
+          jiraAnalysisStartMinute
+        ),
+        qaEndDateTime: buildAnalysisDateTime(
+          jiraAnalysisEndDate,
+          jiraAnalysisEndHour,
+          jiraAnalysisEndMinute
+        ),
         qaSummary: analysisSummary.qaTotal,
         testSheets: analysisSummary.testSheets,
         jiraFilteredSummary: analysisSummary.jiraFiltered,
@@ -807,6 +1280,9 @@ export default function Home() {
 
       const data = (await response.json()) as {
         sheetName?: string;
+        sheetId?: number;
+        spreadsheetId?: string;
+        sheetUrl?: string;
         error?: string;
         details?: string;
       };
@@ -821,6 +1297,7 @@ export default function Home() {
         title: "Result Sheet 생성이 완료되었습니다.",
         items: [`Sheet Name: ${data.sheetName ?? "-"}`],
       });
+      setResultSheetUrl(data.sheetUrl ?? "");
     } catch (error) {
       console.error("Create Result Sheet Error:", error);
       setResultSheetMessage({
@@ -836,6 +1313,12 @@ export default function Home() {
       setIsCreatingResultSheet(false);
     }
   };
+
+  const reportScopeText = createTargetVersionDisplay({
+    version: reportVersion,
+    rcVersion: reportRcVersion,
+    inferredTargetVersion: analysisSummary?.inferredTargetVersion ?? "",
+  });
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -877,20 +1360,92 @@ export default function Home() {
 
           <div className="mb-8">
             <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Report Title
+              Quick Scenario
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["메인피쳐", "서브피쳐", "더미:안정", "더미:주의필요"].map(
+                (scenario) => {
+                  const preset =
+                    QUICK_SCENARIO_PRESETS[
+                      scenario as keyof typeof QUICK_SCENARIO_PRESETS
+                    ];
+                  const isApplying = applyingQuickScenario === scenario;
+
+                  return (
+                    <button
+                      key={scenario}
+                      type="button"
+                      onClick={
+                        preset
+                          ? () => applyQuickScenario(scenario, preset)
+                          : undefined
+                      }
+                      disabled={Boolean(applyingQuickScenario)}
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isApplying ? "적용 중..." : scenario}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+            <p className="mt-3 text-sm leading-6 text-zinc-500">
+              준비된 QA 시나리오를 통해 Result Report를 빠르게 확인할 수
+              있습니다.
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <label className="mb-2 block text-sm font-semibold text-zinc-200">
+              Feature Name
             </label>
             <p className="mb-3 text-sm leading-6 text-zinc-500">
-              결과 리포트 제목에 사용할 피쳐명을 입력하세요.
+              결과 리포트에 사용할 피쳐명을 입력하세요.
               <br />
-              예: 결제 QA 결과 리포트
+              예: 결제 / 알림 / 이벤트 응모 / 멤버십
             </p>
             <input
               type="text"
               value={reportTitle}
               onChange={(event) => setReportTitle(event.target.value)}
-              placeholder="예: 결제 QA 결과 리포트"
+              placeholder="예: 결제"
               className="min-h-11 w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
             />
+          </div>
+
+          <div className="mb-8">
+            <label className="mb-2 block text-sm font-semibold text-zinc-200">
+              Version / RC
+            </label>
+            <p className="mb-3 text-sm leading-6 text-zinc-500">
+              미입력 시 Jira Version / RC 기준 자동 추론
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="w-full sm:w-40">
+                <label className="mb-2 block text-xs font-medium text-zinc-400">
+                  Build Version
+                </label>
+                <input
+                  type="text"
+                  value={reportVersion}
+                  onChange={(event) => setReportVersion(event.target.value)}
+                  placeholder="2.0.0"
+                  className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
+                />
+              </div>
+              <div className="w-full sm:w-32">
+                <label className="mb-2 block text-xs font-medium text-zinc-400">
+                  Report RC Version
+                </label>
+                <input
+                  type="text"
+                  value={reportRcVersion}
+                  onChange={(event) => setReportRcVersion(event.target.value)}
+                  placeholder="RC3"
+                  className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mb-8">
@@ -959,10 +1514,15 @@ export default function Home() {
                     <SpreadsheetPreview
                       spreadsheetInfo={testSheetMetadataList[index]!}
                       selectedGids={selectedTestSheetGids[index] ?? []}
+                      autoLinkedJiraSheet={getAutoLinkedJiraSheetForTestSheet(
+                        sheet.url
+                      )}
                       isExpanded={expandedTestSheetSelections[index] ?? false}
                       onToggleExpanded={() => toggleTestSheetSelectionExpanded(index)}
                       onCloseSelection={() => closeTestSheetSelection(index)}
-                      onToggleSheet={(gid) => toggleSelectedTestSheetGid(index, gid)}
+                      onToggleSheet={(sheet) =>
+                        toggleSelectedTestSheetGid(index, sheet)
+                      }
                     />
                   )}
                 </div>
@@ -994,9 +1554,10 @@ export default function Home() {
               <input
                 type="text"
                 value={jiraIssueSheet.url}
-                onChange={(event) =>
-                  setJiraIssueSheet({ ...jiraIssueSheet, url: event.target.value })
-                }
+                onChange={(event) => {
+                  setJiraIssueSheet({ ...jiraIssueSheet, url: event.target.value });
+                  setAutoLinkedJiraSheet(null);
+                }}
                 onBlur={() => {
                   if (jiraIssueSheet.url.trim()) {
                     setJiraIssueSheet({ ...jiraIssueSheet, isEditing: false });
@@ -1140,11 +1701,59 @@ export default function Home() {
 
         {analysisSummary && (
           <section ref={analysisSummaryRef} className="mt-8 space-y-6">
+            <AiAnalysisPreview
+              analysisText={aiAnalysisText}
+              isLoading={isAiAnalyzing}
+              onAnalyze={handleAiAnalysisTest}
+            />
+
+            <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-semibold text-zinc-100">
+                    Result Report
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                    현재 분석 결과를 QA Dashboard 형태의 Result Report로
+                    저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateResultSheet}
+                  disabled={isCreatingResultSheet}
+                  className="min-w-44 whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(16,185,129,0.18)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0"
+                >
+                  {isCreatingResultSheet
+                    ? "Creating Result Report..."
+                    : "Create Result Report"}
+                </button>
+              </div>
+              {resultSheetMessage && <MessagePanel message={resultSheetMessage} />}
+              {resultSheetUrl && (
+                <button
+                  type="button"
+                  onClick={() => window.open(resultSheetUrl, "_blank")}
+                  className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+                >
+                  Open Result Report
+                </button>
+              )}
+            </section>
+
             <div>
               <h2 className="mb-3 text-sm font-semibold text-zinc-300">
                 QA Summary
               </h2>
               <div className="space-y-4">
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Report Scope
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-zinc-100">
+                    Target Version: {reportScopeText}
+                  </p>
+                </div>
                 <SummaryCard title="QA Summary - Total" summary={analysisSummary.qaTotal} />
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {analysisSummary.testSheets.map((sheet) => (
@@ -1195,32 +1804,8 @@ export default function Home() {
             </div>
 
             <FeatureReportPreview analysisSummary={analysisSummary} />
-            <AiAnalysisPreview
-              analysisText={aiAnalysisText}
-              isLoading={isAiAnalyzing}
-              onAnalyze={handleAiAnalysisTest}
-            />
             <RemainingIssueList issues={analysisSummary.remainingIssues} />
             <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
-
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-base font-semibold text-zinc-100">
-                  Result Sheet
-                </h2>
-                <button
-                  type="button"
-                  onClick={handleCreateResultSheet}
-                  disabled={isCreatingResultSheet}
-                  className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isCreatingResultSheet
-                    ? "Creating Result Sheet..."
-                    : "Create Result Sheet"}
-                </button>
-              </div>
-              {resultSheetMessage && <MessagePanel message={resultSheetMessage} />}
-            </section>
           </section>
         )}
 
