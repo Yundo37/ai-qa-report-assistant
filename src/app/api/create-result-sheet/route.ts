@@ -188,7 +188,6 @@ const TEMPLATE_QA_SUMMARY_START_ROW = 13;
 const TEMPLATE_QA_SUMMARY_MAX_LINES = 8;
 const TEMPLATE_ISSUE_START_ROW = 41;
 const TEMPLATE_ISSUE_BODY_CAPACITY = 3;
-const TEMPLATE_COMMENT_TITLE_ROW = 46;
 const TEMPLATE_COMMENT_BODY_CAPACITY = 6;
 
 type QaJudgmentState = "안정" | "주의 필요" | "위험";
@@ -480,6 +479,8 @@ function isHighPriorityRemainingIssue(issue: RemainingIssue) {
   return issue.priority === "Highest" || issue.priority === "High";
 }
 
+// Legacy summary helper kept for the older non-template builder path.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function createRemainingIssueSummaryText(issues: RemainingIssue[]) {
   const mediumCount = issues.filter((issue) => issue.priority === "Medium").length;
   const lowCount = issues.filter((issue) => issue.priority === "Low").length;
@@ -496,6 +497,23 @@ function createRemainingIssueSummaryText(issues: RemainingIssue[]) {
   ].filter(Boolean);
 
   return summaryParts.length > 0 ? ` (${summaryParts.join(" / ")})` : "";
+}
+
+function isMediumLowRemainingIssue(issue: RemainingIssue) {
+  return (
+    issue.priority === "Medium" ||
+    issue.priority === "Low" ||
+    issue.priority === "Lowest"
+  );
+}
+
+function createMediumLowRemainingIssueSummaryText(issues: RemainingIssue[]) {
+  const mediumCount = issues.filter((issue) => issue.priority === "Medium").length;
+  const lowCount = issues.filter(
+    (issue) => issue.priority === "Low" || issue.priority === "Lowest"
+  ).length;
+
+  return ` (Medium ${mediumCount}건 / Low ${lowCount}건)`;
 }
 
 function createFollowUpCategory(followUp: string) {
@@ -920,11 +938,11 @@ function createDashboardRows(body: CreateResultSheetRequest) {
     isHighPriorityRemainingIssue
   );
   const summarizedRemainingIssues = sortedRemainingIssues.filter(
-    (issue) => !isHighPriorityRemainingIssue(issue)
+    isMediumLowRemainingIssue
   );
   const remainingExtraCount = summarizedRemainingIssues.length;
   const remainingExtraSummaryText =
-    createRemainingIssueSummaryText(summarizedRemainingIssues);
+    createMediumLowRemainingIssueSummaryText(summarizedRemainingIssues);
   const followUps =
     body.qaFollowUps && body.qaFollowUps.length > 0
       ? body.qaFollowUps
@@ -1885,7 +1903,13 @@ function createTemplateValues(
   const highPriorityRemainingIssues = sortedRemainingIssues.filter(
     isHighPriorityRemainingIssue
   );
-  const hasExtraIssueSummary = false;
+  const summarizedRemainingIssues = sortedRemainingIssues.filter(
+    isMediumLowRemainingIssue
+  );
+  const remainingExtraCount = summarizedRemainingIssues.length;
+  const remainingExtraSummaryText =
+    createMediumLowRemainingIssueSummaryText(summarizedRemainingIssues);
+  const hasExtraIssueSummary = remainingExtraCount > 0;
   const rawFollowUps =
     body.qaFollowUps && body.qaFollowUps.length > 0
       ? body.qaFollowUps
@@ -1909,12 +1933,13 @@ function createTemplateValues(
     issue.summary,
     issue.status,
   ]);
-  const issueRows = Math.max(highIssueRows.length, 1);
+  const baseIssueRows = Math.max(highIssueRows.length, 1);
+  const issueRows = baseIssueRows + (hasExtraIssueSummary ? 1 : 0);
   const issueExtraRows = Math.max(
     issueRows - TEMPLATE_ISSUE_BODY_CAPACITY,
     0
   );
-  const extraIssueRow = issueStartRow + highIssueRows.length;
+  const extraIssueRow = issueStartRow + baseIssueRows;
   const commentRows: Array<Array<string>> = [];
   const commentCategoryOffsets: number[] = [];
   const commentCategories = [
@@ -1944,8 +1969,10 @@ function createTemplateValues(
     0
   );
   const commentTitleRow =
-    highPriorityRemainingIssues.length > 0
-      ? Math.max(TEMPLATE_COMMENT_TITLE_ROW + issueExtraRows, extraIssueRow + 2)
+    highPriorityRemainingIssues.length > 0 || hasExtraIssueSummary
+      ? hasExtraIssueSummary
+        ? extraIssueRow + 1
+        : issueStartRow + baseIssueRows
       : issueStartRow + 2;
   const dynamicLayout: TemplateDynamicLayout = {
     issueStartRow,
@@ -1980,6 +2007,7 @@ function createTemplateValues(
     section.prioritySummary.Low,
   ];
   const highIssueEndRow = issueStartRow + highPriorityRemainingIssues.length - 1;
+  const extraIssueSummaryText = `+ 잔여 이슈 ${remainingExtraCount}건 추가 존재${remainingExtraSummaryText}`;
   const issueValueUpdates: ValueUpdate[] =
     highPriorityRemainingIssues.length > 0
       ? [
@@ -2015,13 +2043,21 @@ function createTemplateValues(
           },
         ];
 
+  if (hasExtraIssueSummary) {
+    issueValueUpdates.push({
+      range: `${quoteSheetName(sheetName)}!A${extraIssueRow}`,
+      values: [[extraIssueSummaryText]],
+    });
+  }
+
   return {
     sheetName,
     copiedSheetState: state,
     highPriorityRemainingIssues,
     totalRemainingIssuesCount: sortedRemainingIssues.length,
-    remainingExtraCount: 0,
-    remainingExtraSummaryText: "",
+    remainingExtraCount,
+    remainingExtraSummaryText,
+    extraIssueSummaryText: hasExtraIssueSummary ? extraIssueSummaryText : "",
     dynamicLayout,
     updates: [
       { range: `${quoteSheetName(sheetName)}!A1`, values: [[state]] },
@@ -2536,6 +2572,31 @@ async function prepareCopiedTemplateDynamicRows(
     );
   }
 
+  if (layout.hasExtraIssueSummary) {
+    const rowIndex = layout.extraIssueRow - 1;
+    requests.push(
+      {
+        unmergeCells: {
+          range: gridRange(copiedSheetId, rowIndex, rowIndex + 1, 0, COLUMN_COUNT),
+        },
+      },
+      createMergeRequest(copiedSheetId, rowIndex),
+      createRowHeightRequest(copiedSheetId, rowIndex, 30),
+      createTemplateRepeatCellRequest(
+        copiedSheetId,
+        rowIndex,
+        rowIndex + 1,
+        0,
+        COLUMN_COUNT,
+        COLOR.cardMuted,
+        COLOR.muted,
+        false,
+        11,
+        "LEFT"
+      )
+    );
+  }
+
   requests.push(
     {
       unmergeCells: {
@@ -2892,8 +2953,13 @@ export async function POST(request: Request) {
       totalRemainingIssuesCount: templateValues.totalRemainingIssuesCount,
       remainingExtraCount: templateValues.remainingExtraCount,
       remainingExtraSummaryText: templateValues.remainingExtraSummaryText,
+      extraIssueSummaryText: templateValues.extraIssueSummaryText,
       commentTitleRow: templateValues.dynamicLayout.commentTitleRow,
       summaryRowIndex: templateValues.dynamicLayout.extraIssueRow,
+      summaryWriteRange:
+        templateValues.remainingExtraCount > 0
+          ? `${quoteSheetName(sheetName)}!A${templateValues.dynamicLayout.extraIssueRow}`
+          : "",
     });
 
     return NextResponse.json({

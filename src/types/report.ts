@@ -25,6 +25,7 @@ export type MessageState =
 export type CsvRecord = Record<string, string>;
 export type CountSummary = Record<string, number>;
 export type LabelMatchMode = "ANY" | "ALL";
+export type ReportType = "FEATURE" | "OVERALL";
 
 export type SpreadsheetSheetInfo = {
   title: string;
@@ -89,6 +90,45 @@ export type QaIssueOverviewSummary = {
   remaining: QaIssueOverviewSection;
 };
 
+export type OverallQaSummary = {
+  Total: number;
+  Pass: number;
+  Fail: number;
+  Blocked: number;
+  NextEvent: number;
+  "N/A": number;
+};
+
+export type OverallTestSheetSummary = {
+  title: string;
+  rows: number;
+  summary: OverallQaSummary;
+};
+
+export type VersionIssueSummaryItem = {
+  version: string;
+  highHighest: number;
+  medium: number;
+  low: number;
+  total: number;
+};
+
+export type IssuePatternSource = {
+  key: string;
+  summary: string;
+  priority: string;
+  status: string;
+  version: string;
+};
+
+export type IssuePatternAnalysisItem = {
+  name: string;
+  keywords: string[];
+  count: number;
+  versions: string[];
+  sourceTypes: string[];
+};
+
 export type QaAnalysisContext = {
   testSheetTitles: string[];
   scopeKeywords: string[];
@@ -97,6 +137,7 @@ export type QaAnalysisContext = {
 };
 
 export type AnalysisSummaryState = {
+  reportType: ReportType;
   resultSpreadsheetId: string;
   qaTotal: CountSummary;
   testSheets: TestSheetSummary[];
@@ -110,4 +151,10 @@ export type AnalysisSummaryState = {
   qaFollowUps: string[];
   inferredTargetVersion: string;
   qaAnalysisContext: QaAnalysisContext;
+  overallQaSummary?: OverallQaSummary;
+  overallTestSheets?: OverallTestSheetSummary[];
+  versionSummary?: VersionIssueSummaryItem[];
+  versionIssueSummary?: VersionIssueSummaryItem[];
+  issuePatternSources?: IssuePatternSource[];
+  issuePatternAnalysis?: IssuePatternAnalysisItem[];
 } | null;

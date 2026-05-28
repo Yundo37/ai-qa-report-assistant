@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AiAnalysisPreview } from "@/components/report/AiAnalysisPreview";
 import { FeatureReportPreview } from "@/components/report/FeatureReportPreview";
+import { OverallFeatureSummaryCard } from "@/components/report/OverallFeatureSummaryCard";
+import { OverallReportPreview } from "@/components/report/OverallReportPreview";
+import { OverallQaSummaryCard } from "@/components/report/OverallQaSummaryCard";
 import { QaFollowUpList } from "@/components/report/QaFollowUpList";
 import { RemainingIssueList } from "@/components/report/RemainingIssueList";
 import { SpreadsheetPreview } from "@/components/report/SpreadsheetPreview";
 import { SummaryCard } from "@/components/report/SummaryCard";
+import { VersionIssueSummaryCard } from "@/components/report/VersionIssueSummaryCard";
 import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
@@ -22,6 +26,7 @@ import {
   createRcProgressSummary,
   filterJiraIssuesByLabels,
   filterJiraIssuesByPeriod,
+  getRecordValue,
   getJiraStatus,
   JIRA_CREATED_FIELDS,
   JIRA_LABEL_FIELDS,
@@ -33,19 +38,28 @@ import {
   createQaSummary,
   extractQaFollowUps,
 } from "@/lib/qaSummary";
-import { createFeatureReportPreviewLines } from "@/lib/reportPreview";
+import {
+  createFeatureReportPreviewLines,
+  createOverallReportPreviewLinesUtf8,
+} from "@/lib/reportPreview";
 import type {
   AnalysisSummaryState,
   CountSummary,
   CsvRecord,
+  IssuePatternAnalysisItem,
   LabelMatchMode,
   MessageState,
+  OverallQaSummary,
+  IssuePatternSource,
   QaAnalysisContext,
   QaIssueOverviewSummary,
   RcProgressSummary,
+  RemainingIssue,
+  ReportType,
   SheetInput,
   SpreadsheetInfo,
   SpreadsheetSheetInfo,
+  VersionIssueSummaryItem,
 } from "@/types/report";
 
 const MAX_TEST_SHEETS = 50;
@@ -67,8 +81,18 @@ const JIRA_TARGET_VERSION_FIELDS = [
   "Affects Version/s",
   "Affected Version",
   "Affected versions",
+  "버전",
+  "대상 버전",
+  "대상버전",
+  "수정 버전",
+  "수정버전",
+  "영향 버전",
+  "영향버전",
+  "릴리즈",
+  "릴리즈 버전",
   "RC",
   "RC Version",
+  "RC 버전",
   "RC 버전",
   "Target Version",
   "Target version",
@@ -84,6 +108,89 @@ const JIRA_TARGET_VERSION_FIELDS = [
   "영향 버전",
   "영향버전",
 ];
+const JIRA_ISSUE_PATTERN_SUMMARY_FIELDS = [
+  "Summary",
+  "Issue Summary",
+  "Title",
+  "Subject",
+  "요약",
+  "제목",
+];
+const JIRA_ISSUE_PATTERN_KEY_FIELDS = ["Key", "Issue key", "이슈 키", "키"];
+
+const ISSUE_PATTERN_GROUPS = [
+  {
+    name: "상태 변경 / 상태 반영 / 상태 동기화",
+    keywords: [
+      "상태 변경",
+      "상태 반영",
+      "상태 동기화",
+      "상태값",
+      "자동 변경",
+      "종료 상태",
+      "변경 지연",
+    ],
+  },
+  {
+    name: "데이터 반영 지연 / 저장 후 리스트 갱신",
+    keywords: [
+      "데이터 반영",
+      "반영 지연",
+      "저장 후",
+      "리스트 갱신",
+      "목록 갱신",
+      "새로고침",
+      "refresh",
+    ],
+  },
+  {
+    name: "노출 시점 / CTA 노출 유지",
+    keywords: [
+      "노출 시점",
+      "노출 유지",
+      "CTA",
+      "버튼 노출",
+      "미노출",
+      "노출되지",
+      "노출 불일치",
+    ],
+  },
+  {
+    name: "알림 중복 발송 / 우선순위 처리",
+    keywords: [
+      "중복 발송",
+      "중복 노출",
+      "알림 중복",
+      "우선순위",
+      "우선 노출",
+      "정렬",
+      "알림 처리",
+    ],
+  },
+  {
+    name: "결과 상태 반영 / 결과 알림 지연",
+    keywords: [
+      "결과 상태",
+      "결과 반영",
+      "결과 알림",
+      "결과값",
+      "결과 노출",
+      "결과 갱신",
+    ],
+  },
+  {
+    name: "다국어 / 문구 표시",
+    keywords: [
+      "다국어",
+      "번역",
+      "문구",
+      "텍스트",
+      "메시지",
+      "label",
+      "copy",
+    ],
+  },
+] satisfies Array<{ name: string; keywords: string[] }>;
 
 type QuickScenarioPreset = {
   featureName: string;
@@ -92,6 +199,11 @@ type QuickScenarioPreset = {
   spreadsheetUrl: string;
   testSheetTitles: string[];
   jiraSheetTitle: string;
+  testSheetGroups?: Array<{
+    spreadsheetUrl: string;
+    testSheetTitles: string[];
+    jiraSheetTitle?: string;
+  }>;
   startDate: string;
   startHour: string;
   startMinute: string;
@@ -175,11 +287,56 @@ const CAUTION_DUMMY_SCENARIO = {
   labels: ["주의필요", "더미"],
   labelMatchMode: "ALL",
 } satisfies QuickScenarioPreset;
+const OVERALL_SCENARIO = {
+  featureName: "A프로젝트 v2.0.0",
+  version: "2.0.0",
+  rcVersion: "RC3",
+  spreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
+  testSheetTitles: [
+    "메인피쳐1 TC",
+    "메인피쳐2 TC",
+    "메인피쳐3 TC",
+    "메인피쳐4 TC",
+    "지라 데이터",
+  ],
+  jiraSheetTitle: "지라 데이터",
+  testSheetGroups: [
+    {
+      spreadsheetUrl:
+        "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
+      testSheetTitles: [
+        "메인피쳐1 TC",
+        "메인피쳐2 TC",
+        "메인피쳐3 TC",
+        "메인피쳐4 TC",
+        "지라 데이터",
+      ],
+      jiraSheetTitle: "지라 데이터",
+    },
+    {
+      spreadsheetUrl:
+        "https://docs.google.com/spreadsheets/d/1gl3yDCtZn71XeFEa3JSyOu7UrMluLO3x8ezN9Ag96eI/edit?gid=982602155#gid=982602155",
+      testSheetTitles: ["서브피쳐1 TC", "서브피쳐2 TC"],
+    },
+  ],
+  startDate: "2026-05-01",
+  startHour: "09",
+  startMinute: "30",
+  endDate: "2026-05-13",
+  endHour: "13",
+  endMinute: "00",
+  labels: [],
+  labelMatchMode: "ANY",
+} satisfies QuickScenarioPreset;
 const QUICK_SCENARIO_PRESETS = {
   메인피쳐: MAIN_FEATURE_SCENARIO,
   서브피쳐: SUB_FEATURE_SCENARIO,
   "더미:안정": STABLE_DUMMY_SCENARIO,
   "더미:주의필요": CAUTION_DUMMY_SCENARIO,
+} satisfies Record<string, QuickScenarioPreset>;
+const OVERALL_QUICK_SCENARIO_PRESETS = {
+  "전체 결과": OVERALL_SCENARIO,
 } satisfies Record<string, QuickScenarioPreset>;
 
 function logSummary(title: string, summary: CountSummary) {
@@ -282,6 +439,303 @@ function inferTargetVersionFromJiraIssues(records: CsvRecord[]) {
         second[1] - first[1] || first[0].localeCompare(second[0])
     )[0]?.[0] ?? ""
   );
+}
+
+function getJiraTargetVersionValues(record: CsvRecord) {
+  return JIRA_TARGET_VERSION_FIELDS.flatMap((fieldName) =>
+    (record[fieldName] ?? "")
+      .split(/[;,\n]/)
+      .map(normalizeTargetVersion)
+      .filter(Boolean)
+  );
+}
+
+function getVersionIssueSortScore(version: string) {
+  if (version === "기타 / 버전 없음") {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const normalizedVersion = version.toLowerCase().replace(/\s+/g, "");
+  const versionScore =
+    normalizedVersion
+      .match(/\d+(?:\.\d+)*/)?.[0]
+      ?.split(".")
+      .map(Number)
+      .reduce((score, number) => score * 100 + number, 0) ?? 0;
+  const rcScore = Number(normalizedVersion.match(/rc(\d+)/)?.[1] ?? 0);
+
+  return versionScore * 100 + rcScore;
+}
+
+function extractBaseVersion(value: string) {
+  return value.match(/\d+(?:\.\d+)+/)?.[0] ?? "";
+}
+
+function createOverallQaSummary(records: CsvRecord[]): OverallQaSummary {
+  return records.reduce<OverallQaSummary>(
+    (summary, record) => {
+      const qaCheck = record["QA Check"]?.trim().toLowerCase() ?? "";
+      const normalizedQaCheck = qaCheck.replace(/[\s_]+/g, "");
+
+      if (!qaCheck) {
+        return summary;
+      }
+
+      summary.Total += 1;
+
+      if (qaCheck === "pass") summary.Pass += 1;
+      if (qaCheck === "fail") summary.Fail += 1;
+      if (qaCheck === "blocked") summary.Blocked += 1;
+      if (normalizedQaCheck === "nextevent") summary.NextEvent += 1;
+      if (normalizedQaCheck === "n/a" || normalizedQaCheck === "na") {
+        summary["N/A"] += 1;
+      }
+
+      return summary;
+    },
+    {
+      Total: 0,
+      Pass: 0,
+      Fail: 0,
+      Blocked: 0,
+      NextEvent: 0,
+      "N/A": 0,
+    }
+  );
+}
+
+function createEmptyVersionIssueSummaryItem(version: string): VersionIssueSummaryItem {
+  return {
+    version,
+    highHighest: 0,
+    medium: 0,
+    low: 0,
+    total: 0,
+  };
+}
+
+function addPriorityToVersionIssueSummary(
+  item: VersionIssueSummaryItem,
+  priority: string
+) {
+  item.total += 1;
+
+  if (priority === "Highest" || priority === "High") {
+    item.highHighest += 1;
+  } else if (priority === "Medium") {
+    item.medium += 1;
+  } else if (priority === "Low" || priority === "Lowest") {
+    item.low += 1;
+  }
+}
+
+function createVersionIssueSummary(
+  records: CsvRecord[]
+): VersionIssueSummaryItem[] {
+  const groupedSummary = new Map<string, VersionIssueSummaryItem>();
+
+  records.forEach((record) => {
+    const versionValues = Array.from(new Set(getJiraTargetVersionValues(record)));
+    const targetVersions =
+      versionValues.length > 0 ? versionValues : ["기타 / 버전 없음"];
+    const priority = getRecordValue(record, JIRA_PRIORITY_FIELDS);
+
+    targetVersions.forEach((version) => {
+      const item =
+        groupedSummary.get(version) ?? createEmptyVersionIssueSummaryItem(version);
+
+      addPriorityToVersionIssueSummary(item, priority);
+      groupedSummary.set(version, item);
+    });
+  });
+
+  return Array.from(groupedSummary.values()).sort(
+    (first, second) =>
+      getVersionIssueSortScore(first.version) -
+        getVersionIssueSortScore(second.version) ||
+      first.version.localeCompare(second.version)
+  );
+}
+
+function createBaseVersionIssueSummary(
+  records: CsvRecord[]
+): VersionIssueSummaryItem[] {
+  const groupedSummary = new Map<string, VersionIssueSummaryItem>();
+  const debugVersionSamples: Array<{
+    rawValues: string[];
+    normalizedBaseVersions: string[];
+  }> = [];
+
+  records.forEach((record) => {
+    const createdValue = getRecordValue(record, JIRA_CREATED_FIELDS);
+
+    if (!createdValue) return;
+
+    const rawVersionValues = getJiraTargetVersionValues(record);
+    const baseVersions = Array.from(
+      new Set(
+        rawVersionValues.map(extractBaseVersion).filter(Boolean)
+      )
+    );
+
+    if (debugVersionSamples.length < 20 && rawVersionValues.length > 0) {
+      debugVersionSamples.push({
+        rawValues: rawVersionValues,
+        normalizedBaseVersions: baseVersions,
+      });
+    }
+
+    if (baseVersions.length === 0) return;
+
+    const priority = getRecordValue(record, JIRA_PRIORITY_FIELDS);
+
+    baseVersions.forEach((version) => {
+      const item =
+        groupedSummary.get(version) ?? createEmptyVersionIssueSummaryItem(version);
+
+      addPriorityToVersionIssueSummary(item, priority);
+    groupedSummary.set(version, item);
+    });
+  });
+
+  console.log("Overall Version Summary parsedJiraIssueData count:", records.length);
+  console.log(
+    "Overall Version Summary raw version values sample:",
+    debugVersionSamples.map((sample) => sample.rawValues)
+  );
+  console.log(
+    "Overall Version Summary normalized base version values sample:",
+    debugVersionSamples.flatMap((sample) =>
+      sample.rawValues.map((rawValue) => ({
+        rawValue,
+        baseVersion: extractBaseVersion(rawValue) || "No parsed base version",
+      }))
+    )
+  );
+  console.log(
+    "Overall Version Summary grouped version summary:",
+    Array.from(groupedSummary.values())
+  );
+
+  return Array.from(groupedSummary.values())
+    .sort(
+      (first, second) =>
+        getVersionIssueSortScore(first.version) -
+          getVersionIssueSortScore(second.version) ||
+        first.version.localeCompare(second.version)
+    )
+    .slice(-5);
+}
+
+function createIssuePatternSources(records: CsvRecord[]): IssuePatternSource[] {
+  return records
+    .map((record) => ({
+      key: getRecordValue(record, JIRA_ISSUE_PATTERN_KEY_FIELDS),
+      summary: getRecordValue(record, JIRA_ISSUE_PATTERN_SUMMARY_FIELDS),
+      priority: getRecordValue(record, JIRA_PRIORITY_FIELDS),
+      status: getRecordValue(record, JIRA_STATUS_FIELDS),
+      version: getJiraTargetVersionValues(record).join(", "),
+    }))
+    .filter((source) => source.summary)
+    .slice(0, 80);
+}
+
+function normalizePatternText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, "");
+}
+
+function patternKeywordMatches(text: string, keyword: string) {
+  const normalizedText = normalizePatternText(text);
+  const normalizedKeyword = normalizePatternText(keyword);
+
+  return text.toLowerCase().includes(keyword.toLowerCase()) ||
+    normalizedText.includes(normalizedKeyword);
+}
+
+function createIssuePatternAnalysis(
+  jiraRecords: CsvRecord[],
+  remainingIssues: RemainingIssue[],
+  qaFollowUps: string[]
+): IssuePatternAnalysisItem[] {
+  const patternMap = new Map<
+    string,
+    {
+      keywords: Set<string>;
+      count: number;
+      versions: Set<string>;
+      sourceTypes: Set<string>;
+    }
+  >();
+  const addText = (text: string, sourceType: string, version = "") => {
+    if (!text.trim()) return;
+
+    ISSUE_PATTERN_GROUPS.forEach((group) => {
+      const matchedKeywords = group.keywords.filter((keyword) =>
+        patternKeywordMatches(text, keyword)
+      );
+
+      if (matchedKeywords.length === 0) return;
+
+      const current =
+        patternMap.get(group.name) ??
+        {
+          keywords: new Set<string>(),
+          count: 0,
+          versions: new Set<string>(),
+          sourceTypes: new Set<string>(),
+        };
+
+      current.count += 1;
+      matchedKeywords.forEach((keyword) => current.keywords.add(keyword));
+      if (version) current.versions.add(version);
+      current.sourceTypes.add(sourceType);
+      patternMap.set(group.name, current);
+    });
+  };
+
+  jiraRecords.forEach((record) => {
+    const summaryText = getRecordValue(record, JIRA_ISSUE_PATTERN_SUMMARY_FIELDS);
+    const categoryText = QA_SCOPE_FIELDS.map((fieldName) => record[fieldName] ?? "")
+      .filter(Boolean)
+      .join(" ");
+    const versions = getJiraTargetVersionValues(record)
+      .map(extractBaseVersion)
+      .filter(Boolean);
+    const version = Array.from(new Set(versions)).join(", ");
+
+    addText([summaryText, categoryText].filter(Boolean).join(" "), "jiraSummary", version);
+  });
+
+  remainingIssues.forEach((issue) => {
+    addText(issue.summary, "remainingIssue", extractBaseVersion(issue.version));
+  });
+
+  qaFollowUps.forEach((comment) => {
+    addText(comment, "qaComment");
+  });
+
+  return Array.from(patternMap.entries())
+    .map(([name, pattern]) => ({
+      name,
+      keywords: Array.from(pattern.keywords).slice(0, 6),
+      count: pattern.count,
+      versions: Array.from(pattern.versions)
+        .sort(
+          (first, second) =>
+            getVersionIssueSortScore(first) - getVersionIssueSortScore(second) ||
+            first.localeCompare(second)
+        )
+        .slice(0, 6),
+      sourceTypes: Array.from(pattern.sourceTypes),
+    }))
+    .filter((pattern) => pattern.count >= 2)
+    .sort(
+      (first, second) =>
+        second.versions.length - first.versions.length ||
+        second.count - first.count ||
+        first.name.localeCompare(second.name)
+    )
+    .slice(0, 5);
 }
 
 const QA_SCOPE_FIELDS = [
@@ -453,6 +907,7 @@ function createFallbackQaIssueOverview(
 }
 
 export default function Home() {
+  const [reportType, setReportType] = useState<ReportType>("FEATURE");
   const [reportTitle, setReportTitle] = useState("");
   const [reportVersion, setReportVersion] = useState("");
   const [reportRcVersion, setReportRcVersion] = useState("");
@@ -498,6 +953,8 @@ export default function Home() {
   const [resultSheetMessage, setResultSheetMessage] =
     useState<MessageState>(null);
   const analysisSummaryRef = useRef<HTMLElement | null>(null);
+  const aiAnalysisRequestIdRef = useRef(0);
+  const didMountInputResetRef = useRef(false);
 
   useEffect(() => {
     if (!analysisSummary) return;
@@ -506,6 +963,38 @@ export default function Home() {
       block: "start",
     });
   }, [analysisSummary]);
+
+  const clearAiAnalysisResult = useCallback(() => {
+    aiAnalysisRequestIdRef.current += 1;
+    setAiAnalysisText("");
+    setIsAiAnalyzing(false);
+  }, []);
+
+  useEffect(() => {
+    if (!didMountInputResetRef.current) {
+      didMountInputResetRef.current = true;
+      return;
+    }
+
+    clearAiAnalysisResult();
+  }, [
+    reportType,
+    reportTitle,
+    reportVersion,
+    reportRcVersion,
+    testSheets,
+    selectedTestSheetGids,
+    jiraIssueSheet,
+    jiraAnalysisStartDate,
+    jiraAnalysisStartHour,
+    jiraAnalysisStartMinute,
+    jiraAnalysisEndDate,
+    jiraAnalysisEndHour,
+    jiraAnalysisEndMinute,
+    jiraLabels,
+    labelMatchMode,
+    clearAiAnalysisResult,
+  ]);
 
   const logSpreadsheetInfo = (spreadsheetMetadata: SpreadsheetInfo) => {
     console.log("Spreadsheet Info");
@@ -519,19 +1008,12 @@ export default function Home() {
   const resetReportState = () => {
     setMessage(null);
     setAnalysisSummary(null);
-    setAiAnalysisText("");
+    clearAiAnalysisResult();
     setResultSheetMessage(null);
     setResultSheetUrl("");
   };
 
-  const applyQuickScenario = async (
-    scenarioName: string,
-    scenario: QuickScenarioPreset
-  ) => {
-    if (applyingQuickScenario) return;
-
-    setApplyingQuickScenario(scenarioName);
-    resetReportState();
+  const resetReportInputs = () => {
     setReportTitle("");
     setReportVersion("");
     setReportRcVersion("");
@@ -549,32 +1031,92 @@ export default function Home() {
     setJiraAnalysisEndMinute("00");
     setJiraLabels([""]);
     setLabelMatchMode("ANY");
+    setIsGenerating(false);
+    setIsAiAnalyzing(false);
+    setIsCreatingResultSheet(false);
+  };
+
+  const handleReportTypeChange = (nextReportType: ReportType) => {
+    if (reportType === nextReportType) return;
+
+    setReportType(nextReportType);
+    resetReportInputs();
+    resetReportState();
+  };
+
+  const applyQuickScenario = async (
+    scenarioName: string,
+    scenario: QuickScenarioPreset
+  ) => {
+    if (applyingQuickScenario) return;
+
+    setApplyingQuickScenario(scenarioName);
+    resetReportState();
+    resetReportInputs();
 
     try {
-      const parsedSheet = parseGoogleSheetUrl(scenario.spreadsheetUrl);
+      const scenarioGroups = scenario.testSheetGroups ?? [
+        {
+          spreadsheetUrl: scenario.spreadsheetUrl,
+          testSheetTitles: scenario.testSheetTitles,
+          jiraSheetTitle: scenario.jiraSheetTitle,
+        },
+      ];
+      const loadedGroups = await Promise.all(
+        scenarioGroups.map(async (group) => {
+          const parsedSheet = parseGoogleSheetUrl(group.spreadsheetUrl);
 
-      if (!parsedSheet.spreadsheetId) {
-        throw new Error(
-          `${scenarioName} Spreadsheet URL에서 spreadsheetId를 찾을 수 없습니다.`
-        );
-      }
+          if (!parsedSheet.spreadsheetId) {
+            throw new Error(
+              `${scenarioName} Spreadsheet URL에서 spreadsheetId를 찾을 수 없습니다.`
+            );
+          }
 
-      const spreadsheetMetadata = await fetchSpreadsheetInfo(parsedSheet.spreadsheetId);
-      const selectedGids = spreadsheetMetadata.sheets
-        .filter((sheet) => scenario.testSheetTitles.includes(sheet.title))
-        .map((sheet) => sheet.gid);
+          const spreadsheetMetadata = await fetchSpreadsheetInfo(
+            parsedSheet.spreadsheetId
+          );
+          const selectedGids = spreadsheetMetadata.sheets
+            .filter((sheet) => group.testSheetTitles.includes(sheet.title))
+            .map((sheet) => sheet.gid);
+
+          return {
+            group,
+            parsedSheet,
+            spreadsheetMetadata,
+            selectedGids,
+          };
+        })
+      );
+      const jiraGroup =
+        loadedGroups.find(
+          ({ group, spreadsheetMetadata }) =>
+            group.jiraSheetTitle &&
+            spreadsheetMetadata.sheets.some(
+              (sheet) => sheet.title === group.jiraSheetTitle
+            )
+        ) ?? loadedGroups[0];
       const jiraSheet =
-        spreadsheetMetadata.sheets.find(
-          (sheet) => sheet.title === scenario.jiraSheetTitle
-        ) ?? spreadsheetMetadata.sheets.find((sheet) => isJiraSheetTitle(sheet.title));
+        jiraGroup?.spreadsheetMetadata.sheets.find(
+          (sheet) => sheet.title === jiraGroup.group.jiraSheetTitle
+        ) ??
+        jiraGroup?.spreadsheetMetadata.sheets.find((sheet) =>
+          isJiraSheetTitle(sheet.title)
+        );
 
       setReportTitle(scenario.featureName);
       setReportVersion(scenario.version);
       setReportRcVersion(scenario.rcVersion);
-      setTestSheets([{ url: scenario.spreadsheetUrl, isEditing: false }]);
-      setTestSheetMetadataList([spreadsheetMetadata]);
-      setSelectedTestSheetGids([selectedGids]);
-      setExpandedTestSheetSelections([false]);
+      setTestSheets(
+        loadedGroups.map(({ group }) => ({
+          url: group.spreadsheetUrl,
+          isEditing: false,
+        }))
+      );
+      setTestSheetMetadataList(
+        loadedGroups.map(({ spreadsheetMetadata }) => spreadsheetMetadata)
+      );
+      setSelectedTestSheetGids(loadedGroups.map(({ selectedGids }) => selectedGids));
+      setExpandedTestSheetSelections(loadedGroups.map(() => false));
       setJiraAnalysisStartDate(scenario.startDate);
       setJiraAnalysisStartHour(scenario.startHour);
       setJiraAnalysisStartMinute(scenario.startMinute);
@@ -583,15 +1125,22 @@ export default function Home() {
       setJiraAnalysisEndMinute(scenario.endMinute);
       setJiraLabels(scenario.labels);
       setLabelMatchMode(scenario.labelMatchMode);
-      logSpreadsheetInfo(spreadsheetMetadata);
+      loadedGroups.forEach(({ spreadsheetMetadata }) =>
+        logSpreadsheetInfo(spreadsheetMetadata)
+      );
 
-      if (jiraSheet) {
+      if (jiraGroup && jiraSheet) {
+        const jiraSpreadsheetId = jiraGroup.parsedSheet.spreadsheetId!;
+
         setJiraIssueSheet({
-          url: buildGoogleSpreadsheetTabUrl(parsedSheet.spreadsheetId, jiraSheet.gid),
+          url: buildGoogleSpreadsheetTabUrl(
+            jiraSpreadsheetId,
+            jiraSheet.gid
+          ),
           isEditing: false,
         });
         setAutoLinkedJiraSheet({
-          spreadsheetId: parsedSheet.spreadsheetId,
+          spreadsheetId: jiraSpreadsheetId,
           gid: jiraSheet.gid,
           title: jiraSheet.title,
         });
@@ -792,6 +1341,7 @@ export default function Home() {
   };
 
   const runGenerateReport = async () => {
+    clearAiAnalysisResult();
     setAnalysisSummary(null);
     setResultSheetMessage(null);
     setResultSheetUrl("");
@@ -800,9 +1350,10 @@ export default function Home() {
       .map((sheet, index) => ({ url: sheet.url.trim(), index }))
       .filter((sheet) => Boolean(sheet.url));
     const validTestSheetUrls = validTestSheetEntries.map((sheet) => sheet.url);
-    const validJiraLabels = jiraLabels
-      .map((label) => label.trim())
-      .filter(Boolean);
+    const validJiraLabels =
+      reportType === "FEATURE"
+        ? jiraLabels.map((label) => label.trim()).filter(Boolean)
+        : [];
     const jiraIssueSheetUrl = jiraIssueSheet.url.trim();
     const jiraAnalysisStartDateTime = buildAnalysisDateTime(
       jiraAnalysisStartDate,
@@ -816,10 +1367,19 @@ export default function Home() {
     );
     const missingItems: string[] = [];
 
-    const featureName = reportTitle.trim();
-    const generatedReportTitle = createReportTitle(featureName);
+    const reportName = reportTitle.trim();
+    const generatedReportTitle =
+      reportType === "FEATURE"
+        ? createReportTitle(reportName)
+        : reportName || "Overall QA Report";
 
-    if (!featureName) missingItems.push("Feature Name을 입력해주세요.");
+    if (!reportName) {
+      missingItems.push(
+        reportType === "FEATURE"
+          ? "Feature Name을 입력해주세요."
+          : "Overall Report Title을 입력해주세요."
+      );
+    }
     if (validTestSheetUrls.length === 0) {
       missingItems.push("Test Sheets URL을 1개 이상 입력해주세요.");
     }
@@ -890,7 +1450,8 @@ export default function Home() {
 
     const reportInput = {
       reportTitle: generatedReportTitle,
-      featureName,
+      featureName: reportName,
+      reportType,
       testSheets: parsedTestSheets,
       jiraIssueSheet: parsedJiraIssueSheet,
       jiraAnalysisPeriod: {
@@ -901,7 +1462,10 @@ export default function Home() {
       labelMatchMode,
     };
 
-    console.log("Feature Report Input:", reportInput);
+    console.log(
+      `${reportType === "FEATURE" ? "Feature" : "Overall"} Report Input:`,
+      reportInput
+    );
     console.log(
       `Label Match Mode: ${
         labelMatchMode === "ANY" ? "ANY (OR)" : "ALL (AND)"
@@ -909,7 +1473,9 @@ export default function Home() {
     );
     console.log(
       `Label Filter: ${
-        validJiraLabels.length > 0 ? "Applied" : "Skipped (Period only)"
+        reportType === "FEATURE" && validJiraLabels.length > 0
+          ? "Applied"
+          : "Skipped (Period only)"
       }`
     );
 
@@ -1094,12 +1660,45 @@ export default function Home() {
         const qaIssueOverview = createQaIssueOverviewSummary(filteredJiraIssues);
         const inferredTargetVersion =
           inferTargetVersionFromJiraIssues(filteredJiraIssues);
+        const overallQaSummary =
+          reportType === "OVERALL"
+            ? createOverallQaSummary(allParsedTestSheetData)
+            : undefined;
+        const overallTestSheets =
+          reportType === "OVERALL"
+            ? parsedTestSheetDataList.map((parsedTestSheetData, index) => ({
+                title: selectedTestSheets[index].title,
+                rows: parsedTestSheetData.length,
+                summary: createOverallQaSummary(parsedTestSheetData),
+              }))
+            : undefined;
+        const versionIssueSummary =
+          reportType === "OVERALL"
+            ? createVersionIssueSummary(filteredJiraIssues)
+            : undefined;
+        const versionSummary =
+          reportType === "OVERALL"
+            ? createBaseVersionIssueSummary(parsedJiraIssueData)
+            : undefined;
+        const issuePatternSources =
+          reportType === "OVERALL"
+            ? createIssuePatternSources(parsedJiraIssueData)
+            : undefined;
+        const issuePatternAnalysis =
+          reportType === "OVERALL"
+            ? createIssuePatternAnalysis(
+                parsedJiraIssueData,
+                remainingIssues,
+                qaFollowUps
+              )
+            : undefined;
         const rcProgress = createRcProgressSummary(filteredJiraIssues, {
           reportTitle: reportInput.reportTitle,
           startDateTime: jiraAnalysisStartDateTime ?? "",
           endDateTime: jiraAnalysisEndDateTime,
         });
         const nextAnalysisSummary: Exclude<AnalysisSummaryState, null> = {
+          reportType,
           resultSpreadsheetId: selectedTestSheets[0].spreadsheetId,
           qaTotal: qaTotalSummary,
           testSheets: testSheetSummaries,
@@ -1113,6 +1712,12 @@ export default function Home() {
           qaFollowUps,
           inferredTargetVersion,
           qaAnalysisContext,
+          overallQaSummary,
+          overallTestSheets,
+          versionSummary,
+          versionIssueSummary,
+          issuePatternSources,
+          issuePatternAnalysis,
         };
         console.log("Remaining Count Summary:", jiraFilteredSummary.Remaining ?? 0);
         console.log("Remaining Issue List Length:", remainingIssues.length);
@@ -1149,7 +1754,9 @@ export default function Home() {
         type: "success",
         title: "Feature 관련 Jira Issue가 없습니다.",
         items: [
-          "Jira Reference Label이 Jira 시트의 Label 값과 일치하는지 확인해주세요.",
+          reportType === "FEATURE"
+            ? "Jira Reference Label이 Jira 시트의 Label 값과 일치하는지 확인해주세요."
+            : "Jira Analysis Period 범위가 전체 이슈 생성일을 포함하는지 확인해주세요.",
           "Jira Analysis Period 범위가 너무 좁지 않은지 확인해주세요.",
           'Jira 시트의 "만듦" 컬럼 날짜 형식이 정상인지 확인해주세요.',
         ],
@@ -1159,10 +1766,14 @@ export default function Home() {
         type: "success",
         title: "Feature Report 입력값과 Google Sheet 데이터 확인이 완료되었습니다.",
         items: [
-          `Feature Name: ${reportInput.featureName}`,
+          `${
+            reportType === "FEATURE" ? "Feature Name" : "Overall Report"
+          }: ${reportInput.featureName}`,
           `Test Sheets: ${reportInput.testSheets.length}개`,
           "Jira Issue Sheet: 입력 완료",
-          `Jira Reference Labels: ${reportInput.jiraLabels.length}개`,
+          reportType === "FEATURE"
+            ? `Jira Reference Labels: ${reportInput.jiraLabels.length}개`
+            : "Jira Reference Labels: 사용 안 함 (Period only)",
           "Console에서 Test Sheet / Jira Issue Sheet parsed data preview를 확인할 수 있습니다.",
         ],
       });
@@ -1171,6 +1782,7 @@ export default function Home() {
 
   const handleGenerateReport = async () => {
     if (isGenerating) return;
+    clearAiAnalysisResult();
     setIsGenerating(true);
     try {
       await runGenerateReport();
@@ -1181,6 +1793,8 @@ export default function Home() {
 
   const handleAiAnalysisTest = async () => {
     if (!analysisSummary || isAiAnalyzing) return;
+    const requestId = aiAnalysisRequestIdRef.current + 1;
+    aiAnalysisRequestIdRef.current = requestId;
     setIsAiAnalyzing(true);
     setAiAnalysisText("");
 
@@ -1190,11 +1804,20 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           qaSummary: analysisSummary.qaTotal,
+          reportType: analysisSummary.reportType,
           jiraFilteredSummary: analysisSummary.jiraFiltered,
           jiraStatusSummary: analysisSummary.jiraStatus,
           jiraPrioritySummary: analysisSummary.jiraPriority,
           reportTitle: createReportTitle(reportTitle),
           testSheets: analysisSummary.testSheets,
+          overallQaSummary: analysisSummary.overallQaSummary,
+          overallTestSheets: analysisSummary.overallTestSheets,
+          versionSummary: analysisSummary.versionSummary,
+          versionIssueSummary: analysisSummary.versionIssueSummary,
+          rcProgress: analysisSummary.rcProgress,
+          qaIssueOverview: analysisSummary.qaIssueOverview,
+          issuePatternSources: analysisSummary.issuePatternSources,
+          issuePatternAnalysis: analysisSummary.issuePatternAnalysis,
           remainingIssues: analysisSummary.remainingIssues,
           qaFollowUps: analysisSummary.qaFollowUps,
           qaAnalysisContext: analysisSummary.qaAnalysisContext,
@@ -1208,17 +1831,24 @@ export default function Home() {
       }
 
       const data = (await response.json()) as { analysis?: string };
-      setAiAnalysisText(data.analysis || "AI 분석 결과가 비어 있습니다.");
+      if (aiAnalysisRequestIdRef.current === requestId) {
+        setAiAnalysisText(data.analysis || "AI 분석 결과가 비어 있습니다.");
+      }
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      setAiAnalysisText("AI 분석을 불러오지 못했습니다.");
+      if (aiAnalysisRequestIdRef.current === requestId) {
+        setAiAnalysisText("AI 분석을 불러오지 못했습니다.");
+      }
     } finally {
-      setIsAiAnalyzing(false);
+      if (aiAnalysisRequestIdRef.current === requestId) {
+        setIsAiAnalyzing(false);
+      }
     }
   };
 
   const handleCreateResultSheet = async () => {
     if (!analysisSummary || isCreatingResultSheet) return;
+
     setIsCreatingResultSheet(true);
     setResultSheetMessage(null);
     setResultSheetUrl("");
@@ -1232,7 +1862,10 @@ export default function Home() {
       const didUseRcProgressFallback = !analysisSummary.rcProgress;
       const createResultSheetPayload = {
         spreadsheetId: analysisSummary.resultSpreadsheetId,
-        reportTitle: createReportTitle(reportTitle),
+        reportTitle:
+          analysisSummary.reportType === "FEATURE"
+            ? createReportTitle(reportTitle)
+            : reportTitle.trim() || "Overall QA Report",
         version: reportVersion.trim(),
         rcVersion: reportRcVersion.trim(),
         qaStartDateTime: buildAnalysisDateTime(
@@ -1250,11 +1883,17 @@ export default function Home() {
         jiraFilteredSummary: analysisSummary.jiraFiltered,
         jiraStatusSummary: analysisSummary.jiraStatus,
         jiraPrioritySummary: analysisSummary.jiraPriority,
-        reportPreviewLines: createFeatureReportPreviewLines(analysisSummary),
+        reportPreviewLines:
+          analysisSummary.reportType === "FEATURE"
+            ? createFeatureReportPreviewLines(analysisSummary)
+            : createOverallReportPreviewLinesUtf8(analysisSummary),
         remainingIssues: analysisSummary.remainingIssues,
         rcProgress: rcProgressForRequest,
         qaIssueOverview: qaIssueOverviewForRequest,
         qaFollowUps: analysisSummary.qaFollowUps,
+        overallTestSheets: analysisSummary.overallTestSheets,
+        versionSummary: analysisSummary.versionSummary,
+        versionIssueSummary: analysisSummary.versionIssueSummary,
         aiAnalysisText,
       };
 
@@ -1272,7 +1911,12 @@ export default function Home() {
       );
       console.log("Create Result Sheet Request Payload:", createResultSheetPayload);
 
-      const response = await fetch("/api/create-result-sheet", {
+      const createResultSheetEndpoint =
+        analysisSummary.reportType === "FEATURE"
+          ? "/api/create-result-sheet"
+          : "/api/create-overall-result-sheet";
+
+      const response = await fetch(createResultSheetEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(createResultSheetPayload),
@@ -1319,6 +1963,10 @@ export default function Home() {
     rcVersion: reportRcVersion,
     inferredTargetVersion: analysisSummary?.inferredTargetVersion ?? "",
   });
+  const isFeatureReport = reportType === "FEATURE";
+  const activeQuickScenarioPresets = isFeatureReport
+    ? QUICK_SCENARIO_PRESETS
+    : OVERALL_QUICK_SCENARIO_PRESETS;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -1327,9 +1975,17 @@ export default function Home() {
           <p className="mb-4 inline-flex rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-300">
             AI 기반 QA 운영 지원 도구
           </p>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            AI QA Report Assistant
-          </h1>
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+            <h1
+              onClick={() => window.location.reload()}
+              className="cursor-pointer text-4xl font-bold tracking-tight transition hover:text-zinc-200 sm:text-5xl"
+            >
+              AI QA Report Assistant
+            </h1>
+            <span className="pb-1 text-sm font-medium text-zinc-500 sm:text-base">
+              v1.0 Beta 2
+            </span>
+          </div>
           <p className="mt-6 max-w-3xl text-base leading-7 text-zinc-400">
             TC, CL 등 테스트 수행 문서와 Jira 이슈 데이터를 함께 분석해 피쳐
             단위 QA 결과 리포트를 생성합니다.
@@ -1342,23 +1998,59 @@ export default function Home() {
               Report Type
             </label>
             <div className="flex gap-3">
-              <button className="rounded-xl bg-white px-5 py-3 text-sm font-medium text-black">
-                Feature Report
-              </button>
-              <button
-                disabled
-                className="cursor-not-allowed rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-3 text-sm font-medium text-zinc-500"
-              >
-                Overall Report
-              </button>
+              {(["FEATURE", "OVERALL"] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleReportTypeChange(type)}
+                  className={`rounded-xl px-5 py-3 text-sm font-medium transition ${
+                    reportType === type
+                      ? "bg-white text-black"
+                      : "border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {type === "FEATURE" ? "Feature Report" : "Overall Report"}
+                </button>
+              ))}
             </div>
             <p className="mt-3 text-sm text-zinc-500">
-              현재 단계에서는 Feature Report 화면을 우선 구성합니다. Overall
-              Report는 이후 별도 화면 구조로 확장 예정입니다.
+              {reportType === "FEATURE"
+                ? "Feature Report는 label 기준으로 특정 피쳐 QA 결과를 분석합니다."
+                : "Overall Report는 프로젝트 / 버전 단위 릴리즈 QA 결과를 기간 기준으로 분석합니다."}
             </p>
           </div>
 
           <div className="mb-8">
+            <label className="mb-2 block text-sm font-semibold text-zinc-200">
+              Quick Scenario
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(activeQuickScenarioPresets).map(
+                ([scenario, preset]) => {
+                  const isApplying = applyingQuickScenario === scenario;
+
+                  return (
+                    <button
+                      key={scenario}
+                      type="button"
+                      onClick={() => applyQuickScenario(scenario, preset)}
+                      disabled={Boolean(applyingQuickScenario)}
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isApplying ? "Applying..." : scenario}
+                    </button>
+                  );
+                }
+              )}
+            </div>
+            <p className="mt-3 text-sm leading-6 text-zinc-500">
+              {isFeatureReport
+                ? "준비된 Feature QA 시나리오로 입력값을 빠르게 세팅합니다."
+                : "릴리즈 QA 결과를 기간 기준으로 빠르게 확인할 수 있습니다."}
+            </p>
+          </div>
+
+          <div className="hidden">
             <label className="mb-2 block text-sm font-semibold text-zinc-200">
               Quick Scenario
             </label>
@@ -1397,9 +2089,18 @@ export default function Home() {
 
           <div className="mb-8">
             <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Feature Name
+              {isFeatureReport ? "Feature Name" : "Overall Report Title"}
             </label>
             <p className="mb-3 text-sm leading-6 text-zinc-500">
+              {isFeatureReport
+                ? "결과 리포트에 사용할 피쳐명을 입력하세요."
+                : "전체 QA 결과 리포트에 사용할 프로젝트명과 버전을 입력하세요."}
+              <br />
+              {isFeatureReport
+                ? "예: 결제 / 알림 / 이벤트 응모 / 멤버십"
+                : "예: 디어스 2.0.0 / A프로젝트 2.0.0"}
+            </p>
+            <p className="hidden">
               결과 리포트에 사용할 피쳐명을 입력하세요.
               <br />
               예: 결제 / 알림 / 이벤트 응모 / 멤버십
@@ -1408,7 +2109,9 @@ export default function Home() {
               type="text"
               value={reportTitle}
               onChange={(event) => setReportTitle(event.target.value)}
-              placeholder="예: 결제"
+              placeholder={
+                isFeatureReport ? "예: 결제" : "예: 디어스 2.0.0"
+              }
               className="min-h-11 w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
             />
           </div>
@@ -1624,6 +2327,7 @@ export default function Home() {
             </div>
           </div>
 
+          {isFeatureReport && (
           <div className="mb-10">
             <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center">
               <label className="block text-sm font-semibold text-zinc-200">
@@ -1687,13 +2391,18 @@ export default function Home() {
               </span>
             </div>
           </div>
+          )}
 
           <button
             onClick={handleGenerateReport}
             disabled={isGenerating}
             className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-white text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isGenerating ? "Generating Report..." : "Generate Feature QA Report"}
+            {isGenerating
+              ? "Generating Report..."
+              : isFeatureReport
+                ? "Generate Feature QA Report"
+                : "Generate Overall QA Report"}
           </button>
 
           {message && <MessagePanel message={message} />}
@@ -1714,6 +2423,11 @@ export default function Home() {
                     Result Report
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                    {analysisSummary.reportType === "FEATURE"
+                      ? "현재 분석 결과를 QA Dashboard 형태의 Result Report로 저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다."
+                      : "현재 분석 결과를 Overall QA Dashboard 형태의 Result Report로 저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다."}
+                  </p>
+                  <p className="hidden">
                     현재 분석 결과를 QA Dashboard 형태의 Result Report로
                     저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다.
                   </p>
@@ -1725,8 +2439,8 @@ export default function Home() {
                   className="min-w-44 whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(16,185,129,0.18)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0"
                 >
                   {isCreatingResultSheet
-                    ? "Creating Result Report..."
-                    : "Create Result Report"}
+                      ? "Creating Result Report..."
+                      : "Create Result Report"}
                 </button>
               </div>
               {resultSheetMessage && <MessagePanel message={resultSheetMessage} />}
@@ -1741,11 +2455,35 @@ export default function Home() {
               )}
             </section>
 
-            <div>
-              <h2 className="mb-3 text-sm font-semibold text-zinc-300">
-                QA Summary
-              </h2>
-              <div className="space-y-4">
+            {analysisSummary.reportType === "FEATURE" ? (
+              <div>
+                <h2 className="mb-3 text-sm font-semibold text-zinc-300">
+                  QA Summary
+                </h2>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                      Report Scope
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-zinc-100">
+                      Target Version: {reportScopeText}
+                    </p>
+                  </div>
+                  <SummaryCard title="QA Summary - Total" summary={analysisSummary.qaTotal} />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {analysisSummary.testSheets.map((sheet) => (
+                      <SummaryCard
+                        key={sheet.title}
+                        title={`QA Summary - ${sheet.title}`}
+                        rows={sheet.rows}
+                        summary={sheet.summary}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                     Report Scope
@@ -1754,19 +2492,24 @@ export default function Home() {
                     Target Version: {reportScopeText}
                   </p>
                 </div>
-                <SummaryCard title="QA Summary - Total" summary={analysisSummary.qaTotal} />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {analysisSummary.testSheets.map((sheet) => (
-                    <SummaryCard
-                      key={sheet.title}
-                      title={`QA Summary - ${sheet.title}`}
-                      rows={sheet.rows}
-                      summary={sheet.summary}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+                {analysisSummary.overallQaSummary && (
+                  <OverallQaSummaryCard summary={analysisSummary.overallQaSummary} />
+                )}
+                {analysisSummary.overallTestSheets && (
+                  <OverallFeatureSummaryCard
+                    testSheets={analysisSummary.overallTestSheets}
+                  />
+                )}
+                <VersionIssueSummaryCard
+                  items={analysisSummary.versionSummary ?? []}
+                  title="Version Issue Summary"
+                  description="같은 base version에 속한 RC 이슈를 통합한 우선순위 분포입니다."
+                />
+                <VersionIssueSummaryCard
+                  items={analysisSummary.versionIssueSummary ?? []}
+                />
+              </>
+            )}
 
             <div>
               <h2 className="mb-3 text-sm font-semibold text-zinc-300">
@@ -1803,16 +2546,32 @@ export default function Home() {
               </div>
             </div>
 
-            <FeatureReportPreview analysisSummary={analysisSummary} />
+            {analysisSummary.reportType === "FEATURE" ? (
+              <FeatureReportPreview analysisSummary={analysisSummary} />
+            ) : (
+              <OverallReportPreview analysisSummary={analysisSummary} />
+            )}
             <RemainingIssueList issues={analysisSummary.remainingIssues} />
             <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
           </section>
         )}
 
-        <p className="mt-6 text-center text-sm text-zinc-600">
-          MVP v1 · Feature Report 우선 구현 · Google Spreadsheet 공유 링크 기반
-          데이터 조회 예정
-        </p>
+        <footer className="mt-6 space-y-2 text-center text-sm text-zinc-600">
+          <p>
+            AI-powered QA Reporting · Feature & Overall Report Supported ·
+            Google Spreadsheet Integration
+          </p>
+          <p>Created by Dohyeon Yun</p>
+          <p>
+            Contact :{" "}
+            <a
+              href="mailto:porore37@naver.com"
+              className="text-zinc-500 underline decoration-zinc-700 underline-offset-4 transition hover:text-zinc-300"
+            >
+              porore37@naver.com
+            </a>
+          </p>
+        </footer>
       </section>
     </main>
   );
