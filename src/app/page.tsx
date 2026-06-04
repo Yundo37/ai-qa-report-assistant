@@ -1,16 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AiAnalysisPreview } from "@/components/report/AiAnalysisPreview";
-import { FeatureReportPreview } from "@/components/report/FeatureReportPreview";
-import { OverallFeatureSummaryCard } from "@/components/report/OverallFeatureSummaryCard";
-import { OverallReportPreview } from "@/components/report/OverallReportPreview";
-import { OverallQaSummaryCard } from "@/components/report/OverallQaSummaryCard";
-import { QaFollowUpList } from "@/components/report/QaFollowUpList";
-import { RemainingIssueList } from "@/components/report/RemainingIssueList";
-import { SpreadsheetPreview } from "@/components/report/SpreadsheetPreview";
-import { SummaryCard } from "@/components/report/SummaryCard";
-import { VersionIssueSummaryCard } from "@/components/report/VersionIssueSummaryCard";
+import { ReportAssistantPageView } from "@/components/layout/ReportAssistantPageView";
+import {
+  OVERALL_QUICK_SCENARIO_PRESETS,
+  QUICK_SCENARIO_PRESETS,
+} from "@/components/report/quickScenarioPresets";
+import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
 import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
@@ -64,9 +60,6 @@ import type {
 
 const MAX_TEST_SHEETS = 50;
 const MAX_JIRA_LABELS = 8;
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) =>
-  index.toString().padStart(2, "0")
-);
 const JIRA_TARGET_VERSION_FIELDS = [
   "Version",
   "Versions",
@@ -191,153 +184,6 @@ const ISSUE_PATTERN_GROUPS = [
     ],
   },
 ] satisfies Array<{ name: string; keywords: string[] }>;
-
-type QuickScenarioPreset = {
-  featureName: string;
-  version: string;
-  rcVersion: string;
-  spreadsheetUrl: string;
-  testSheetTitles: string[];
-  jiraSheetTitle: string;
-  testSheetGroups?: Array<{
-    spreadsheetUrl: string;
-    testSheetTitles: string[];
-    jiraSheetTitle?: string;
-  }>;
-  startDate: string;
-  startHour: string;
-  startMinute: string;
-  endDate: string;
-  endHour: string;
-  endMinute: string;
-  labels: string[];
-  labelMatchMode: LabelMatchMode;
-};
-
-const MAIN_FEATURE_SCENARIO = {
-  featureName: "커뮤니티 미션 이벤트",
-  version: "2.0.0",
-  rcVersion: "RC2",
-  spreadsheetUrl:
-    "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
-  testSheetTitles: [
-    "메인피쳐1 TC",
-    "메인피쳐2 TC",
-    "메인피쳐3 TC",
-    "메인피쳐4 TC",
-  ],
-  jiraSheetTitle: "지라 데이터",
-  startDate: "2026-05-01",
-  startHour: "09",
-  startMinute: "30",
-  endDate: "2026-05-11",
-  endHour: "20",
-  endMinute: "00",
-  labels: ["커뮤니티미션"],
-  labelMatchMode: "ANY",
-} satisfies QuickScenarioPreset;
-const SUB_FEATURE_SCENARIO = {
-  featureName: "알림 우선순위 정책 개선",
-  version: "2.0.0",
-  rcVersion: "RC3",
-  spreadsheetUrl:
-    "https://docs.google.com/spreadsheets/d/1gl3yDCtZn71XeFEa3JSyOu7UrMluLO3x8ezN9Ag96eI/edit?gid=982602155#gid=982602155",
-  testSheetTitles: ["서브피쳐1 TC", "서브피쳐2 TC"],
-  jiraSheetTitle: "지라 데이터",
-  startDate: "2026-05-08",
-  startHour: "19",
-  startMinute: "00",
-  endDate: "2026-05-13",
-  endHour: "13",
-  endMinute: "00",
-  labels: ["알림"],
-  labelMatchMode: "ANY",
-} satisfies QuickScenarioPreset;
-const STABLE_DUMMY_SCENARIO = {
-  featureName: "더미 결과 : 안정",
-  version: "",
-  rcVersion: "",
-  spreadsheetUrl:
-    "https://docs.google.com/spreadsheets/d/1KrAeYbhgiTpp4v-9ibcdKnTGkoyI_jk9qfGhLwOe68Y/edit?gid=846682949#gid=846682949",
-  testSheetTitles: ["Dummy_TC_안정"],
-  jiraSheetTitle: "Dummy_Jira_안정",
-  startDate: "2026-05-20",
-  startHour: "00",
-  startMinute: "00",
-  endDate: "2026-05-22",
-  endHour: "17",
-  endMinute: "00",
-  labels: ["안정", "더미"],
-  labelMatchMode: "ALL",
-} satisfies QuickScenarioPreset;
-const CAUTION_DUMMY_SCENARIO = {
-  featureName: "더미 결과 : 주의 필요",
-  version: "",
-  rcVersion: "",
-  spreadsheetUrl:
-    "https://docs.google.com/spreadsheets/d/1KrAeYbhgiTpp4v-9ibcdKnTGkoyI_jk9qfGhLwOe68Y/edit?gid=2000456795#gid=2000456795",
-  testSheetTitles: ["Dummy_TC_주의필요"],
-  jiraSheetTitle: "Dummy_Jira_주의필요",
-  startDate: "2026-05-20",
-  startHour: "00",
-  startMinute: "00",
-  endDate: "",
-  endHour: "00",
-  endMinute: "00",
-  labels: ["주의필요", "더미"],
-  labelMatchMode: "ALL",
-} satisfies QuickScenarioPreset;
-const OVERALL_SCENARIO = {
-  featureName: "A프로젝트 v2.0.0",
-  version: "2.0.0",
-  rcVersion: "RC3",
-  spreadsheetUrl:
-    "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
-  testSheetTitles: [
-    "메인피쳐1 TC",
-    "메인피쳐2 TC",
-    "메인피쳐3 TC",
-    "메인피쳐4 TC",
-    "지라 데이터",
-  ],
-  jiraSheetTitle: "지라 데이터",
-  testSheetGroups: [
-    {
-      spreadsheetUrl:
-        "https://docs.google.com/spreadsheets/d/1PjBH8lwT8gRvWW_Gbio07CmlYjibOzFPdPXyHgonfr8/edit?gid=1971538612#gid=1971538612",
-      testSheetTitles: [
-        "메인피쳐1 TC",
-        "메인피쳐2 TC",
-        "메인피쳐3 TC",
-        "메인피쳐4 TC",
-        "지라 데이터",
-      ],
-      jiraSheetTitle: "지라 데이터",
-    },
-    {
-      spreadsheetUrl:
-        "https://docs.google.com/spreadsheets/d/1gl3yDCtZn71XeFEa3JSyOu7UrMluLO3x8ezN9Ag96eI/edit?gid=982602155#gid=982602155",
-      testSheetTitles: ["서브피쳐1 TC", "서브피쳐2 TC"],
-    },
-  ],
-  startDate: "2026-05-01",
-  startHour: "09",
-  startMinute: "30",
-  endDate: "2026-05-13",
-  endHour: "13",
-  endMinute: "00",
-  labels: [],
-  labelMatchMode: "ANY",
-} satisfies QuickScenarioPreset;
-const QUICK_SCENARIO_PRESETS = {
-  메인피쳐: MAIN_FEATURE_SCENARIO,
-  서브피쳐: SUB_FEATURE_SCENARIO,
-  "더미:안정": STABLE_DUMMY_SCENARIO,
-  "더미:주의필요": CAUTION_DUMMY_SCENARIO,
-} satisfies Record<string, QuickScenarioPreset>;
-const OVERALL_QUICK_SCENARIO_PRESETS = {
-  "전체 결과": OVERALL_SCENARIO,
-} satisfies Record<string, QuickScenarioPreset>;
 
 function logSummary(title: string, summary: CountSummary) {
   console.log(title);
@@ -821,13 +667,6 @@ function createQaAnalysisContext(
   };
 }
 
-function openDatePicker(input: HTMLInputElement) {
-  if (typeof input.showPicker === "function") {
-    input.showPicker();
-    return;
-  }
-  input.focus();
-}
 
 function createFallbackRcProgress(
   analysisSummary: Exclude<AnalysisSummaryState, null>
@@ -1969,689 +1808,70 @@ export default function Home() {
     : OVERALL_QUICK_SCENARIO_PRESETS;
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
-      <section className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-16">
-        <div className="mb-12">
-          <p className="mb-4 inline-flex rounded-full border border-zinc-700 px-4 py-2 text-sm text-zinc-300">
-            AI 기반 QA 운영 지원 도구
-          </p>
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-            <h1
-              onClick={() => window.location.reload()}
-              className="cursor-pointer text-4xl font-bold tracking-tight transition hover:text-zinc-200 sm:text-5xl"
-            >
-              AI QA Report Assistant
-            </h1>
-            <span className="pb-1 text-sm font-medium text-zinc-500 sm:text-base">
-              v1.0 Beta 2
-            </span>
-          </div>
-          <p className="mt-6 max-w-3xl text-base leading-7 text-zinc-400">
-            TC, CL 등 테스트 수행 문서와 Jira 이슈 데이터를 함께 분석해 피쳐
-            단위 QA 결과 리포트를 생성합니다.
-          </p>
-        </div>
-
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Report Type
-            </label>
-            <div className="flex gap-3">
-              {(["FEATURE", "OVERALL"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handleReportTypeChange(type)}
-                  className={`rounded-xl px-5 py-3 text-sm font-medium transition ${
-                    reportType === type
-                      ? "bg-white text-black"
-                      : "border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  {type === "FEATURE" ? "Feature Report" : "Overall Report"}
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 text-sm text-zinc-500">
-              {reportType === "FEATURE"
-                ? "Feature Report는 label 기준으로 특정 피쳐 QA 결과를 분석합니다."
-                : "Overall Report는 프로젝트 / 버전 단위 릴리즈 QA 결과를 기간 기준으로 분석합니다."}
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Quick Scenario
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(activeQuickScenarioPresets).map(
-                ([scenario, preset]) => {
-                  const isApplying = applyingQuickScenario === scenario;
-
-                  return (
-                    <button
-                      key={scenario}
-                      type="button"
-                      onClick={() => applyQuickScenario(scenario, preset)}
-                      disabled={Boolean(applyingQuickScenario)}
-                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isApplying ? "Applying..." : scenario}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-            <p className="mt-3 text-sm leading-6 text-zinc-500">
-              {isFeatureReport
-                ? "준비된 Feature QA 시나리오로 입력값을 빠르게 세팅합니다."
-                : "릴리즈 QA 결과를 기간 기준으로 빠르게 확인할 수 있습니다."}
-            </p>
-          </div>
-
-          <div className="hidden">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Quick Scenario
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {["메인피쳐", "서브피쳐", "더미:안정", "더미:주의필요"].map(
-                (scenario) => {
-                  const preset =
-                    QUICK_SCENARIO_PRESETS[
-                      scenario as keyof typeof QUICK_SCENARIO_PRESETS
-                    ];
-                  const isApplying = applyingQuickScenario === scenario;
-
-                  return (
-                    <button
-                      key={scenario}
-                      type="button"
-                      onClick={
-                        preset
-                          ? () => applyQuickScenario(scenario, preset)
-                          : undefined
-                      }
-                      disabled={Boolean(applyingQuickScenario)}
-                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isApplying ? "적용 중..." : scenario}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-            <p className="mt-3 text-sm leading-6 text-zinc-500">
-              준비된 QA 시나리오를 통해 Result Report를 빠르게 확인할 수
-              있습니다.
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              {isFeatureReport ? "Feature Name" : "Overall Report Title"}
-            </label>
-            <p className="mb-3 text-sm leading-6 text-zinc-500">
-              {isFeatureReport
-                ? "결과 리포트에 사용할 피쳐명을 입력하세요."
-                : "전체 QA 결과 리포트에 사용할 프로젝트명과 버전을 입력하세요."}
-              <br />
-              {isFeatureReport
-                ? "예: 결제 / 알림 / 이벤트 응모 / 멤버십"
-                : "예: 디어스 2.0.0 / A프로젝트 2.0.0"}
-            </p>
-            <p className="hidden">
-              결과 리포트에 사용할 피쳐명을 입력하세요.
-              <br />
-              예: 결제 / 알림 / 이벤트 응모 / 멤버십
-            </p>
-            <input
-              type="text"
-              value={reportTitle}
-              onChange={(event) => setReportTitle(event.target.value)}
-              placeholder={
-                isFeatureReport ? "예: 결제" : "예: 디어스 2.0.0"
-              }
-              className="min-h-11 w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-            />
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Version / RC
-            </label>
-            <p className="mb-3 text-sm leading-6 text-zinc-500">
-              미입력 시 Jira Version / RC 기준 자동 추론
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="w-full sm:w-40">
-                <label className="mb-2 block text-xs font-medium text-zinc-400">
-                  Build Version
-                </label>
-                <input
-                  type="text"
-                  value={reportVersion}
-                  onChange={(event) => setReportVersion(event.target.value)}
-                  placeholder="2.0.0"
-                  className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-                />
-              </div>
-              <div className="w-full sm:w-32">
-                <label className="mb-2 block text-xs font-medium text-zinc-400">
-                  Report RC Version
-                </label>
-                <input
-                  type="text"
-                  value={reportRcVersion}
-                  onChange={(event) => setReportRcVersion(event.target.value)}
-                  placeholder="RC3"
-                  className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Test Sheets
-            </label>
-            <p className="mb-4 text-sm leading-6 text-zinc-500">
-              TC, CL, Smoke Test 등 QA 진행 내용을 확인할 Google Sheet URL을
-              입력하세요. TC 또는 CL 문서가 별도 링크로 관리되는 경우 Add를
-              통해 추가할 수 있습니다.
-            </p>
-            <div className="mb-4 text-sm leading-6 text-zinc-500">
-              <p>
-                결과 리포트에 포함할 코멘트에는 &quot;##&quot;를 함께
-                작성해주세요.
-              </p>
-              <p className="mt-1">예: ## 다음 버전 수정 예정</p>
-            </div>
-            <div className="space-y-3">
-              {testSheets.map((sheet, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="flex min-w-0 gap-3">
-                    {sheet.isEditing ? (
-                      <input
-                        type="text"
-                        value={sheet.url}
-                        onChange={(event) =>
-                          updateTestSheet(index, event.target.value)
-                        }
-                        onBlur={() => finishEditingTestSheet(index)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") finishEditingTestSheet(index);
-                        }}
-                        placeholder="https://docs.google.com/spreadsheets/..."
-                        className="min-h-12 min-w-0 flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-                      />
-                    ) : (
-                      <div className="flex min-h-12 min-w-0 flex-1 items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 px-4">
-                        <a
-                          href={sheet.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="min-w-0 flex-1 truncate text-sm text-blue-400 underline-offset-4 transition hover:text-blue-300 hover:underline"
-                        >
-                          {sheet.url}
-                        </a>
-                        <button
-                          onClick={() => editTestSheet(index)}
-                          title="Edit URL"
-                          className="ml-4 shrink-0 text-zinc-500 transition hover:text-zinc-300"
-                        >
-                          ✎
-                        </button>
-                      </div>
-                    )}
-                    {testSheets.length > 1 && (
-                      <button
-                        onClick={() => removeTestSheet(index)}
-                        className="min-h-12 shrink-0 rounded-xl border border-zinc-700 px-4 text-sm text-zinc-300 transition hover:border-red-400 hover:text-red-300"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  {testSheetMetadataList[index] && (
-                    <SpreadsheetPreview
-                      spreadsheetInfo={testSheetMetadataList[index]!}
-                      selectedGids={selectedTestSheetGids[index] ?? []}
-                      autoLinkedJiraSheet={getAutoLinkedJiraSheetForTestSheet(
-                        sheet.url
-                      )}
-                      isExpanded={expandedTestSheetSelections[index] ?? false}
-                      onToggleExpanded={() => toggleTestSheetSelectionExpanded(index)}
-                      onCloseSelection={() => closeTestSheetSelection(index)}
-                      onToggleSheet={(sheet) =>
-                        toggleSelectedTestSheetGid(index, sheet)
-                      }
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-4">
-              <button
-                onClick={addTestSheet}
-                disabled={testSheets.length >= MAX_TEST_SHEETS}
-                className="rounded-xl border border-dashed border-zinc-600 px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                + Add Test Sheet
-              </button>
-              <span className="text-xs text-zinc-500">
-                {testSheets.length}/{MAX_TEST_SHEETS}
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Jira Issue Sheet
-            </label>
-            <p className="mb-3 text-sm leading-6 text-zinc-500">
-              Jira for Cloud Google Sheets 등을 통해 불러온 전체 이슈 시트 URL을
-              입력하세요.
-            </p>
-            {jiraIssueSheet.isEditing ? (
-              <input
-                type="text"
-                value={jiraIssueSheet.url}
-                onChange={(event) => {
-                  setJiraIssueSheet({ ...jiraIssueSheet, url: event.target.value });
-                  setAutoLinkedJiraSheet(null);
-                }}
-                onBlur={() => {
-                  if (jiraIssueSheet.url.trim()) {
-                    setJiraIssueSheet({ ...jiraIssueSheet, isEditing: false });
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && jiraIssueSheet.url.trim()) {
-                    setJiraIssueSheet({ ...jiraIssueSheet, isEditing: false });
-                  }
-                }}
-                placeholder="https://docs.google.com/spreadsheets/..."
-                className="min-h-12 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-              />
-            ) : (
-              <div className="flex min-h-12 min-w-0 items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 px-4">
-                <a
-                  href={jiraIssueSheet.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-w-0 flex-1 truncate text-sm text-blue-400 underline-offset-4 transition hover:text-blue-300 hover:underline"
-                >
-                  {jiraIssueSheet.url}
-                </a>
-                <button
-                  onClick={() =>
-                    setJiraIssueSheet({ ...jiraIssueSheet, isEditing: true })
-                  }
-                  title="Edit URL"
-                  className="ml-4 shrink-0 text-zinc-500 transition hover:text-zinc-300"
-                >
-                  ✎
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-8">
-            <label className="mb-2 block text-sm font-semibold text-zinc-200">
-              Jira Analysis Period
-            </label>
-            <p className="mb-4 text-sm leading-6 text-zinc-500">
-              End DateTime 미입력 시 현재 시점까지 분석합니다.
-            </p>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-              <DateTimeInputs
-                label="Start DateTime"
-                date={jiraAnalysisStartDate}
-                hour={jiraAnalysisStartHour}
-                minute={jiraAnalysisStartMinute}
-                onDateChange={setJiraAnalysisStartDate}
-                onHourChange={setJiraAnalysisStartHour}
-                onMinuteChange={(value) => updateMinute(value, setJiraAnalysisStartMinute)}
-              />
-              <span className="hidden pb-3 text-sm text-zinc-500 lg:block">~</span>
-              <DateTimeInputs
-                label="End DateTime"
-                date={jiraAnalysisEndDate}
-                hour={jiraAnalysisEndHour}
-                minute={jiraAnalysisEndMinute}
-                onDateChange={setJiraAnalysisEndDate}
-                onHourChange={setJiraAnalysisEndHour}
-                onMinuteChange={(value) => updateMinute(value, setJiraAnalysisEndMinute)}
-              />
-            </div>
-          </div>
-
-          {isFeatureReport && (
-          <div className="mb-10">
-            <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <label className="block text-sm font-semibold text-zinc-200">
-                Jira Reference Labels
-              </label>
-              <div className="flex gap-2">
-                {(["ANY", "ALL"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setLabelMatchMode(mode)}
-                    className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-                      labelMatchMode === mode
-                        ? "bg-white text-black"
-                        : "border border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-zinc-200"
-                    }`}
-                  >
-                    {mode} ({mode === "ANY" ? "OR" : "AND"})
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="mb-4 text-sm leading-6 text-zinc-500">
-              Jira 이슈 시트에서 참고할 label 또는 keyword를 입력하세요.
-              입력된 label 기준으로 관련 이슈를 분석합니다.
-              <br />
-              Label을 입력하지 않으면 Jira Analysis Period 기준으로만 이슈를
-              분석합니다.
-            </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {jiraLabels.map((label, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={label}
-                    onChange={(event) => updateJiraLabel(index, event.target.value)}
-                    placeholder="payment"
-                    className="min-h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-400"
-                  />
-                  {jiraLabels.length > 1 && (
-                    <button
-                      onClick={() => removeJiraLabel(index)}
-                      className="min-h-11 rounded-xl border border-zinc-700 px-3 text-xs text-zinc-300 transition hover:border-red-400 hover:text-red-300"
-                    >
-                      -
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-4">
-              <button
-                onClick={addJiraLabel}
-                disabled={jiraLabels.length >= MAX_JIRA_LABELS}
-                className="rounded-xl border border-dashed border-zinc-600 px-4 py-3 text-sm text-zinc-300 transition hover:border-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                + Add Label
-              </button>
-              <span className="text-xs text-zinc-500">
-                {jiraLabels.length}/{MAX_JIRA_LABELS}
-              </span>
-            </div>
-          </div>
-          )}
-
-          <button
-            onClick={handleGenerateReport}
-            disabled={isGenerating}
-            className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-white text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isGenerating
-              ? "Generating Report..."
-              : isFeatureReport
-                ? "Generate Feature QA Report"
-                : "Generate Overall QA Report"}
-          </button>
-
-          {message && <MessagePanel message={message} />}
-        </div>
-
-        {analysisSummary && (
-          <section ref={analysisSummaryRef} className="mt-8 space-y-6">
-            <AiAnalysisPreview
-              analysisText={aiAnalysisText}
-              isLoading={isAiAnalyzing}
-              onAnalyze={handleAiAnalysisTest}
-            />
-
-            <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
-              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-base font-semibold text-zinc-100">
-                    Result Report
-                  </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-                    {analysisSummary.reportType === "FEATURE"
-                      ? "현재 분석 결과를 QA Dashboard 형태의 Result Report로 저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다."
-                      : "현재 분석 결과를 Overall QA Dashboard 형태의 Result Report로 저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다."}
-                  </p>
-                  <p className="hidden">
-                    현재 분석 결과를 QA Dashboard 형태의 Result Report로
-                    저장합니다. 생성 후 결과 리포트 바로가기가 활성화됩니다.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCreateResultSheet}
-                  disabled={isCreatingResultSheet}
-                  className="min-w-44 whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(16,185,129,0.18)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0"
-                >
-                  {isCreatingResultSheet
-                      ? "Creating Result Report..."
-                      : "Create Result Report"}
-                </button>
-              </div>
-              {resultSheetMessage && <MessagePanel message={resultSheetMessage} />}
-              {resultSheetUrl && (
-                <button
-                  type="button"
-                  onClick={() => window.open(resultSheetUrl, "_blank")}
-                  className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
-                >
-                  Open Result Report
-                </button>
-              )}
-            </section>
-
-            {analysisSummary.reportType === "FEATURE" ? (
-              <div>
-                <h2 className="mb-3 text-sm font-semibold text-zinc-300">
-                  QA Summary
-                </h2>
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
-                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                      Report Scope
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-zinc-100">
-                      Target Version: {reportScopeText}
-                    </p>
-                  </div>
-                  <SummaryCard title="QA Summary - Total" summary={analysisSummary.qaTotal} />
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {analysisSummary.testSheets.map((sheet) => (
-                      <SummaryCard
-                        key={sheet.title}
-                        title={`QA Summary - ${sheet.title}`}
-                        rows={sheet.rows}
-                        summary={sheet.summary}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                    Report Scope
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-zinc-100">
-                    Target Version: {reportScopeText}
-                  </p>
-                </div>
-                {analysisSummary.overallQaSummary && (
-                  <OverallQaSummaryCard summary={analysisSummary.overallQaSummary} />
-                )}
-                {analysisSummary.overallTestSheets && (
-                  <OverallFeatureSummaryCard
-                    testSheets={analysisSummary.overallTestSheets}
-                  />
-                )}
-                <VersionIssueSummaryCard
-                  items={analysisSummary.versionSummary ?? []}
-                  title="Version Issue Summary"
-                  description="같은 base version에 속한 RC 이슈를 통합한 우선순위 분포입니다."
-                />
-                <VersionIssueSummaryCard
-                  items={analysisSummary.versionIssueSummary ?? []}
-                />
-              </>
-            )}
-
-            <div>
-              <h2 className="mb-3 text-sm font-semibold text-zinc-300">
-                Jira Summary
-              </h2>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <SummaryCard
-                  title="Jira Filtered Summary"
-                  summary={analysisSummary.jiraFiltered}
-                  emptyMessage={
-                    analysisSummary.jiraMatchedRows === 0
-                      ? "No matching Jira issues found."
-                      : undefined
-                  }
-                />
-                <SummaryCard
-                  title="Jira Status Summary"
-                  summary={analysisSummary.jiraStatus}
-                  emptyMessage={
-                    analysisSummary.jiraMatchedRows === 0
-                      ? "No matching Jira issues found."
-                      : undefined
-                  }
-                />
-                <SummaryCard
-                  title="Jira Priority Summary"
-                  summary={analysisSummary.jiraPriority}
-                  emptyMessage={
-                    analysisSummary.jiraMatchedRows === 0
-                      ? "No matching Jira issues found."
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
-
-            {analysisSummary.reportType === "FEATURE" ? (
-              <FeatureReportPreview analysisSummary={analysisSummary} />
-            ) : (
-              <OverallReportPreview analysisSummary={analysisSummary} />
-            )}
-            <RemainingIssueList issues={analysisSummary.remainingIssues} />
-            <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
-          </section>
-        )}
-
-        <footer className="mt-6 space-y-2 text-center text-sm text-zinc-600">
-          <p>
-            AI-powered QA Reporting · Feature & Overall Report Supported ·
-            Google Spreadsheet Integration
-          </p>
-          <p>Created by Dohyeon Yun</p>
-          <p>
-            Contact :{" "}
-            <a
-              href="mailto:porore37@naver.com"
-              className="text-zinc-500 underline decoration-zinc-700 underline-offset-4 transition hover:text-zinc-300"
-            >
-              porore37@naver.com
-            </a>
-          </p>
-        </footer>
-      </section>
-    </main>
-  );
-}
-
-function DateTimeInputs({
-  label,
-  date,
-  hour,
-  minute,
-  onDateChange,
-  onHourChange,
-  onMinuteChange,
-}: {
-  label: string;
-  date: string;
-  hour: string;
-  minute: string;
-  onDateChange: (date: string) => void;
-  onHourChange: (hour: string) => void;
-  onMinuteChange: (minute: string) => void;
-}) {
-  return (
-    <div className="shrink-0">
-      <label className="mb-2 block text-xs font-medium text-zinc-400">
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={date}
-          onClick={(event) => openDatePicker(event.currentTarget)}
-          onChange={(event) => onDateChange(event.target.value)}
-          className="min-h-11 w-40 cursor-pointer rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-zinc-400"
-        />
-        <select
-          value={hour}
-          onChange={(event) => onHourChange(event.target.value)}
-          className="min-h-11 w-20 rounded-xl border border-zinc-700 bg-zinc-950 px-2 text-sm text-white outline-none focus:border-zinc-400"
-        >
-          {HOUR_OPTIONS.map((hourOption) => (
-            <option key={hourOption} value={hourOption}>
-              {hourOption}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          min="0"
-          max="59"
-          value={minute}
-          onChange={(event) => onMinuteChange(event.target.value)}
-          className="min-h-11 w-20 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-zinc-400"
-        />
-      </div>
-    </div>
-  );
-}
-
-function MessagePanel({ message }: { message: Exclude<MessageState, null> }) {
-  return (
-    <div
-      className={`mt-6 rounded-2xl border p-5 ${
-        message.type === "error"
-          ? "border-red-500/40 bg-red-950/30"
-          : "border-emerald-500/40 bg-emerald-950/30"
-      }`}
-    >
-      <p
-        className={`text-sm font-semibold ${
-          message.type === "error" ? "text-red-300" : "text-emerald-300"
-        }`}
-      >
-        {message.title}
-      </p>
-      <ul className="mt-3 space-y-2 text-sm text-zinc-300">
-        {message.items.map((item, index) => (
-          <li key={index}>- {item}</li>
-        ))}
-      </ul>
-    </div>
+    <ReportAssistantPageView
+      reportType={reportType}
+      isFeatureReport={isFeatureReport}
+      quickScenarioPresets={activeQuickScenarioPresets}
+      legacyQuickScenarioPresets={QUICK_SCENARIO_PRESETS}
+      applyingQuickScenario={applyingQuickScenario}
+      onReportTypeChange={handleReportTypeChange}
+      onApplyQuickScenario={applyQuickScenario}
+      reportTitle={reportTitle}
+      setReportTitle={setReportTitle}
+      reportVersion={reportVersion}
+      setReportVersion={setReportVersion}
+      reportRcVersion={reportRcVersion}
+      setReportRcVersion={setReportRcVersion}
+      testSheets={testSheets}
+      testSheetMetadataList={testSheetMetadataList}
+      selectedTestSheetGids={selectedTestSheetGids}
+      expandedTestSheetSelections={expandedTestSheetSelections}
+      maxTestSheets={MAX_TEST_SHEETS}
+      updateTestSheet={updateTestSheet}
+      finishEditingTestSheet={finishEditingTestSheet}
+      editTestSheet={editTestSheet}
+      removeTestSheet={removeTestSheet}
+      addTestSheet={addTestSheet}
+      getAutoLinkedJiraSheetForTestSheet={getAutoLinkedJiraSheetForTestSheet}
+      toggleTestSheetSelectionExpanded={toggleTestSheetSelectionExpanded}
+      closeTestSheetSelection={closeTestSheetSelection}
+      toggleSelectedTestSheetGid={toggleSelectedTestSheetGid}
+      jiraIssueSheet={jiraIssueSheet}
+      setJiraIssueSheet={setJiraIssueSheet}
+      setAutoLinkedJiraSheet={setAutoLinkedJiraSheet}
+      jiraAnalysisStartDate={jiraAnalysisStartDate}
+      setJiraAnalysisStartDate={setJiraAnalysisStartDate}
+      jiraAnalysisStartHour={jiraAnalysisStartHour}
+      setJiraAnalysisStartHour={setJiraAnalysisStartHour}
+      jiraAnalysisStartMinute={jiraAnalysisStartMinute}
+      setJiraAnalysisStartMinute={setJiraAnalysisStartMinute}
+      jiraAnalysisEndDate={jiraAnalysisEndDate}
+      setJiraAnalysisEndDate={setJiraAnalysisEndDate}
+      jiraAnalysisEndHour={jiraAnalysisEndHour}
+      setJiraAnalysisEndHour={setJiraAnalysisEndHour}
+      jiraAnalysisEndMinute={jiraAnalysisEndMinute}
+      setJiraAnalysisEndMinute={setJiraAnalysisEndMinute}
+      updateMinute={updateMinute}
+      labelMatchMode={labelMatchMode}
+      setLabelMatchMode={setLabelMatchMode}
+      jiraLabels={jiraLabels}
+      updateJiraLabel={updateJiraLabel}
+      removeJiraLabel={removeJiraLabel}
+      addJiraLabel={addJiraLabel}
+      maxJiraLabels={MAX_JIRA_LABELS}
+      onGenerateReport={handleGenerateReport}
+      isGenerating={isGenerating}
+      message={message}
+      analysisSummary={analysisSummary}
+      analysisSummaryRef={analysisSummaryRef}
+      aiAnalysisText={aiAnalysisText}
+      isAiAnalyzing={isAiAnalyzing}
+      onAnalyze={handleAiAnalysisTest}
+      onCreateResultSheet={handleCreateResultSheet}
+      isCreatingResultSheet={isCreatingResultSheet}
+      resultSheetMessage={resultSheetMessage}
+      resultSheetUrl={resultSheetUrl}
+      reportScopeText={reportScopeText}
+    />
   );
 }
