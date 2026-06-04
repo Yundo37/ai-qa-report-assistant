@@ -16,14 +16,16 @@ import {
   createReportTitle,
   isJiraSheetTitle,
 } from "@/lib/report/reportFormatting";
+import { createTargetVersionDisplay } from "@/lib/report/versionHelpers";
+import { createOverallQaSummary } from "@/lib/report/overallQaSummary";
 import {
-  createTargetVersionDisplay,
-  normalizeTargetVersion,
-} from "@/lib/report/versionHelpers";
+  createQaAnalysisContext,
+  QA_SCOPE_FIELDS,
+} from "@/lib/report/qaAnalysisContext";
 import {
-  createTopValues,
-  getRecordValueByFields,
-} from "@/lib/report/recordHelpers";
+  inferTargetVersionFromJiraIssues,
+  getJiraTargetVersionValues,
+} from "@/lib/report/versionInference";
 import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
@@ -57,9 +59,7 @@ import type {
   IssuePatternAnalysisItem,
   LabelMatchMode,
   MessageState,
-  OverallQaSummary,
   IssuePatternSource,
-  QaAnalysisContext,
   QaIssueOverviewSummary,
   RcProgressSummary,
   RemainingIssue,
@@ -72,47 +72,6 @@ import type {
 
 const MAX_TEST_SHEETS = 50;
 const MAX_JIRA_LABELS = 8;
-const JIRA_TARGET_VERSION_FIELDS = [
-  "Version",
-  "Versions",
-  "Fix Version",
-  "Fix versions",
-  "Fix Version/s",
-  "FixVersions",
-  "Fix version",
-  "Fix version/s",
-  "Affects Version",
-  "Affects versions",
-  "Affects Version/s",
-  "Affected Version",
-  "Affected versions",
-  "버전",
-  "대상 버전",
-  "대상버전",
-  "수정 버전",
-  "수정버전",
-  "영향 버전",
-  "영향버전",
-  "릴리즈",
-  "릴리즈 버전",
-  "RC",
-  "RC Version",
-  "RC 버전",
-  "RC 버전",
-  "Target Version",
-  "Target version",
-  "Release",
-  "Release Version",
-  "릴리즈",
-  "릴리즈 버전",
-  "버전",
-  "대상 버전",
-  "대상버전",
-  "수정 버전",
-  "수정버전",
-  "영향 버전",
-  "영향버전",
-];
 const JIRA_ISSUE_PATTERN_SUMMARY_FIELDS = [
   "Summary",
   "Issue Summary",
@@ -197,42 +156,6 @@ const ISSUE_PATTERN_GROUPS = [
   },
 ] satisfies Array<{ name: string; keywords: string[] }>;
 
-function inferTargetVersionFromJiraIssues(records: CsvRecord[]) {
-  const counts = new Map<string, number>();
-
-  records.forEach((record) => {
-    JIRA_TARGET_VERSION_FIELDS.forEach((fieldName) => {
-      const rawValue = record[fieldName]?.trim();
-
-      if (!rawValue) return;
-
-      rawValue
-        .split(/[;,\n]/)
-        .map(normalizeTargetVersion)
-        .filter(Boolean)
-        .forEach((value) => {
-          counts.set(value, (counts.get(value) ?? 0) + 1);
-        });
-    });
-  });
-
-  return (
-    Array.from(counts.entries()).sort(
-      (first, second) =>
-        second[1] - first[1] || first[0].localeCompare(second[0])
-    )[0]?.[0] ?? ""
-  );
-}
-
-function getJiraTargetVersionValues(record: CsvRecord) {
-  return JIRA_TARGET_VERSION_FIELDS.flatMap((fieldName) =>
-    (record[fieldName] ?? "")
-      .split(/[;,\n]/)
-      .map(normalizeTargetVersion)
-      .filter(Boolean)
-  );
-}
-
 function getVersionIssueSortScore(version: string) {
   if (version === "기타 / 버전 없음") {
     return Number.MAX_SAFE_INTEGER;
@@ -252,39 +175,6 @@ function getVersionIssueSortScore(version: string) {
 
 function extractBaseVersion(value: string) {
   return value.match(/\d+(?:\.\d+)+/)?.[0] ?? "";
-}
-
-function createOverallQaSummary(records: CsvRecord[]): OverallQaSummary {
-  return records.reduce<OverallQaSummary>(
-    (summary, record) => {
-      const qaCheck = record["QA Check"]?.trim().toLowerCase() ?? "";
-      const normalizedQaCheck = qaCheck.replace(/[\s_]+/g, "");
-
-      if (!qaCheck) {
-        return summary;
-      }
-
-      summary.Total += 1;
-
-      if (qaCheck === "pass") summary.Pass += 1;
-      if (qaCheck === "fail") summary.Fail += 1;
-      if (qaCheck === "blocked") summary.Blocked += 1;
-      if (normalizedQaCheck === "nextevent") summary.NextEvent += 1;
-      if (normalizedQaCheck === "n/a" || normalizedQaCheck === "na") {
-        summary["N/A"] += 1;
-      }
-
-      return summary;
-    },
-    {
-      Total: 0,
-      Pass: 0,
-      Fail: 0,
-      Blocked: 0,
-      NextEvent: 0,
-      "N/A": 0,
-    }
-  );
 }
 
 function createEmptyVersionIssueSummaryItem(version: string): VersionIssueSummaryItem {
@@ -520,61 +410,6 @@ function createIssuePatternAnalysis(
     )
     .slice(0, 5);
 }
-
-const QA_SCOPE_FIELDS = [
-  "Title",
-  "Feature",
-  "Category_1",
-  "Category_2",
-  "Category_3",
-  "Category 1",
-  "Category 2",
-  "Category 3",
-  "대분류",
-  "중분류",
-  "소분류",
-];
-const QA_PATTERN_FIELDS = [
-  "Summary",
-  "Test Case",
-  "TC",
-  "Case",
-  "Description",
-  "Expected Result",
-  "Category_1",
-  "Category_2",
-  "Category_3",
-  "대분류",
-  "중분류",
-  "소분류",
-];
-
-function createQaAnalysisContext(
-  records: CsvRecord[],
-  testSheetTitles: string[]
-): QaAnalysisContext {
-  const scopeKeywords = records.flatMap((record) =>
-    QA_SCOPE_FIELDS.map((fieldName) => record[fieldName]?.trim() ?? "").filter(
-      Boolean
-    )
-  );
-  const failPatternValues = records
-    .filter((record) => record["QA Check"]?.trim().toLowerCase() === "fail")
-    .map((record) => getRecordValueByFields(record, QA_PATTERN_FIELDS))
-    .filter(Boolean);
-  const blockedPatternValues = records
-    .filter((record) => record["QA Check"]?.trim().toLowerCase() === "blocked")
-    .map((record) => getRecordValueByFields(record, QA_PATTERN_FIELDS))
-    .filter(Boolean);
-
-  return {
-    testSheetTitles,
-    scopeKeywords: createTopValues(scopeKeywords, 8),
-    failPatterns: createTopValues(failPatternValues, 8),
-    blockedPatterns: createTopValues(blockedPatternValues, 5),
-  };
-}
-
 
 function createFallbackRcProgress(
   analysisSummary: Exclude<AnalysisSummaryState, null>
