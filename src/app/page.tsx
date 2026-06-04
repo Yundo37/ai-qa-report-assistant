@@ -11,6 +11,7 @@ import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
 import { logQaSummary, logSummary } from "@/lib/report/logging";
 import { createGenerateInputValidation } from "@/lib/report/generateValidation";
+import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -31,7 +32,6 @@ import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
   fetchSpreadsheetInfo,
-  isGoogleSpreadsheetUrl,
   parseGoogleSheetUrl,
 } from "@/lib/googleSheet";
 import {
@@ -962,19 +962,15 @@ export default function Home() {
       return;
     }
 
-    const invalidFormatItems: string[] = [];
-    validTestSheetUrls.forEach((url, index) => {
-      if (!isGoogleSpreadsheetUrl(url)) {
-        invalidFormatItems.push(
-          `Test Sheet ${index + 1} URL이 Google Spreadsheet 형식이 아닙니다.`
-        );
-      }
+    const {
+      invalidFormatItems,
+      parsedTestSheets,
+      parsedJiraIssueSheet,
+      invalidParsedItems,
+    } = createSheetUrlValidation({
+      validTestSheetUrls,
+      jiraIssueSheetUrl,
     });
-    if (!isGoogleSpreadsheetUrl(jiraIssueSheetUrl)) {
-      invalidFormatItems.push(
-        "Jira Issue Sheet URL이 Google Spreadsheet 형식이 아닙니다."
-      );
-    }
 
     if (invalidFormatItems.length > 0) {
       setMessage({
@@ -983,25 +979,6 @@ export default function Home() {
         items: invalidFormatItems,
       });
       return;
-    }
-
-    const parsedTestSheets = validTestSheetUrls.map((url) =>
-      parseGoogleSheetUrl(url)
-    );
-    const parsedJiraIssueSheet = parseGoogleSheetUrl(jiraIssueSheetUrl);
-    const invalidParsedItems: string[] = [];
-
-    parsedTestSheets.forEach((sheet, index) => {
-      if (!sheet.spreadsheetId || !sheet.gid) {
-        invalidParsedItems.push(
-          `Test Sheet ${index + 1} URL에서 spreadsheetId 또는 gid를 찾을 수 없습니다.`
-        );
-      }
-    });
-    if (!parsedJiraIssueSheet.spreadsheetId || !parsedJiraIssueSheet.gid) {
-      invalidParsedItems.push(
-        "Jira Issue Sheet URL에서 spreadsheetId 또는 gid를 찾을 수 없습니다."
-      );
     }
 
     if (invalidParsedItems.length > 0) {
