@@ -14,6 +14,7 @@ import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
 import { createQaSummaryBundle } from "@/lib/report/qaSummaryBuilder";
 import { createJiraSummaryBundle } from "@/lib/report/jiraSummaryBuilder";
 import { createRcProgressBundle } from "@/lib/report/rcProgressBuilder";
+import { createOverallSummaryBundle } from "@/lib/report/overallSummaryBuilder";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -21,7 +22,6 @@ import {
   isJiraSheetTitle,
 } from "@/lib/report/reportFormatting";
 import { createTargetVersionDisplay } from "@/lib/report/versionHelpers";
-import { createOverallQaSummary } from "@/lib/report/overallQaSummary";
 import {
   QA_SCOPE_FIELDS,
 } from "@/lib/report/qaAnalysisContext";
@@ -1175,38 +1175,36 @@ export default function Home() {
         } = createJiraSummaryBundle({
           filteredJiraIssues,
         });
-        const overallQaSummary =
+        const {
+          overallQaSummary,
+          overallTestSheets,
+          versionIssueSummary,
+          versionSummary,
+          issuePatternSources,
+          issuePatternAnalysis,
+        } =
           reportType === "OVERALL"
-            ? createOverallQaSummary(allParsedTestSheetData)
-            : undefined;
-        const overallTestSheets =
-          reportType === "OVERALL"
-            ? parsedTestSheetDataList.map((parsedTestSheetData, index) => ({
-                title: selectedTestSheets[index].title,
-                rows: parsedTestSheetData.length,
-                summary: createOverallQaSummary(parsedTestSheetData),
-              }))
-            : undefined;
-        const versionIssueSummary =
-          reportType === "OVERALL"
-            ? createVersionIssueSummary(filteredJiraIssues)
-            : undefined;
-        const versionSummary =
-          reportType === "OVERALL"
-            ? createBaseVersionIssueSummary(parsedJiraIssueData)
-            : undefined;
-        const issuePatternSources =
-          reportType === "OVERALL"
-            ? createIssuePatternSources(parsedJiraIssueData)
-            : undefined;
-        const issuePatternAnalysis =
-          reportType === "OVERALL"
-            ? createIssuePatternAnalysis(
+            ? createOverallSummaryBundle({
+                allParsedTestSheetData,
+                parsedTestSheetDataList,
+                selectedTestSheets,
+                filteredJiraIssues,
                 parsedJiraIssueData,
                 remainingIssues,
-                qaFollowUps
-              )
-            : undefined;
+                qaFollowUps,
+                createVersionIssueSummary,
+                createBaseVersionIssueSummary,
+                createIssuePatternSources,
+                createIssuePatternAnalysis,
+              })
+            : {
+                overallQaSummary: undefined,
+                overallTestSheets: undefined,
+                versionIssueSummary: undefined,
+                versionSummary: undefined,
+                issuePatternSources: undefined,
+                issuePatternAnalysis: undefined,
+              };
         const { rcProgress } = createRcProgressBundle({
           filteredJiraIssues,
           reportTitle: reportInput.reportTitle,
