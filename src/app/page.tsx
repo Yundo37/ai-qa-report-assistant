@@ -9,6 +9,21 @@ import {
 import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
 import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
+import { logQaSummary, logSummary } from "@/lib/report/logging";
+import {
+  buildAnalysisDateTime,
+  buildGoogleSpreadsheetTabUrl,
+  createReportTitle,
+  isJiraSheetTitle,
+} from "@/lib/report/reportFormatting";
+import {
+  createTargetVersionDisplay,
+  normalizeTargetVersion,
+} from "@/lib/report/versionHelpers";
+import {
+  createTopValues,
+  getRecordValueByFields,
+} from "@/lib/report/recordHelpers";
 import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
@@ -38,7 +53,6 @@ import {
 } from "@/lib/qaSummary";
 import type {
   AnalysisSummaryState,
-  CountSummary,
   CsvRecord,
   IssuePatternAnalysisItem,
   LabelMatchMode,
@@ -182,81 +196,6 @@ const ISSUE_PATTERN_GROUPS = [
     ],
   },
 ] satisfies Array<{ name: string; keywords: string[] }>;
-
-function logSummary(title: string, summary: CountSummary) {
-  console.log(title);
-  Object.entries(summary).forEach(([label, count]) => {
-    console.log(`- ${label}: ${count}`);
-  });
-}
-
-function logQaSummary(title: string, records: CsvRecord[], includeRows = false) {
-  console.log(title);
-  if (includeRows) console.log(`- Rows: ${records.length}`);
-  Object.entries(createQaSummary(records)).forEach(([label, count]) => {
-    console.log(`- ${label}: ${count}`);
-  });
-}
-
-function normalizeMinute(minute: string) {
-  return minute.trim().padStart(2, "0");
-}
-
-function buildAnalysisDateTime(date: string, hour: string, minute: string) {
-  if (!date.trim()) return null;
-  return `${date} ${hour}:${normalizeMinute(minute)}`;
-}
-
-function createReportTitle(featureName: string) {
-  return `${featureName.trim()} QA 결과 리포트`;
-}
-
-function isJiraSheetTitle(title: string) {
-  return /jira|지라/i.test(title);
-}
-
-function buildGoogleSpreadsheetTabUrl(spreadsheetId: string, gid: string) {
-  return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?gid=${gid}`;
-}
-
-function normalizeRcVersion(value: string) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) return "";
-  if (/^\d+$/.test(trimmedValue)) return `RC${trimmedValue}`;
-
-  return trimmedValue.replace(/\brc\s*(\d+)\b/gi, "RC$1");
-}
-
-function normalizeTargetVersion(value: string) {
-  return normalizeRcVersion(value).replace(/\s+/g, " ").trim();
-}
-
-function createTargetVersionDisplay({
-  version,
-  rcVersion,
-  inferredTargetVersion,
-}: {
-  version: string;
-  rcVersion: string;
-  inferredTargetVersion: string;
-}) {
-  const normalizedVersion = version.trim();
-  const normalizedRcVersion = normalizeRcVersion(rcVersion);
-  const userTargetVersion = [normalizedVersion, normalizedRcVersion]
-    .filter(Boolean)
-    .join(" ");
-
-  if (userTargetVersion) {
-    return userTargetVersion;
-  }
-
-  if (inferredTargetVersion) {
-    return `${inferredTargetVersion} (Auto inferred)`;
-  }
-
-  return "Version TBD";
-}
 
 function inferTargetVersionFromJiraIssues(records: CsvRecord[]) {
   const counts = new Map<string, number>();
@@ -609,35 +548,6 @@ const QA_PATTERN_FIELDS = [
   "중분류",
   "소분류",
 ];
-
-function getRecordValueByFields(record: CsvRecord, fieldNames: string[]) {
-  for (const fieldName of fieldNames) {
-    const value = record[fieldName]?.trim();
-
-    if (value) return value;
-  }
-
-  return "";
-}
-
-function createTopValues(values: string[], limit: number) {
-  const counts = values.reduce<Map<string, number>>((summary, value) => {
-    const normalizedValue = value.trim().replace(/\s+/g, " ");
-
-    if (!normalizedValue) return summary;
-
-    summary.set(normalizedValue, (summary.get(normalizedValue) ?? 0) + 1);
-    return summary;
-  }, new Map());
-
-  return Array.from(counts.entries())
-    .sort(
-      (first, second) =>
-        second[1] - first[1] || first[0].localeCompare(second[0])
-    )
-    .slice(0, limit)
-    .map(([value]) => value);
-}
 
 function createQaAnalysisContext(
   records: CsvRecord[],
