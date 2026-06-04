@@ -13,6 +13,7 @@ import { createGenerateInputValidation } from "@/lib/report/generateValidation";
 import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
 import { createQaSummaryBundle } from "@/lib/report/qaSummaryBuilder";
 import { createJiraSummaryBundle } from "@/lib/report/jiraSummaryBuilder";
+import { createRcProgressBundle } from "@/lib/report/rcProgressBuilder";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -33,7 +34,6 @@ import {
 } from "@/lib/googleSheet";
 import {
   createFieldValueSample,
-  createRcProgressSummary,
   filterJiraIssuesByLabels,
   filterJiraIssuesByPeriod,
   getRecordValue,
@@ -1207,7 +1207,8 @@ export default function Home() {
                 qaFollowUps
               )
             : undefined;
-        const rcProgress = createRcProgressSummary(filteredJiraIssues, {
+        const { rcProgress } = createRcProgressBundle({
+          filteredJiraIssues,
           reportTitle: reportInput.reportTitle,
           startDateTime: jiraAnalysisStartDateTime ?? "",
           endDateTime: jiraAnalysisEndDateTime,
