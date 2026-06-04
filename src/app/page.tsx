@@ -9,9 +9,10 @@ import {
 import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
 import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
-import { logQaSummary, logSummary } from "@/lib/report/logging";
+import { logSummary } from "@/lib/report/logging";
 import { createGenerateInputValidation } from "@/lib/report/generateValidation";
 import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
+import { createQaSummaryBundle } from "@/lib/report/qaSummaryBuilder";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -21,7 +22,6 @@ import {
 import { createTargetVersionDisplay } from "@/lib/report/versionHelpers";
 import { createOverallQaSummary } from "@/lib/report/overallQaSummary";
 import {
-  createQaAnalysisContext,
   QA_SCOPE_FIELDS,
 } from "@/lib/report/qaAnalysisContext";
 import {
@@ -49,11 +49,7 @@ import {
   JIRA_PRIORITY_FIELDS,
   JIRA_STATUS_FIELDS,
 } from "@/lib/jira";
-import {
-  createFieldSummaryByFields,
-  createQaSummary,
-  extractQaFollowUps,
-} from "@/lib/qaSummary";
+import { createFieldSummaryByFields } from "@/lib/qaSummary";
 import type {
   AnalysisSummaryState,
   CsvRecord,
@@ -1087,28 +1083,16 @@ export default function Home() {
         totalRows: allParsedTestSheetData.length,
         sample: allParsedTestSheetData.slice(0, 5),
       });
-      const qaTotalSummary = createQaSummary(allParsedTestSheetData);
-      const qaFollowUps = extractQaFollowUps(allParsedTestSheetData);
-      const qaAnalysisContext = createQaAnalysisContext(
+      const {
+        qaTotalSummary,
+        qaFollowUps,
+        qaAnalysisContext,
+        testSheetSummaries,
+      } = createQaSummaryBundle(
         allParsedTestSheetData,
-        selectedTestSheets.map((sheet) => sheet.title)
+        parsedTestSheetDataList,
+        selectedTestSheets
       );
-      const testSheetSummaries = parsedTestSheetDataList.map(
-        (parsedTestSheetData, index) => ({
-          title: selectedTestSheets[index].title,
-          rows: parsedTestSheetData.length,
-          summary: createQaSummary(parsedTestSheetData),
-        })
-      );
-
-      logQaSummary("QA Summary - Total", allParsedTestSheetData);
-      parsedTestSheetDataList.forEach((parsedTestSheetData, index) => {
-        logQaSummary(
-          `QA Summary - Test Sheet ${index + 1}`,
-          parsedTestSheetData,
-          true
-        );
-      });
 
       if (parsedJiraIssueSheet.spreadsheetId && parsedJiraIssueSheet.gid) {
         const jiraIssueCsvData = await fetchGoogleSheetCsv(
