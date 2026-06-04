@@ -9,10 +9,10 @@ import {
 import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
 import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
-import { logSummary } from "@/lib/report/logging";
 import { createGenerateInputValidation } from "@/lib/report/generateValidation";
 import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
 import { createQaSummaryBundle } from "@/lib/report/qaSummaryBuilder";
+import { createJiraSummaryBundle } from "@/lib/report/jiraSummaryBuilder";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -24,10 +24,7 @@ import { createOverallQaSummary } from "@/lib/report/overallQaSummary";
 import {
   QA_SCOPE_FIELDS,
 } from "@/lib/report/qaAnalysisContext";
-import {
-  inferTargetVersionFromJiraIssues,
-  getJiraTargetVersionValues,
-} from "@/lib/report/versionInference";
+import { getJiraTargetVersionValues } from "@/lib/report/versionInference";
 import { parseJiraIssueSheetCsv, parseTestSheetCsv } from "@/lib/csv";
 import {
   fetchGoogleSheetCsv,
@@ -36,9 +33,6 @@ import {
 } from "@/lib/googleSheet";
 import {
   createFieldValueSample,
-  createJiraFilteredSummary,
-  createQaIssueOverviewSummary,
-  createRemainingIssues,
   createRcProgressSummary,
   filterJiraIssuesByLabels,
   filterJiraIssuesByPeriod,
@@ -49,7 +43,6 @@ import {
   JIRA_PRIORITY_FIELDS,
   JIRA_STATUS_FIELDS,
 } from "@/lib/jira";
-import { createFieldSummaryByFields } from "@/lib/qaSummary";
 import type {
   AnalysisSummaryState,
   CsvRecord,
@@ -1172,20 +1165,16 @@ export default function Home() {
           )
         );
 
-        const jiraStatusSummary = createFieldSummaryByFields(
+        const {
+          jiraStatusSummary,
+          jiraPrioritySummary,
+          jiraFilteredSummary,
+          remainingIssues,
+          qaIssueOverview,
+          inferredTargetVersion,
+        } = createJiraSummaryBundle({
           filteredJiraIssues,
-          JIRA_STATUS_FIELDS
-        );
-        const jiraPrioritySummary = createFieldSummaryByFields(
-          filteredJiraIssues,
-          JIRA_PRIORITY_FIELDS
-        );
-        const jiraFilteredSummary =
-          createJiraFilteredSummary(filteredJiraIssues);
-        const remainingIssues = createRemainingIssues(filteredJiraIssues);
-        const qaIssueOverview = createQaIssueOverviewSummary(filteredJiraIssues);
-        const inferredTargetVersion =
-          inferTargetVersionFromJiraIssues(filteredJiraIssues);
+        });
         const overallQaSummary =
           reportType === "OVERALL"
             ? createOverallQaSummary(allParsedTestSheetData)
@@ -1254,10 +1243,6 @@ export default function Home() {
         console.log("RC QA Progress Summary Immediately After Create:", rcProgress);
         console.log("Analysis Summary Payload Before setAnalysisSummary:", nextAnalysisSummary);
         hasNoMatchingJiraIssues = filteredJiraIssues.length === 0;
-
-        logSummary("Jira Filtered Summary", jiraFilteredSummary);
-        logSummary("Jira Status Summary", jiraStatusSummary);
-        logSummary("Jira Priority Summary", jiraPrioritySummary);
 
         setAnalysisSummary(nextAnalysisSummary);
       }
