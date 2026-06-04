@@ -10,6 +10,7 @@ import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
 import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
 import { logQaSummary, logSummary } from "@/lib/report/logging";
+import { createGenerateInputValidation } from "@/lib/report/generateValidation";
 import {
   buildAnalysisDateTime,
   buildGoogleSpreadsheetTabUrl,
@@ -928,47 +929,29 @@ export default function Home() {
     setResultSheetMessage(null);
     setResultSheetUrl("");
 
-    const validTestSheetEntries = testSheets
-      .map((sheet, index) => ({ url: sheet.url.trim(), index }))
-      .filter((sheet) => Boolean(sheet.url));
-    const validTestSheetUrls = validTestSheetEntries.map((sheet) => sheet.url);
-    const validJiraLabels =
-      reportType === "FEATURE"
-        ? jiraLabels.map((label) => label.trim()).filter(Boolean)
-        : [];
-    const jiraIssueSheetUrl = jiraIssueSheet.url.trim();
-    const jiraAnalysisStartDateTime = buildAnalysisDateTime(
+    const {
+      validTestSheetEntries,
+      validTestSheetUrls,
+      validJiraLabels,
+      jiraIssueSheetUrl,
+      jiraAnalysisStartDateTime,
+      jiraAnalysisEndDateTime,
+      reportName,
+      generatedReportTitle,
+      missingItems,
+    } = createGenerateInputValidation({
+      testSheets,
+      reportType,
+      jiraLabels,
+      jiraIssueSheet,
       jiraAnalysisStartDate,
       jiraAnalysisStartHour,
-      jiraAnalysisStartMinute
-    );
-    const jiraAnalysisEndDateTime = buildAnalysisDateTime(
+      jiraAnalysisStartMinute,
       jiraAnalysisEndDate,
       jiraAnalysisEndHour,
-      jiraAnalysisEndMinute
-    );
-    const missingItems: string[] = [];
-
-    const reportName = reportTitle.trim();
-    const generatedReportTitle =
-      reportType === "FEATURE"
-        ? createReportTitle(reportName)
-        : reportName || "Overall QA Report";
-
-    if (!reportName) {
-      missingItems.push(
-        reportType === "FEATURE"
-          ? "Feature Name을 입력해주세요."
-          : "Overall Report Title을 입력해주세요."
-      );
-    }
-    if (validTestSheetUrls.length === 0) {
-      missingItems.push("Test Sheets URL을 1개 이상 입력해주세요.");
-    }
-    if (!jiraIssueSheetUrl) missingItems.push("Jira Issue Sheet URL을 입력해주세요.");
-    if (!jiraAnalysisStartDateTime) {
-      missingItems.push("Jira Analysis Start DateTime을 입력해주세요.");
-    }
+      jiraAnalysisEndMinute,
+      reportTitle,
+    });
 
     if (missingItems.length > 0) {
       setMessage({
