@@ -479,7 +479,7 @@ function createFallbackQaIssueOverview(
 }
 
 export default function Home() {
-  const [reportType, setReportType] = useState<ReportType>("FEATURE");
+  const [reportType, setReportType] = useState<ReportType>("OVERALL");
   const [reportTitle, setReportTitle] = useState("");
   const [reportVersion, setReportVersion] = useState("");
   const [reportRcVersion, setReportRcVersion] = useState("");

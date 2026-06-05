@@ -10,7 +10,7 @@ export function ReportTypeSelector({
         Report Type
       </label>
       <div className="flex gap-3">
-        {(["FEATURE", "OVERALL"] as const).map((type) => (
+        {(["OVERALL", "FEATURE"] as const).map((type) => (
       <button
         key={type}
         type="button"

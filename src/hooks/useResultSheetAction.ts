@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   createFeatureReportPreviewLines,
   createOverallReportPreviewLinesUtf8,
@@ -36,6 +36,8 @@ type UseResultSheetActionParams = {
   ) => QaIssueOverviewSummary;
 };
 
+const RESULT_SHEET_CREATE_COOLDOWN_MS = 5000;
+
 export function useResultSheetAction({
   analysisSummary,
   isCreatingResultSheet,
@@ -57,8 +59,23 @@ export function useResultSheetAction({
   createFallbackRcProgress,
   createFallbackQaIssueOverview,
 }: UseResultSheetActionParams) {
+  const lastSuccessfulResultSheetCreatedAtRef = useRef(0);
+
   return useCallback(async () => {
     if (!analysisSummary || isCreatingResultSheet) return;
+
+    const now = Date.now();
+    if (
+      now - lastSuccessfulResultSheetCreatedAtRef.current <
+      RESULT_SHEET_CREATE_COOLDOWN_MS
+    ) {
+      setResultSheetMessage({
+        type: "error",
+        title: "Result Sheet가 방금 생성되었습니다. 잠시 후 다시 시도해주세요.",
+        items: [],
+      });
+      return;
+    }
 
     setIsCreatingResultSheet(true);
     setResultSheetMessage(null);
@@ -153,6 +170,7 @@ export function useResultSheetAction({
         items: [`Sheet Name: ${data.sheetName ?? "-"}`],
       });
       setResultSheetUrl(data.sheetUrl ?? "");
+      lastSuccessfulResultSheetCreatedAtRef.current = Date.now();
     } catch (error) {
       console.error("Create Result Sheet Error:", error);
       setResultSheetMessage({
