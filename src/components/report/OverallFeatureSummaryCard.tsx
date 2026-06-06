@@ -18,12 +18,12 @@ export function OverallFeatureSummaryCard({
   testSheets: OverallTestSheetSummary[];
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
-      <h2 className="text-base font-semibold text-zinc-100">
-        TC / Feature별 QA 현황
+    <section className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-6">
+      <h2 className="text-base font-semibold text-slate-950">
+        Feature별 상세 QA Summary
       </h2>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
-        첨부된 Test Sheet별 QA 상태를 비교해 릴리즈 QA 리스크가 몰린 영역을 확인합니다.
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        Test Sheet / Feature별 QA 상태를 상세 비교합니다.
       </p>
 
       {testSheets.length > 0 ? (
@@ -31,25 +31,22 @@ export function OverallFeatureSummaryCard({
           {testSheets.map((sheet) => (
             <article
               key={sheet.title}
-              className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5"
+              className="rounded-2xl border border-slate-200 bg-white p-5"
             >
               <div className="mb-4 flex items-start justify-between gap-4">
-                <h3 className="text-sm font-semibold text-zinc-100">
+                <h3 className="text-sm font-semibold text-slate-950">
                   {sheet.title}
                 </h3>
-                <span className="shrink-0 rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400">
+                <span className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500">
                   {sheet.rows} rows
                 </span>
               </div>
 
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SUMMARY_ITEMS.map((item) => (
-                  <div
-                    key={item.key}
-                    className="rounded-xl bg-zinc-950 px-4 py-3"
-                  >
-                    <dt className="text-xs text-zinc-500">{item.label}</dt>
-                    <dd className="mt-1 text-xl font-semibold text-white">
+                  <div key={item.key} className="rounded-xl bg-slate-50 px-4 py-3">
+                    <dt className="text-xs text-slate-500">{item.label}</dt>
+                    <dd className="mt-1 text-xl font-semibold text-slate-950">
                       {sheet.summary[item.key]}
                     </dd>
                   </div>
@@ -59,8 +56,8 @@ export function OverallFeatureSummaryCard({
           ))}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-zinc-500">
-          표시할 Test Sheet 요약이 없습니다.
+        <p className="mt-4 text-sm text-slate-500">
+          표시할 Test Sheet Summary가 없습니다.
         </p>
       )}
     </section>

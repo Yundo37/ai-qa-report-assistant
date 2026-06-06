@@ -2,10 +2,13 @@ import type { RemainingIssue } from "@/types/report";
 
 export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
-      <h2 className="text-base font-semibold text-zinc-100">
-        잔여 이슈 목록 (Remaining Issue List)
+    <section className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-6">
+      <h2 className="text-base font-semibold text-slate-950">
+        Full Remaining Issue List
       </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        상단 Dashboard에서 요약한 Remaining Issue의 전체 상세 목록입니다.
+      </p>
 
       {issues.length > 0 ? (
         <div className="mt-5 overflow-x-auto">
@@ -17,7 +20,7 @@ export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
               <col className="w-[140px]" />
               <col className="w-[160px]" />
             </colgroup>
-            <thead className="border-b border-zinc-800 text-xs text-zinc-500">
+            <thead className="border-b border-slate-200 text-xs text-slate-500">
               <tr>
                 <th className="w-28 pb-3 pr-4 font-medium">Priority</th>
                 <th className="w-28 pb-3 pr-4 font-medium">Key</th>
@@ -29,13 +32,15 @@ export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-zinc-900 text-zinc-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {issues.map((issue, index) => (
                 <tr key={`${issue.key}-${index}`}>
-                  <td className="w-28 py-3 pr-4 text-zinc-100">
+                  <td className="w-28 py-3 pr-4 font-medium text-slate-950">
                     {issue.priority}
                   </td>
-                  <td className="w-28 py-3 pr-4 text-blue-300">{issue.key}</td>
+                  <td className="w-28 py-3 pr-4 text-indigo-700">
+                    {issue.key}
+                  </td>
                   <td className="py-3 pr-6">
                     <div
                       className="line-clamp-2 max-w-[30rem] break-words text-left leading-6"
@@ -56,7 +61,9 @@ export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
           </table>
         </div>
       ) : (
-        <p className="mt-4 text-sm text-zinc-500">잔여 이슈가 없습니다.</p>
+        <p className="mt-4 text-sm text-slate-500">
+          현재 남아있는 Remaining Issue가 없습니다.
+        </p>
       )}
     </section>
   );

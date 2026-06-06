@@ -59,11 +59,13 @@ export function OverallReportDashboard({
         <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
         <RcProgressCard rcProgress={analysisSummary.rcProgress} />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
-        <FeatureQaSummaryTable analysisSummary={analysisSummary} />
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
+        <div className="space-y-6">
+          <FeatureQaSummaryTable analysisSummary={analysisSummary} />
+          <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
+        </div>
         <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
       </div>
-      <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
       <DetailedSummarySection>{children}</DetailedSummarySection>
     </div>
   );

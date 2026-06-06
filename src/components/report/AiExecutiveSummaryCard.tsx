@@ -17,28 +17,31 @@ export function AiExecutiveSummaryCard({
 
   return (
     <section
-      className={`rounded-3xl border p-6 shadow-sm sm:p-8 ${
+      className={`rounded-3xl border shadow-sm ${
         hasAnalysis
-          ? "border-indigo-200 bg-gradient-to-br from-white to-indigo-50/70"
-          : "border-slate-200 bg-white"
+          ? "border-indigo-200 bg-gradient-to-br from-white to-indigo-50/70 p-6 sm:p-8"
+          : "border-slate-200 bg-white p-5 sm:p-6"
       }`}
     >
-      <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             AI 기반 QA 요약
           </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+          <h2
+            className={`mt-2 font-bold tracking-tight text-slate-950 ${
+              hasAnalysis ? "text-2xl" : "text-xl"
+            }`}
+          >
             AI Executive Summary
           </h2>
           {!hasAnalysis && !isLoading && (
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-              QA Summary와 Jira Issue 데이터를 기반으로 AI 분석을 생성할 수
-              있습니다.
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+              AI Analysis를 생성하면 QA 데이터 기반 요약을 확인할 수 있습니다.
             </p>
           )}
           {isLoading && (
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <p className="mt-2 text-sm leading-6 text-slate-500">
               AI Analysis 생성 중...
             </p>
           )}

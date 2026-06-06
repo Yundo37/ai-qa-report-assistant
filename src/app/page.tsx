@@ -508,6 +508,7 @@ export default function Home() {
   const [message, setMessage] = useState<MessageState>(null);
   const [analysisSummary, setAnalysisSummary] =
     useState<AnalysisSummaryState>(null);
+  const [isInputDashboardVisible, setIsInputDashboardVisible] = useState(true);
   const [testSheetMetadataList, setTestSheetMetadataList] = useState<
     Array<SpreadsheetInfo | null>
   >([null]);
@@ -580,6 +581,7 @@ export default function Home() {
   const resetReportState = () => {
     setMessage(null);
     setAnalysisSummary(null);
+    setIsInputDashboardVisible(true);
     clearAiAnalysisResult();
     setResultSheetMessage(null);
     setResultSheetUrl("");
@@ -1244,6 +1246,7 @@ export default function Home() {
         hasNoMatchingJiraIssues = filteredJiraIssues.length === 0;
 
         setAnalysisSummary(nextAnalysisSummary);
+        setIsInputDashboardVisible(false);
       }
     } catch (error) {
       console.error("Google Sheet Fetch Error:", error);
@@ -1408,6 +1411,9 @@ export default function Home() {
       resultSheetMessage={resultSheetMessage}
       resultSheetUrl={resultSheetUrl}
       reportScopeText={reportScopeText}
+      isInputDashboardVisible={isInputDashboardVisible}
+      onShowInputDashboard={() => setIsInputDashboardVisible(true)}
+      onHideInputDashboard={() => setIsInputDashboardVisible(false)}
     />
   );
 }

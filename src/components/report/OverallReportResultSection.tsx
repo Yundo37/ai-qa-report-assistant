@@ -1,3 +1,4 @@
+import { OverallFeatureSummaryCard } from "@/components/report/OverallFeatureSummaryCard";
 import { OverallQaSummaryCard } from "@/components/report/OverallQaSummaryCard";
 import { VersionIssueSummaryCard } from "@/components/report/VersionIssueSummaryCard";
 import type { AnalysisSummaryState } from "@/types/report";
@@ -13,6 +14,11 @@ export function OverallReportResultSection({
     <>
       {analysisSummary.overallQaSummary && (
         <OverallQaSummaryCard summary={analysisSummary.overallQaSummary} />
+      )}
+      {analysisSummary.overallTestSheets && (
+        <OverallFeatureSummaryCard
+          testSheets={analysisSummary.overallTestSheets}
+        />
       )}
       <VersionIssueSummaryCard
         items={analysisSummary.versionSummary ?? []}

@@ -8,11 +8,11 @@ export function QaFollowUpDashboardCard({
   followUps: string[];
 }) {
   const [showAll, setShowAll] = useState(false);
-  const visibleFollowUps = showAll ? followUps : followUps.slice(0, 8);
+  const visibleFollowUps = showAll ? followUps : followUps.slice(0, 6);
   const hiddenCount = Math.max(followUps.length - visibleFollowUps.length, 0);
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
@@ -22,11 +22,10 @@ export function QaFollowUpDashboardCard({
             QA Comment / Follow-up
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            협의 사항과 후속 확인이 필요한 항목입니다. AI Summary와 분리해
-            참고 정보로 유지합니다.
+            협의 사항과 후속 확인이 필요한 항목입니다.
           </p>
         </div>
-        {followUps.length > 8 && (
+        {followUps.length > 6 && (
           <button
             type="button"
             onClick={() => setShowAll((value) => !value)}
@@ -38,11 +37,11 @@ export function QaFollowUpDashboardCard({
       </div>
 
       {followUps.length > 0 ? (
-        <ul className="mt-5 space-y-3">
+        <ul className="mt-4 space-y-2">
           {visibleFollowUps.map((followUp) => (
             <li
               key={followUp}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700"
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700"
             >
               {followUp}
             </li>
@@ -50,7 +49,7 @@ export function QaFollowUpDashboardCard({
         </ul>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          후속 확인 항목이 없습니다.
+          표시할 QA Comment가 없습니다.
         </p>
       )}
     </section>

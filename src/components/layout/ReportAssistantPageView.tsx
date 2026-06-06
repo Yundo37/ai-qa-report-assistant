@@ -3,6 +3,7 @@
 import type { RefObject } from "react";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AnalysisResultSection } from "@/components/report/AnalysisResultSection";
+import { CollapsedInputSummaryBar } from "@/components/report/CollapsedInputSummaryBar";
 import { InputHeroSection } from "@/components/report/InputHeroSection";
 import {
   ReportInputPanel,
@@ -21,6 +22,9 @@ type ReportAssistantPageViewProps = ReportInputPanelProps & {
   resultSheetMessage: MessageState;
   resultSheetUrl: string;
   reportScopeText: string;
+  isInputDashboardVisible: boolean;
+  onShowInputDashboard: () => void;
+  onHideInputDashboard: () => void;
 };
 
 export function ReportAssistantPageView({
@@ -34,13 +38,41 @@ export function ReportAssistantPageView({
   resultSheetMessage,
   resultSheetUrl,
   reportScopeText,
+  isInputDashboardVisible,
+  onShowInputDashboard,
+  onHideInputDashboard,
   ...reportInputPanelProps
 }: ReportAssistantPageViewProps) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <section className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-10 sm:px-6 lg:py-14">
-        <InputHeroSection />
-        <ReportInputPanel {...reportInputPanelProps} />
+      <section className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
+        {isInputDashboardVisible ? (
+          <div className="mx-auto w-full max-w-6xl">
+            {analysisSummary && (
+              <div className="mb-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={onHideInputDashboard}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  입력 접기
+                </button>
+              </div>
+            )}
+            <InputHeroSection />
+            <ReportInputPanel {...reportInputPanelProps} />
+          </div>
+        ) : (
+          <CollapsedInputSummaryBar
+            reportType={reportInputPanelProps.reportType}
+            reportTitle={reportInputPanelProps.reportTitle}
+            reportVersion={reportInputPanelProps.reportVersion}
+            reportRcVersion={reportInputPanelProps.reportRcVersion}
+            testSheets={reportInputPanelProps.testSheets}
+            jiraIssueSheet={reportInputPanelProps.jiraIssueSheet}
+            onEditInput={onShowInputDashboard}
+          />
+        )}
         {analysisSummary && (
           <AnalysisResultSection
             analysisSummary={analysisSummary}
