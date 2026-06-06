@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
 import { AiExecutiveSummaryCard } from "@/components/report/AiExecutiveSummaryCard";
+import { DetailedSummarySection } from "@/components/report/DetailedSummarySection";
+import { FeatureQaSummaryTable } from "@/components/report/FeatureQaSummaryTable";
+import { QaFollowUpDashboardCard } from "@/components/report/QaFollowUpDashboardCard";
+import { RcProgressCard } from "@/components/report/RcProgressCard";
+import { ReleaseRiskSummaryCard } from "@/components/report/ReleaseRiskSummaryCard";
+import { RemainingIssuesDashboardCard } from "@/components/report/RemainingIssuesDashboardCard";
 import { ReportDashboardHeader } from "@/components/report/ReportDashboardHeader";
 import { ReportStatusKpiStrip } from "@/components/report/ReportStatusKpiStrip";
 import type { AnalysisSummaryState, MessageState } from "@/types/report";
@@ -45,17 +51,12 @@ export function OverallReportDashboard({
         isLoading={isAiAnalyzing}
         onAnalyze={onAnalyze}
       />
-      <section className="space-y-6">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Detailed QA Data
-          </p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-            Overall 상세 데이터
-          </h2>
-        </div>
-        {children}
-      </section>
+      <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
+      <RcProgressCard rcProgress={analysisSummary.rcProgress} />
+      <FeatureQaSummaryTable analysisSummary={analysisSummary} />
+      <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+      <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
+      <DetailedSummarySection>{children}</DetailedSummarySection>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export function JiraSummarySection({ analysisSummary }: JiraSummarySectionProps)
 
   return (
     <div>
-      <h2 className="mb-3 text-sm font-semibold text-zinc-300">
+      <h2 className="mb-3 text-sm font-semibold text-slate-800">
         Jira Summary
       </h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

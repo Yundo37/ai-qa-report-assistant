@@ -57,8 +57,6 @@ export function AnalysisResultSection({
           />
           <JiraSummarySection analysisSummary={analysisSummary} />
           <OverallReportPreview analysisSummary={analysisSummary} />
-          <RemainingIssueList issues={analysisSummary.remainingIssues} />
-          <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
         </OverallReportDashboard>
       </section>
     );
