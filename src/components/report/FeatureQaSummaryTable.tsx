@@ -39,6 +39,8 @@ export function FeatureQaSummaryTable({
       rows: sheet.rows,
       summary: toOverallSummary(sheet.summary),
     }));
+  const visibleRows = rows.slice(0, 8);
+  const hiddenCount = Math.max(rows.length - visibleRows.length, 0);
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -48,53 +50,68 @@ export function FeatureQaSummaryTable({
       <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
         Feature QA Summary
       </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        Overall Report에 포함된 각 Test Sheet / Feature 단위 QA 결과를
+        비교합니다.
+      </p>
 
       {rows.length > 0 ? (
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[860px] text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs text-slate-500">
-              <tr>
-                <th className="pb-3 pr-4 font-medium">Feature Name</th>
-                <th className="pb-3 pr-4 font-medium">Total TC</th>
-                <th className="pb-3 pr-4 font-medium">Pass</th>
-                <th className="pb-3 pr-4 font-medium">Fail</th>
-                <th className="pb-3 pr-4 font-medium">Blocked</th>
-                <th className="pb-3 pr-4 font-medium">Next Event</th>
-                <th className="pb-3 pr-4 font-medium">Pass Rate</th>
-                <th className="pb-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {rows.map((row) => {
-                const status =
-                  row.summary.Fail > 0 || row.summary.Blocked > 0
-                    ? "주의 필요"
-                    : "안정";
+        <div className="mt-5 space-y-3">
+          {visibleRows.map((row) => {
+            const status =
+              row.summary.Fail > 0 || row.summary.Blocked > 0
+                ? "주의 필요"
+                : "안정";
 
-                return (
-                  <tr key={row.title}>
-                    <td className="py-3 pr-4 font-semibold text-slate-950">
+            return (
+              <article
+                key={row.title}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold text-slate-950">
                       {row.title}
-                    </td>
-                    <td className="py-3 pr-4">{row.summary.Total || row.rows}</td>
-                    <td className="py-3 pr-4 text-emerald-700">
-                      {row.summary.Pass}
-                    </td>
-                    <td className="py-3 pr-4 text-red-700">
-                      {row.summary.Fail}
-                    </td>
-                    <td className="py-3 pr-4 text-amber-700">
-                      {row.summary.Blocked}
-                    </td>
-                    <td className="py-3 pr-4 text-indigo-700">
-                      {row.summary.NextEvent}
-                    </td>
-                    <td className="py-3 pr-4 font-semibold text-slate-950">
-                      {calculatePassRate(row.summary)}%
-                    </td>
-                    <td className="py-3">
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Total TC {row.summary.Total || row.rows}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-sm sm:grid-cols-6 lg:w-[640px]">
+                    <div>
+                      <p className="text-xs text-slate-500">Pass</p>
+                      <p className="font-semibold text-emerald-700">
+                        {row.summary.Pass}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Fail</p>
+                      <p className="font-semibold text-red-700">
+                        {row.summary.Fail}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Blocked</p>
+                      <p className="font-semibold text-amber-700">
+                        {row.summary.Blocked}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Next Event</p>
+                      <p className="font-semibold text-indigo-700">
+                        {row.summary.NextEvent}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Pass Rate</p>
+                      <p className="font-semibold text-slate-950">
+                        {calculatePassRate(row.summary)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Status</p>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={`mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           status === "안정"
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-amber-50 text-amber-700"
@@ -102,12 +119,18 @@ export function FeatureQaSummaryTable({
                       >
                         {status}
                       </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+          {hiddenCount > 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+              추가 Feature {hiddenCount}개는 Detailed QA Data에서 확인할 수
+              있습니다.
+            </div>
+          )}
         </div>
       ) : (
         <p className="mt-4 text-sm text-slate-500">

@@ -13,18 +13,25 @@ export function AiExecutiveSummaryCard({
     .split(/\n+/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
+  const hasAnalysis = paragraphs.length > 0;
 
   return (
-    <section className="rounded-3xl border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
+    <section
+      className={`rounded-3xl border p-6 shadow-sm sm:p-8 ${
+        hasAnalysis
+          ? "border-indigo-200 bg-gradient-to-br from-white to-indigo-50/70"
+          : "border-slate-200 bg-white"
+      }`}
+    >
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             AI 기반 QA 요약
           </p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
             AI Executive Summary
           </h2>
-          {!analysisText && !isLoading && (
+          {!hasAnalysis && !isLoading && (
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
               QA Summary와 Jira Issue 데이터를 기반으로 AI 분석을 생성할 수
               있습니다.
@@ -41,16 +48,29 @@ export function AiExecutiveSummaryCard({
           type="button"
           onClick={onAnalyze}
           disabled={isLoading}
-          className="min-w-40 whitespace-nowrap rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0"
+          className={`min-w-40 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0 ${
+            hasAnalysis
+              ? "border border-indigo-200 bg-white text-indigo-700 hover:border-indigo-300"
+              : "bg-indigo-600 text-white hover:bg-indigo-700"
+          }`}
         >
-          {isLoading ? "Analyzing..." : "AI Analysis 생성"}
+          {isLoading
+            ? "Analyzing..."
+            : hasAnalysis
+              ? "AI Analysis 다시 생성"
+              : "AI Analysis 생성"}
         </button>
       </div>
 
-      {paragraphs.length > 0 && (
-        <div className="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-700">
+      {hasAnalysis && (
+        <div className="mt-7 space-y-5 text-[15px] leading-8 text-slate-700">
           {paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p
+              key={index}
+              className="border-l-4 border-indigo-200 pl-4 text-slate-700"
+            >
+              {paragraph}
+            </p>
           ))}
         </div>
       )}

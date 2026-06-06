@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AiExecutiveSummaryCard } from "@/components/report/AiExecutiveSummaryCard";
 import { DetailedSummarySection } from "@/components/report/DetailedSummarySection";
+import { EvidenceSnapshotCard } from "@/components/report/EvidenceSnapshotCard";
 import { FeatureQaSummaryTable } from "@/components/report/FeatureQaSummaryTable";
 import { QaFollowUpDashboardCard } from "@/components/report/QaFollowUpDashboardCard";
 import { RcProgressCard } from "@/components/report/RcProgressCard";
@@ -46,15 +47,22 @@ export function OverallReportDashboard({
         resultSheetUrl={resultSheetUrl}
       />
       <ReportStatusKpiStrip analysisSummary={analysisSummary} />
-      <AiExecutiveSummaryCard
-        analysisText={aiAnalysisText}
-        isLoading={isAiAnalyzing}
-        onAnalyze={onAnalyze}
-      />
-      <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
-      <RcProgressCard rcProgress={analysisSummary.rcProgress} />
-      <FeatureQaSummaryTable analysisSummary={analysisSummary} />
-      <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
+        <AiExecutiveSummaryCard
+          analysisText={aiAnalysisText}
+          isLoading={isAiAnalyzing}
+          onAnalyze={onAnalyze}
+        />
+        <EvidenceSnapshotCard analysisSummary={analysisSummary} />
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
+        <RcProgressCard rcProgress={analysisSummary.rcProgress} />
+      </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
+        <FeatureQaSummaryTable analysisSummary={analysisSummary} />
+        <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+      </div>
       <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
       <DetailedSummarySection>{children}</DetailedSummarySection>
     </div>

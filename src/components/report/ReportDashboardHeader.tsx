@@ -26,7 +26,7 @@ export function ReportDashboardHeader({
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             Overall QA Result Report
@@ -39,7 +39,7 @@ export function ReportDashboardHeader({
             Report로, Google Sheet는 Export / 공유용으로 사용할 수 있습니다.
           </p>
 
-          <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+          <dl className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <dt className="text-xs font-medium text-slate-500">
                 Target Version
@@ -62,7 +62,7 @@ export function ReportDashboardHeader({
             </div>
           </dl>
 
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-medium text-slate-500">Report Scope</p>
             <p className="mt-1 text-sm font-semibold text-slate-950">
               {reportScopeText}
