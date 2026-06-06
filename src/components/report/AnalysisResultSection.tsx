@@ -6,6 +6,7 @@ import { FeatureReportPreview } from "@/components/report/FeatureReportPreview";
 import { FeatureReportResultSection } from "@/components/report/FeatureReportResultSection";
 import { JiraSummarySection } from "@/components/report/JiraSummarySection";
 import { OverallReportPreview } from "@/components/report/OverallReportPreview";
+import { OverallReportDashboard } from "@/components/report/OverallReportDashboard";
 import { OverallReportResultSection } from "@/components/report/OverallReportResultSection";
 import { QaFollowUpList } from "@/components/report/QaFollowUpList";
 import { RemainingIssueList } from "@/components/report/RemainingIssueList";
@@ -37,6 +38,32 @@ export function AnalysisResultSection({
   resultSheetUrl,
   reportScopeText,
 }: AnalysisResultSectionProps) {
+  if (analysisSummary.reportType === "OVERALL") {
+    return (
+      <section ref={analysisSummaryRef} className="mt-8">
+        <OverallReportDashboard
+          analysisSummary={analysisSummary}
+          reportScopeText={reportScopeText}
+          aiAnalysisText={aiAnalysisText}
+          isAiAnalyzing={isAiAnalyzing}
+          onAnalyze={onAnalyze}
+          onCreateResultSheet={onCreateResultSheet}
+          isCreatingResultSheet={isCreatingResultSheet}
+          resultSheetMessage={resultSheetMessage}
+          resultSheetUrl={resultSheetUrl}
+        >
+          <OverallReportResultSection
+            analysisSummary={analysisSummary}
+          />
+          <JiraSummarySection analysisSummary={analysisSummary} />
+          <OverallReportPreview analysisSummary={analysisSummary} />
+          <RemainingIssueList issues={analysisSummary.remainingIssues} />
+          <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
+        </OverallReportDashboard>
+      </section>
+    );
+  }
+
   return (
     <section ref={analysisSummaryRef} className="mt-8 space-y-6">
       <AiAnalysisPreview
@@ -51,23 +78,12 @@ export function AnalysisResultSection({
         resultSheetMessage={resultSheetMessage}
         resultSheetUrl={resultSheetUrl}
       />
-      {analysisSummary.reportType === "FEATURE" ? (
-        <FeatureReportResultSection
-          analysisSummary={analysisSummary}
-          reportScopeText={reportScopeText}
-        />
-      ) : (
-        <OverallReportResultSection
-          analysisSummary={analysisSummary}
-          reportScopeText={reportScopeText}
-        />
-      )}
+      <FeatureReportResultSection
+        analysisSummary={analysisSummary}
+        reportScopeText={reportScopeText}
+      />
       <JiraSummarySection analysisSummary={analysisSummary} />
-      {analysisSummary.reportType === "FEATURE" ? (
-        <FeatureReportPreview analysisSummary={analysisSummary} />
-      ) : (
-        <OverallReportPreview analysisSummary={analysisSummary} />
-      )}
+      <FeatureReportPreview analysisSummary={analysisSummary} />
       <RemainingIssueList issues={analysisSummary.remainingIssues} />
       <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
     </section>

@@ -5,23 +5,13 @@ import type { AnalysisSummaryState } from "@/types/report";
 
 type OverallReportResultSectionProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
-  reportScopeText: string;
 };
 
 export function OverallReportResultSection({
   analysisSummary,
-  reportScopeText,
 }: OverallReportResultSectionProps) {
   return (
     <>
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Report Scope
-        </p>
-        <p className="mt-2 text-sm font-medium text-zinc-100">
-          Target Version: {reportScopeText}
-        </p>
-      </div>
       {analysisSummary.overallQaSummary && (
         <OverallQaSummaryCard summary={analysisSummary.overallQaSummary} />
       )}
@@ -33,7 +23,7 @@ export function OverallReportResultSection({
       <VersionIssueSummaryCard
         items={analysisSummary.versionSummary ?? []}
         title="Version Issue Summary"
-        description="媛숈? base version???랁븳 RC ?댁뒋瑜??듯빀???곗꽑?쒖쐞 遺꾪룷?낅땲??"
+        description="이전 버전과 현재 버전의 Jira 이슈 우선순위 분포를 비교합니다."
       />
       <VersionIssueSummaryCard
         items={analysisSummary.versionIssueSummary ?? []}

@@ -3,7 +3,7 @@ import type { VersionIssueSummaryItem } from "@/types/report";
 export function VersionIssueSummaryCard({
   items,
   title = "Version / RC Issue Summary",
-  description = "Jira Analysis Period 내 이슈를 Version / RC 기준으로 묶은 우선순위 분포입니다.",
+  description = "Jira Analysis Period 내 이슈를 Version / RC 기준으로 묶어 우선순위 분포를 표시합니다.",
 }: {
   items: VersionIssueSummaryItem[];
   title?: string;
@@ -11,12 +11,8 @@ export function VersionIssueSummaryCard({
 }) {
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-6">
-      <h2 className="text-base font-semibold text-zinc-100">
-        {title}
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
-        {description}
-      </p>
+      <h2 className="text-base font-semibold text-zinc-100">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-zinc-500">{description}</p>
 
       {items.length > 0 ? (
         <div className="mt-5 overflow-x-auto">
