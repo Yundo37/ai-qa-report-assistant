@@ -1,0 +1,28 @@
+최종 디자인 기준
+
+Input
+- Input 최종 시안.png 사용
+- 3번 시안 채택
+
+선정 이유
+- Step 기반 입력 구조
+- Quick Scenario 강조
+- 통짜 입력폼 개선
+- SaaS Dashboard 스타일
+
+Report
+- Report 최종 시안.png 사용
+- 2번 시안 채택
+
+선정 이유
+- AI Executive Summary 강조
+- QA Release Dashboard 방향
+- 현재 프로젝트 데이터 구조와 적합
+- 구현 범위와 난이도 균형
+
+구현 원칙
+
+웹 = 메인 QA Report
+Google Sheet = Export / 공유용
+
+향후 UI 개선 작업은 위 시안을 기준으로 진행
