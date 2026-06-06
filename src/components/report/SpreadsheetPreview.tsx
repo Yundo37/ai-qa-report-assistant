@@ -47,43 +47,45 @@ export function SpreadsheetPreview({
   return (
     <section
       ref={previewRef}
-      className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4"
+      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-sm font-semibold text-zinc-100">
+        <h3 className="text-sm font-semibold text-slate-950">
           Spreadsheet Preview
         </h3>
 
         <button
           type="button"
           onClick={onToggleExpanded}
-          className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-zinc-400 hover:text-white"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700"
         >
           {isExpanded ? "Done" : "Edit Sheet Selection"}
         </button>
       </div>
 
-      <div className="mt-4 space-y-4 text-sm text-zinc-300">
+      <div className="mt-4 space-y-4 text-sm text-slate-700">
         <div>
-          <p className="text-xs font-medium text-zinc-500">
+          <p className="text-xs font-medium text-slate-500">
             Spreadsheet Title
           </p>
-          <p className="mt-1 text-zinc-100">{spreadsheetInfo.title || "-"}</p>
+          <p className="mt-1 font-medium text-slate-950">
+            {spreadsheetInfo.title || "-"}
+          </p>
         </div>
 
         {autoLinkedJiraSheet && (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-3">
-            <p className="text-xs font-semibold text-emerald-300">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-xs font-semibold text-emerald-700">
               Jira Issue Sheet가 자동 선택되었습니다.
             </p>
-            <p className="mt-1 text-xs text-emerald-100/80">
+            <p className="mt-1 text-xs text-emerald-700">
               선택된 Jira 시트: {autoLinkedJiraSheet.title}
             </p>
           </div>
         )}
 
         <div>
-          <p className="text-xs font-medium text-zinc-500">
+          <p className="text-xs font-medium text-slate-500">
             Selected Sheets: {selectedSheets.length}
           </p>
           {selectedSheets.length > 0 ? (
@@ -91,38 +93,38 @@ export function SpreadsheetPreview({
               {selectedSheets.map((sheet) => (
                 <li
                   key={`${sheet.gid}-${sheet.title}`}
-                  className="border-b border-zinc-900 pb-2 last:border-b-0 last:pb-0"
+                  className="border-b border-slate-200 pb-2 last:border-b-0 last:pb-0"
                 >
                   {sheet.title}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-zinc-500">선택된 시트가 없습니다.</p>
+            <p className="mt-2 text-slate-500">선택된 시트가 없습니다.</p>
           )}
         </div>
 
         {isExpanded && (
           <div>
-            <p className="text-xs font-medium text-zinc-500">Sheet List</p>
+            <p className="text-xs font-medium text-slate-500">Sheet List</p>
             {spreadsheetInfo.sheets.length > 0 ? (
               <ul className="mt-2 space-y-2">
                 {spreadsheetInfo.sheets.map((sheet) => (
                   <li
                     key={`${sheet.gid}-${sheet.title}`}
-                    className="border-b border-zinc-900 pb-2 last:border-b-0 last:pb-0"
+                    className="border-b border-slate-200 pb-2 last:border-b-0 last:pb-0"
                   >
                     <label className="flex cursor-pointer items-center gap-3">
                       <input
                         type="checkbox"
                         checked={selectedGids.includes(sheet.gid)}
                         onChange={() => onToggleSheet(sheet)}
-                        className="h-4 w-4 accent-white"
+                        className="h-4 w-4 accent-indigo-600"
                       />
                       <span className="min-w-0 flex-1">{sheet.title}</span>
                       {autoLinkedJiraSheet?.gid === sheet.gid && (
-                        <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2 py-1 text-[11px] font-medium text-emerald-300">
-                          Jira로 자동 연결됨
+                        <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                          Jira 자동 연결
                         </span>
                       )}
                     </label>
@@ -130,7 +132,7 @@ export function SpreadsheetPreview({
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-zinc-500">Sheet 목록이 없습니다.</p>
+              <p className="mt-2 text-slate-500">Sheet 목록이 없습니다.</p>
             )}
           </div>
         )}

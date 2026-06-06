@@ -2,8 +2,8 @@
 
 import type { RefObject } from "react";
 import { AppFooter } from "@/components/layout/AppFooter";
-import { AppHeader } from "@/components/layout/AppHeader";
 import { AnalysisResultSection } from "@/components/report/AnalysisResultSection";
+import { InputHeroSection } from "@/components/report/InputHeroSection";
 import {
   ReportInputPanel,
   type ReportInputPanelProps,
@@ -37,9 +37,9 @@ export function ReportAssistantPageView({
   ...reportInputPanelProps
 }: ReportAssistantPageViewProps) {
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
-      <section className="mx-auto flex min-h-screen max-w-4xl flex-col px-6 py-16">
-        <AppHeader />
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <section className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-10 sm:px-6 lg:py-14">
+        <InputHeroSection />
         <ReportInputPanel {...reportInputPanelProps} />
         {analysisSummary && (
           <AnalysisResultSection
