@@ -32,10 +32,10 @@ export function EvidenceSnapshotCard({
         Evidence Snapshot
       </p>
       <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-        리포트 데이터 기준
+        데이터 근거 요약
       </h2>
       <p className="mt-2 text-sm leading-6 text-slate-500">
-        이번 리포트는 아래 QA / Jira 데이터를 기준으로 생성되었습니다.
+        이번 리포트에 사용된 QA / Jira 데이터 기준입니다.
       </p>
 
       <dl className="mt-4 grid grid-cols-2 gap-2">
@@ -44,7 +44,9 @@ export function EvidenceSnapshotCard({
             key={item.label}
             className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5"
           >
-            <dt className="truncate text-xs font-medium text-slate-500">{item.label}</dt>
+            <dt className="truncate text-xs font-medium text-slate-500">
+              {item.label}
+            </dt>
             <dd className="mt-1 text-xl font-bold text-slate-950">
               {item.value.toLocaleString()}
             </dd>

@@ -50,6 +50,7 @@ export function OverallReportDashboard({
       <div className="grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0">
           <AiExecutiveSummaryCard
+            analysisSummary={analysisSummary}
             analysisText={aiAnalysisText}
             isLoading={isAiAnalyzing}
             onAnalyze={onAnalyze}

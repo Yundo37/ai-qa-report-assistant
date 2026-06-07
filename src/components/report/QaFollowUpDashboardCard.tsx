@@ -37,13 +37,13 @@ export function QaFollowUpDashboardCard({
       </div>
 
       {followUps.length > 0 ? (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {visibleFollowUps.map((followUp) => (
             <li
               key={followUp}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700"
+              className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700"
             >
-              {followUp}
+              <span className="line-clamp-2">{followUp}</span>
             </li>
           ))}
         </ul>

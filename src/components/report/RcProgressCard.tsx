@@ -66,7 +66,7 @@ export function RcProgressCard({
           ))}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
           표시할 RC Progress 데이터가 없습니다.
         </p>
       )}

@@ -61,7 +61,7 @@ export function createOverallDashboardMetrics(
         : {
             label: "안정",
             tone: "stable",
-            description: "현재 상단 KPI 기준 주요 위험 신호가 낮습니다.",
+            description: "현재 상단 KPI 기준 주요 위험 신호가 없습니다.",
           };
 
   return {

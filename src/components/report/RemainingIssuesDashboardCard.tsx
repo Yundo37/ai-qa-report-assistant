@@ -137,12 +137,13 @@ export function RemainingIssuesDashboardCard({
                 상세 목록은 Detailed QA Data에서 확인할 수 있습니다.
               </p>
             )}
-            {highIssues.length === 0 && (mediumIssues.length > 0 || lowIssues.length > 0) && (
-              <p className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
-                Medium / Low Remaining 상세는 Detailed QA Data에서 확인할 수
-                있습니다.
-              </p>
-            )}
+            {highIssues.length === 0 &&
+              (mediumIssues.length > 0 || lowIssues.length > 0) && (
+                <p className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+                  Medium / Low Remaining 상세는 Detailed QA Data에서 확인할 수
+                  있습니다.
+                </p>
+              )}
           </div>
         </>
       )}
