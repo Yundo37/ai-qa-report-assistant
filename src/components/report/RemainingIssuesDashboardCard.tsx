@@ -24,34 +24,36 @@ function RepresentativeIssueRows({ issues }: { issues: RemainingIssue[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200">
+    <div className="space-y-2">
       {issues.map((issue, index) => (
         <article
           key={`${issue.key}-${index}`}
-          className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 first:border-t-0"
+          className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
         >
-          <div className="grid min-w-0 gap-1.5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
               <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityClassName(
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityClassName(
                   issue.priority
                 )}`}
               >
                 {issue.priority}
               </span>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                {issue.status}
-              </span>
+              <p className="min-w-0 truncate text-xs font-semibold leading-5 text-slate-950">
+                {issue.summary}
+              </p>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-1">
               <span className="text-[11px] font-medium text-slate-400">
                 {issue.key}
               </span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                {issue.status}
+              </span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                {issue.version || "-"}
+              </span>
             </div>
-            <p className="min-w-0 truncate text-xs font-medium leading-5 text-slate-950">
-              {issue.summary}
-            </p>
-            <span className="justify-self-start rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-500 md:justify-self-end">
-              {issue.version || "-"}
-            </span>
           </div>
         </article>
       ))}
@@ -128,7 +130,7 @@ export function RemainingIssuesDashboardCard({
 
           <div className="mt-4">
             <h3 className="mb-2 text-sm font-semibold text-slate-950">
-              High Priority Remaining · {highIssues.length} issues
+              대표 High Risk Remaining · {highIssues.length} issues
             </h3>
             <RepresentativeIssueRows issues={representativeHighIssues} />
             {hiddenHighIssueCount > 0 && (

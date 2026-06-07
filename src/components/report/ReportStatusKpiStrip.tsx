@@ -2,9 +2,9 @@ import { createOverallDashboardMetrics } from "@/components/report/reportDashboa
 import type { AnalysisSummaryState } from "@/types/report";
 
 const STATUS_TONE_CLASS = {
-  stable: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  caution: "border-amber-200 bg-amber-50 text-amber-700",
-  risk: "border-red-200 bg-red-50 text-red-700",
+  stable: "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-emerald-100",
+  caution: "border-amber-200 bg-amber-50 text-amber-700 shadow-amber-100",
+  risk: "border-red-200 bg-red-50 text-red-700 shadow-red-100",
 };
 
 export function ReportStatusKpiStrip({
@@ -24,17 +24,17 @@ export function ReportStatusKpiStrip({
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="grid gap-3 lg:grid-cols-[210px_1fr]">
+      <div className="grid gap-3 lg:grid-cols-[260px_1fr]">
         <div
-          className={`rounded-2xl border px-4 py-3 ${
+          className={`rounded-2xl border px-5 py-4 shadow-sm ${
             STATUS_TONE_CLASS[metrics.status.tone]
           }`}
         >
           <p className="text-xs font-semibold uppercase tracking-wide">
             QA Status
           </p>
-          <p className="mt-2 text-xl font-bold">{metrics.status.label}</p>
-          <p className="mt-1 text-xs leading-5">{metrics.status.description}</p>
+          <p className="mt-2 text-3xl font-bold">{metrics.status.label}</p>
+          <p className="mt-2 text-xs leading-5">{metrics.status.description}</p>
         </div>
 
         <dl className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
@@ -46,7 +46,7 @@ export function ReportStatusKpiStrip({
               <dt className="truncate text-xs font-medium text-slate-500">
                 {kpi.label}
               </dt>
-              <dd className="mt-2 text-xl font-bold text-slate-950">
+              <dd className="mt-2 text-2xl font-bold text-slate-950">
                 {kpi.value}
               </dd>
             </div>
