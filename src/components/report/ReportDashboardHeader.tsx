@@ -7,6 +7,7 @@ import type { AnalysisSummaryState, MessageState } from "@/types/report";
 type ReportDashboardHeaderProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   reportScopeText: string;
+  reportPeriodText: string;
   onCreateResultSheet: () => void;
   isCreatingResultSheet: boolean;
   resultSheetMessage: MessageState;
@@ -16,6 +17,7 @@ type ReportDashboardHeaderProps = {
 export function ReportDashboardHeader({
   analysisSummary,
   reportScopeText,
+  reportPeriodText,
   onCreateResultSheet,
   isCreatingResultSheet,
   resultSheetMessage,
@@ -23,6 +25,8 @@ export function ReportDashboardHeader({
 }: ReportDashboardHeaderProps) {
   const targetVersion =
     analysisSummary.inferredTargetVersion || reportScopeText || "-";
+  const scopeLabel = reportPeriodText ? "QA Period" : "Target Scope";
+  const scopeValue = reportPeriodText || reportScopeText || "-";
   const rcLabel = analysisSummary.rcProgress?.rcLabel || "-";
   const generatedAt = useMemo(
     () =>
@@ -52,14 +56,15 @@ export function ReportDashboardHeader({
             </span>
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-            Google Spreadsheet 기반 QA 데이터를 분석한 Overall QA Result
-            Report입니다.
+            Overall QA Result Report based on Google Spreadsheet QA data.
           </p>
           <dl className="mt-5 grid gap-2 text-sm sm:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-2.5">
-              <dt className="text-xs font-medium text-slate-500">QA Period</dt>
+              <dt className="text-xs font-medium text-slate-500">
+                {scopeLabel}
+              </dt>
               <dd className="mt-1 truncate font-semibold text-slate-900">
-                {reportScopeText}
+                {scopeValue}
               </dd>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-2.5">
@@ -85,8 +90,8 @@ export function ReportDashboardHeader({
             Export to Google Sheet
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            현재 Dashboard 결과를 Google Spreadsheet 기반 Result Report로
-            내보냅니다.
+            Exports the current Dashboard result as a Google Spreadsheet Result
+            Report.
           </p>
           <button
             type="button"

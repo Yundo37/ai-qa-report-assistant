@@ -23,6 +23,23 @@ function priorityBadgeClass(tone: "High" | "Medium" | "Low") {
   return "bg-emerald-50 text-emerald-700";
 }
 
+function createConclusionText(
+  tone: "stable" | "caution" | "risk",
+  highRisk: number,
+  blocked: number,
+  remaining: number
+) {
+  if (tone === "risk") {
+    return `현재 Overall QA는 High Risk Remaining ${highRisk.toLocaleString()}건과 Blocked ${blocked.toLocaleString()}건의 영향이 남아 있어 배포 전 추가 확인이 필요한 상태입니다.`;
+  }
+
+  if (tone === "caution") {
+    return `현재 Overall QA는 Remaining ${remaining.toLocaleString()}건을 중심으로 후속 확인이 필요한 상태입니다.`;
+  }
+
+  return "현재 Overall QA는 상단 지표 기준 안정적인 흐름이며, 주요 위험 신호는 크지 않습니다.";
+}
+
 export function AiExecutiveSummaryCard({
   analysisSummary,
   analysisText,
@@ -40,6 +57,8 @@ export function AiExecutiveSummaryCard({
     analysisSummary.qaIssueOverview?.remaining?.prioritySummary;
   const highRisk =
     (remainingPriority?.Highest ?? 0) + (remainingPriority?.High ?? 0);
+  const mediumRisk = remainingPriority?.Medium ?? 0;
+  const lowRisk = (remainingPriority?.Low ?? 0) + (remainingPriority?.Lowest ?? 0);
   const blockedCount =
     analysisSummary.overallQaSummary?.Blocked ??
     analysisSummary.qaTotal.Blocked ??
@@ -51,36 +70,57 @@ export function AiExecutiveSummaryCard({
   const features =
     analysisSummary.overallTestSheets?.length || analysisSummary.testSheets.length;
   const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 2);
+  const conclusionText = createConclusionText(
+    metrics.status.tone,
+    highRisk,
+    blockedCount,
+    metrics.remaining
+  );
   const riskItems = [
     {
-      label: "High / Highest Remaining",
+      label:
+        highRisk > 0
+          ? "High / Highest Remaining 이슈가 주요 리스크로 확인됩니다."
+          : "High / Highest Remaining 이슈는 현재 상단 리스크로 크지 않습니다.",
       value: highRisk,
-      tone: "High" as const,
+      tone: highRisk > 0 ? ("High" as const) : ("Low" as const),
     },
-    { label: "Blocked TC", value: blockedCount, tone: "Medium" as const },
     {
-      label: patternItems[0]?.name ?? "반복 이슈 패턴",
+      label:
+        blockedCount > 0
+          ? "Blocked 항목이 기능 검증 범위에 영향을 줄 수 있습니다."
+          : "Blocked 항목은 현재 낮은 수준입니다.",
+      value: blockedCount,
+      tone: blockedCount > 0 ? ("Medium" as const) : ("Low" as const),
+    },
+    {
+      label: patternItems[0]
+        ? `${patternItems[0].name} 패턴이 반복 관찰됩니다.`
+        : "반복 이슈 패턴은 추가 데이터에서 확인합니다.",
       value: patternItems[0]?.count ?? 0,
-      tone: "Medium" as const,
+      tone: patternItems[0] ? ("Medium" as const) : ("Low" as const),
     },
     {
-      label: "RC Remaining",
+      label: "RC 잔여 흐름은 RC Progress에서 함께 확인합니다.",
       value: analysisSummary.rcProgress.remainingIssues,
-      tone: "Low" as const,
+      tone:
+        analysisSummary.rcProgress.remainingIssues > 0
+          ? ("Medium" as const)
+          : ("Low" as const),
     },
   ];
   const recommendationItems = [
     highRisk > 0
-      ? "High / Highest Remaining 이슈를 우선 확인합니다."
-      : "상위 Remaining 이슈 상태를 정기적으로 확인합니다.",
+      ? "상위 Remaining 이슈는 배포 전 재확인이 필요합니다."
+      : "상위 Remaining 이슈는 정기적으로 상태를 확인합니다.",
     blockedCount > 0
-      ? "Blocked TC 원인과 담당 액션을 재확인합니다."
-      : "Blocked TC는 현재 보조 모니터링 항목으로 관리합니다.",
+      ? "Blocked 항목은 선행 이슈 해결 후 재검증이 필요합니다."
+      : "Blocked 항목은 보조 모니터링 대상으로 유지합니다.",
     nextEventCount > 0
-      ? "Next Event 항목은 후속 일정과 재확인 기준을 정리합니다."
-      : "Next Event 항목이 추가될 경우 후속 확인 대상으로 관리합니다.",
+      ? "Next Event 항목은 후속 일정에서 별도 관리하는 것이 좋습니다."
+      : "Next Event가 추가되면 후속 확인 대상으로 분리합니다.",
     analysisSummary.qaFollowUps[0] ??
-      "QA Comment / Follow-up 항목은 Detailed QA Data에서 함께 확인합니다.",
+      "QA Comment / Follow-up 원문은 Detailed QA Data에서 확인합니다.",
   ];
   const evidenceItems = [
     {
@@ -124,7 +164,7 @@ export function AiExecutiveSummaryCard({
   }
 
   return (
-    <section className="min-w-0 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-violet-50/60 to-white p-5 shadow-md shadow-indigo-100/70 sm:p-6">
+    <section className="min-w-0 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 via-violet-50/70 to-white p-5 shadow-lg shadow-indigo-100/70 sm:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -136,10 +176,11 @@ export function AiExecutiveSummaryCard({
             </p>
           </div>
           <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
-            AI 기반 QA Release 요약
+            결론 중심 QA Release 요약
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            QA 데이터와 Jira 이슈를 기반으로 구성한 Dashboard 요약입니다.
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            QA 데이터와 Jira 이슈를 기반으로 결론, 리스크, 후속 확인,
+            근거 데이터를 순서대로 정리합니다.
           </p>
         </div>
         <button
@@ -170,21 +211,21 @@ export function AiExecutiveSummaryCard({
               >
                 {metrics.status.label}
               </span>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                {metrics.status.description}
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-800">
+                {conclusionText}
               </p>
-              <div className="mt-5 grid place-items-center">
-                <div
-                  className="grid size-28 place-items-center rounded-full"
-                  style={{
-                    background: `conic-gradient(#7c3aed ${metrics.passRate}%, #e2e8f0 0)`,
-                  }}
-                >
-                  <div className="grid size-20 place-items-center rounded-full bg-white text-center">
-                    <span className="text-xl font-bold text-slate-950">
-                      {metrics.passRate}%
-                    </span>
-                  </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                  <p className="text-slate-500">Pass Rate</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">
+                    {metrics.passRate}%
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                  <p className="text-slate-500">Remaining</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">
+                    {metrics.remaining.toLocaleString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -195,20 +236,19 @@ export function AiExecutiveSummaryCard({
               </p>
               <ul className="mt-4 space-y-3">
                 {riskItems.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-center justify-between gap-3 text-sm"
-                  >
-                    <span className="min-w-0 truncate text-slate-700">
-                      {item.label}
-                    </span>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadgeClass(
-                        item.tone
-                      )}`}
-                    >
-                      {item.value.toLocaleString()}
-                    </span>
+                  <li key={item.label} className="text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 leading-5 text-slate-700">
+                        {item.label}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadgeClass(
+                          item.tone
+                        )}`}
+                      >
+                        {item.value.toLocaleString()}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -221,7 +261,7 @@ export function AiExecutiveSummaryCard({
               <ul className="mt-4 space-y-3">
                 {recommendationItems.map((item) => (
                   <li key={item} className="flex gap-2 text-sm leading-5">
-                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-indigo-500" />
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-indigo-500" />
                     <span className="line-clamp-2 text-slate-700">{item}</span>
                   </li>
                 ))}
@@ -248,6 +288,11 @@ export function AiExecutiveSummaryCard({
                   </div>
                 ))}
               </dl>
+              <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-700">
+                Medium {mediumRisk.toLocaleString()} · Low{" "}
+                {lowRisk.toLocaleString()} · Next Event{" "}
+                {nextEventCount.toLocaleString()}
+              </div>
             </div>
           </div>
 

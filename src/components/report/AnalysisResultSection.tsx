@@ -24,6 +24,7 @@ type AnalysisResultSectionProps = {
   resultSheetMessage: MessageState;
   resultSheetUrl: string;
   reportScopeText: string;
+  reportPeriodText: string;
 };
 
 export function AnalysisResultSection({
@@ -37,6 +38,7 @@ export function AnalysisResultSection({
   resultSheetMessage,
   resultSheetUrl,
   reportScopeText,
+  reportPeriodText,
 }: AnalysisResultSectionProps) {
   if (analysisSummary.reportType === "OVERALL") {
     return (
@@ -52,6 +54,7 @@ export function AnalysisResultSection({
             isCreatingResultSheet={isCreatingResultSheet}
             resultSheetMessage={resultSheetMessage}
             resultSheetUrl={resultSheetUrl}
+            reportPeriodText={reportPeriodText}
           >
             <OverallReportResultSection
               analysisSummary={analysisSummary}

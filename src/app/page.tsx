@@ -1341,6 +1341,10 @@ export default function Home() {
     rcVersion: reportRcVersion,
     inferredTargetVersion: analysisSummary?.inferredTargetVersion ?? "",
   });
+  const reportPeriodText =
+    jiraAnalysisStartDate.trim() && jiraAnalysisEndDate.trim()
+      ? `${jiraAnalysisStartDate.trim()} ~ ${jiraAnalysisEndDate.trim()}`
+      : "";
   const isFeatureReport = reportType === "FEATURE";
   const activeQuickScenarioPresets = isFeatureReport
     ? QUICK_SCENARIO_PRESETS
@@ -1411,6 +1415,7 @@ export default function Home() {
       resultSheetMessage={resultSheetMessage}
       resultSheetUrl={resultSheetUrl}
       reportScopeText={reportScopeText}
+      reportPeriodText={reportPeriodText}
       isInputDashboardVisible={isInputDashboardVisible}
       onShowInputDashboard={() => setIsInputDashboardVisible(true)}
       onHideInputDashboard={() => setIsInputDashboardVisible(false)}

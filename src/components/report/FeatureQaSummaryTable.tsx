@@ -69,7 +69,8 @@ export function FeatureQaSummaryTable({
           </div>
           {visibleRows.map((row) => {
             const passRate = calculatePassRate(row.summary);
-            const remaining = row.summary.Fail + row.summary.Blocked + row.summary.NextEvent;
+            const remaining =
+              row.summary.Fail + row.summary.Blocked + row.summary.NextEvent;
             const highRisk = row.summary.Fail + row.summary.Blocked;
 
             return (

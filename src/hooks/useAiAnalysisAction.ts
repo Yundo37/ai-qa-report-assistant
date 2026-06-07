@@ -11,6 +11,11 @@ type UseAiAnalysisActionParams = {
   createReportTitle: (featureName: string) => string;
 };
 
+const EMPTY_AI_ANALYSIS_MESSAGE =
+  "AI \uBD84\uC11D \uACB0\uACFC\uAC00 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.";
+const FAILED_AI_ANALYSIS_MESSAGE =
+  "AI \uBD84\uC11D \uACB0\uACFC\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.";
+
 export function useAiAnalysisAction({
   analysisSummary,
   isAiAnalyzing,
@@ -61,12 +66,12 @@ export function useAiAnalysisAction({
 
       const data = (await response.json()) as { analysis?: string };
       if (aiAnalysisRequestIdRef.current === requestId) {
-        setAiAnalysisText(data.analysis || "AI 遺꾩꽍 寃곌낵媛 鍮꾩뼱 ?덉뒿?덈떎.");
+        setAiAnalysisText(data.analysis || EMPTY_AI_ANALYSIS_MESSAGE);
       }
     } catch (error) {
       console.error("AI Analysis Error:", error);
       if (aiAnalysisRequestIdRef.current === requestId) {
-        setAiAnalysisText("AI 遺꾩꽍??遺덈윭?ㅼ? 紐삵뻽?듬땲??");
+        setAiAnalysisText(FAILED_AI_ANALYSIS_MESSAGE);
       }
     } finally {
       if (aiAnalysisRequestIdRef.current === requestId) {

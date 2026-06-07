@@ -22,6 +22,7 @@ type ReportAssistantPageViewProps = ReportInputPanelProps & {
   resultSheetMessage: MessageState;
   resultSheetUrl: string;
   reportScopeText: string;
+  reportPeriodText: string;
   isInputDashboardVisible: boolean;
   onShowInputDashboard: () => void;
   onHideInputDashboard: () => void;
@@ -38,6 +39,7 @@ export function ReportAssistantPageView({
   resultSheetMessage,
   resultSheetUrl,
   reportScopeText,
+  reportPeriodText,
   isInputDashboardVisible,
   onShowInputDashboard,
   onHideInputDashboard,
@@ -87,6 +89,7 @@ export function ReportAssistantPageView({
             resultSheetMessage={resultSheetMessage}
             resultSheetUrl={resultSheetUrl}
             reportScopeText={reportScopeText}
+            reportPeriodText={reportPeriodText}
           />
         )}
         <AppFooter />

@@ -17,7 +17,8 @@ export function DetailedSummarySection({ children }: { children: ReactNode }) {
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             검증용 상세 데이터와 원본 요약 정보입니다. Jira Summary, Version
-            Summary, Report Preview, 전체 Remaining / Follow-up 목록을 보존합니다.
+            Summary, Report Preview, 전체 Remaining / Follow-up 목록을
+            보존합니다.
           </p>
         </div>
         <button

@@ -4,6 +4,7 @@ import { DetailedSummarySection } from "@/components/report/DetailedSummarySecti
 import { FeatureQaSummaryTable } from "@/components/report/FeatureQaSummaryTable";
 import { IssuePatternAnalysisCard } from "@/components/report/IssuePatternAnalysisCard";
 import { QaFollowUpDashboardCard } from "@/components/report/QaFollowUpDashboardCard";
+import { QaReleaseStatusCard } from "@/components/report/QaReleaseStatusCard";
 import { RcProgressCard } from "@/components/report/RcProgressCard";
 import { ReleaseRiskSummaryCard } from "@/components/report/ReleaseRiskSummaryCard";
 import { RemainingIssuesDashboardCard } from "@/components/report/RemainingIssuesDashboardCard";
@@ -14,6 +15,7 @@ import type { AnalysisSummaryState, MessageState } from "@/types/report";
 type OverallReportDashboardProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   reportScopeText: string;
+  reportPeriodText: string;
   aiAnalysisText: string;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
@@ -27,6 +29,7 @@ type OverallReportDashboardProps = {
 export function OverallReportDashboard({
   analysisSummary,
   reportScopeText,
+  reportPeriodText,
   aiAnalysisText,
   isAiAnalyzing,
   onAnalyze,
@@ -41,11 +44,13 @@ export function OverallReportDashboard({
       <ReportDashboardHeader
         analysisSummary={analysisSummary}
         reportScopeText={reportScopeText}
+        reportPeriodText={reportPeriodText}
         onCreateResultSheet={onCreateResultSheet}
         isCreatingResultSheet={isCreatingResultSheet}
         resultSheetMessage={resultSheetMessage}
         resultSheetUrl={resultSheetUrl}
       />
+      <QaReleaseStatusCard analysisSummary={analysisSummary} />
       <ReportStatusKpiStrip analysisSummary={analysisSummary} />
       <AiExecutiveSummaryCard
         analysisSummary={analysisSummary}

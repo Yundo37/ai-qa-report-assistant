@@ -40,48 +40,46 @@ export function ReleaseRiskSummaryCard({
     0;
   const reopened = analysisSummary.rcProgress?.reopenedIssues ?? 0;
   const highRisk = highest + high;
+  const lowRisk = low + lowest;
   const riskMessage =
     highRisk > 0
       ? "High / Highest Remaining 이슈가 남아 있어 배포 전 후속 확인이 필요합니다."
       : medium > 0 || blocked > 0
         ? "Medium Remaining 또는 Blocked 항목을 중심으로 추가 확인이 필요합니다."
-        : "상단 리스크 지표 기준으로 큰 위험 신호는 확인되지 않았습니다.";
-  const highRiskCardClass =
+        : "상단 리스크 지표 기준 주요 위험 신호가 크지 않습니다.";
+  const conclusionClass =
     highRisk > 0
       ? "border-red-200 bg-red-50 text-red-700"
       : medium > 0 || blocked > 0
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : "border-emerald-200 bg-emerald-50 text-emerald-700";
-  const supportItems = [
+  const priorityItems = [
     {
-      label: "Remaining Total",
-      value: remainingTotal,
-      className: "bg-slate-50 text-slate-900",
+      label: "High / Highest",
+      value: highRisk,
+      className: "border-red-200 bg-red-50 text-red-700",
     },
     {
       label: "Medium",
       value: medium,
-      className: "bg-amber-50 text-amber-700",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
     },
+    {
+      label: "Low / Lowest",
+      value: lowRisk,
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    },
+  ];
+  const supportItems = [
     {
       label: "Blocked",
       value: blocked,
       className: "bg-orange-50 text-orange-700",
     },
     {
-      label: "Low / Lowest",
-      value: low + lowest,
-      className: "bg-emerald-50 text-emerald-700",
-    },
-    {
       label: "Next Event",
       value: nextEvent,
       className: "bg-indigo-50 text-indigo-700",
-    },
-    {
-      label: "Reopened",
-      value: reopened,
-      className: "bg-slate-50 text-slate-900",
     },
   ];
 
@@ -95,48 +93,45 @@ export function ReleaseRiskSummaryCard({
           Release Risk Summary
         </h2>
         <p className="text-sm leading-6 text-slate-500">
-          Remaining Issue와 QA 진행 상태를 기준으로 릴리즈 확인 포인트를
+          Remaining 우선순위와 QA 진행 상태를 기준으로 배포 전 확인 포인트를
           요약합니다.
         </p>
       </div>
 
-      <div className="mt-5 space-y-3">
-        <div className="grid grid-cols-3 gap-2">
-          <div className={`rounded-2xl border px-3 py-3 ${highRiskCardClass}`}>
-            <p className="truncate text-xs font-semibold">High / Highest</p>
-            <p className="mt-2 text-3xl font-bold">{highRisk}</p>
-          </div>
-          <div className="rounded-2xl bg-amber-50 px-3 py-3 text-amber-700">
-            <p className="truncate text-xs font-semibold">Medium</p>
-            <p className="mt-2 text-3xl font-bold">{medium}</p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 px-3 py-3 text-emerald-700">
-            <p className="truncate text-xs font-semibold">Low</p>
-            <p className="mt-2 text-3xl font-bold">{low + lowest}</p>
-          </div>
-        </div>
+      <p className={`mt-4 rounded-2xl border px-3 py-3 text-sm font-semibold leading-6 ${conclusionClass}`}>
+        {riskMessage}
+      </p>
 
-        <div className="grid grid-cols-3 gap-2">
-          {supportItems
-            .filter((item) =>
-              ["Remaining Total", "Blocked", "Next Event"].includes(item.label)
-            )
-            .map((item) => (
-              <div
-                key={item.label}
-                className={`min-w-0 rounded-2xl px-3 py-2.5 ${item.className}`}
-              >
-                <p className="truncate text-[11px] font-semibold opacity-80">
-                  {item.label}
-                </p>
-                <p className="mt-1 text-xl font-bold">{item.value}</p>
-              </div>
-            ))}
-        </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {priorityItems.map((item) => (
+          <div
+            key={item.label}
+            className={`rounded-2xl border px-3 py-3 ${item.className}`}
+          >
+            <p className="truncate text-xs font-semibold">{item.label}</p>
+            <p className="mt-2 text-3xl font-bold">{item.value}</p>
+          </div>
+        ))}
       </div>
 
-      <p className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs leading-5 text-indigo-700">
-        {riskMessage} Next Event는 후속 확인 항목입니다.
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {supportItems.map((item) => (
+          <div
+            key={item.label}
+            className={`min-w-0 rounded-2xl px-3 py-2.5 ${item.className}`}
+          >
+            <p className="truncate text-[11px] font-semibold opacity-80">
+              {item.label}
+            </p>
+            <p className="mt-1 text-xl font-bold">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-3 text-xs leading-5 text-slate-400">
+        Remaining Total {remainingTotal.toLocaleString()} · Reopened{" "}
+        {reopened.toLocaleString()} · Next Event는 현재 릴리즈 실패가 아닌 후속
+        확인 항목입니다.
       </p>
     </section>
   );
