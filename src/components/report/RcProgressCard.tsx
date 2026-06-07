@@ -6,7 +6,7 @@ export function RcProgressCard({
   rcProgress: RcProgressSummary;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
@@ -22,11 +22,11 @@ export function RcProgressCard({
       </div>
 
       {rcProgress.items.length > 0 ? (
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+        <div className="mt-5 grid gap-3 xl:grid-cols-2">
           {rcProgress.items.map((item) => (
             <article
               key={item.rc}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-3"
             >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-slate-950">

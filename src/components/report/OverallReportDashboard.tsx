@@ -47,25 +47,35 @@ export function OverallReportDashboard({
         resultSheetUrl={resultSheetUrl}
       />
       <ReportStatusKpiStrip analysisSummary={analysisSummary} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)]">
-        <AiExecutiveSummaryCard
-          analysisText={aiAnalysisText}
-          isLoading={isAiAnalyzing}
-          onAnalyze={onAnalyze}
-        />
-        <EvidenceSnapshotCard analysisSummary={analysisSummary} />
-      </div>
-      <div className="grid gap-6 xl:grid-cols-2">
-        <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
-        <RcProgressCard rcProgress={analysisSummary.rcProgress} />
-      </div>
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
-        <div className="space-y-6">
-          <FeatureQaSummaryTable analysisSummary={analysisSummary} />
-          <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
+      <div className="grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          <AiExecutiveSummaryCard
+            analysisText={aiAnalysisText}
+            isLoading={isAiAnalyzing}
+            onAnalyze={onAnalyze}
+          />
         </div>
-        <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+        <div className="min-w-0">
+          <EvidenceSnapshotCard analysisSummary={analysisSummary} />
+        </div>
       </div>
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="min-w-0">
+          <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
+        </div>
+        <div className="min-w-0">
+          <RcProgressCard rcProgress={analysisSummary.rcProgress} />
+        </div>
+      </div>
+      <div className="grid items-start gap-5 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <div className="min-w-0">
+          <FeatureQaSummaryTable analysisSummary={analysisSummary} />
+        </div>
+        <div className="min-w-0">
+          <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+        </div>
+      </div>
+      <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
       <DetailedSummarySection>{children}</DetailedSummarySection>
     </div>
   );

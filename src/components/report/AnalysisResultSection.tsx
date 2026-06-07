@@ -40,26 +40,28 @@ export function AnalysisResultSection({
 }: AnalysisResultSectionProps) {
   if (analysisSummary.reportType === "OVERALL") {
     return (
-      <section ref={analysisSummaryRef} className="mt-8">
-        <OverallReportDashboard
-          analysisSummary={analysisSummary}
-          reportScopeText={reportScopeText}
-          aiAnalysisText={aiAnalysisText}
-          isAiAnalyzing={isAiAnalyzing}
-          onAnalyze={onAnalyze}
-          onCreateResultSheet={onCreateResultSheet}
-          isCreatingResultSheet={isCreatingResultSheet}
-          resultSheetMessage={resultSheetMessage}
-          resultSheetUrl={resultSheetUrl}
-        >
-          <OverallReportResultSection
+      <section ref={analysisSummaryRef} className="mt-8 w-full overflow-x-auto">
+        <div className="mx-auto w-full max-w-[1280px]">
+          <OverallReportDashboard
             analysisSummary={analysisSummary}
-          />
-          <JiraSummarySection analysisSummary={analysisSummary} />
-          <OverallReportPreview analysisSummary={analysisSummary} />
-          <RemainingIssueList issues={analysisSummary.remainingIssues} />
-          <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
-        </OverallReportDashboard>
+            reportScopeText={reportScopeText}
+            aiAnalysisText={aiAnalysisText}
+            isAiAnalyzing={isAiAnalyzing}
+            onAnalyze={onAnalyze}
+            onCreateResultSheet={onCreateResultSheet}
+            isCreatingResultSheet={isCreatingResultSheet}
+            resultSheetMessage={resultSheetMessage}
+            resultSheetUrl={resultSheetUrl}
+          >
+            <OverallReportResultSection
+              analysisSummary={analysisSummary}
+            />
+            <JiraSummarySection analysisSummary={analysisSummary} />
+            <OverallReportPreview analysisSummary={analysisSummary} />
+            <RemainingIssueList issues={analysisSummary.remainingIssues} />
+            <QaFollowUpList followUps={analysisSummary.qaFollowUps} />
+          </OverallReportDashboard>
+        </div>
       </section>
     );
   }

@@ -17,13 +17,13 @@ export function AiExecutiveSummaryCard({
 
   return (
     <section
-      className={`rounded-3xl border shadow-sm ${
+      className={`min-w-0 rounded-3xl border shadow-sm ${
         hasAnalysis
           ? "border-indigo-200 bg-gradient-to-br from-white to-indigo-50/70 p-6 sm:p-8"
-          : "border-slate-200 bg-white p-5 sm:p-6"
+          : "border-slate-200 bg-white p-4 sm:p-5"
       }`}
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             AI 기반 QA 요약

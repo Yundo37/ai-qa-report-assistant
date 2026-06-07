@@ -12,7 +12,7 @@ export function QaFollowUpDashboardCard({
   const hiddenCount = Math.max(followUps.length - visibleFollowUps.length, 0);
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">

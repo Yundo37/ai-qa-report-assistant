@@ -27,7 +27,7 @@ export function EvidenceSnapshotCard({
   ];
 
   return (
-    <section className="h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="h-full min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         Evidence Snapshot
       </p>
@@ -38,14 +38,14 @@ export function EvidenceSnapshotCard({
         이번 리포트는 아래 QA / Jira 데이터를 기준으로 생성되었습니다.
       </p>
 
-      <dl className="mt-5 grid grid-cols-2 gap-3">
+      <dl className="mt-4 grid grid-cols-2 gap-2">
         {items.map((item) => (
           <div
             key={item.label}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+            className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5"
           >
-            <dt className="text-xs font-medium text-slate-500">{item.label}</dt>
-            <dd className="mt-1 text-2xl font-bold text-slate-950">
+            <dt className="truncate text-xs font-medium text-slate-500">{item.label}</dt>
+            <dd className="mt-1 text-xl font-bold text-slate-950">
               {item.value.toLocaleString()}
             </dd>
           </div>

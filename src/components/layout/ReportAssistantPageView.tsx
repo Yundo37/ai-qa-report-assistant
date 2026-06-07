@@ -63,15 +63,17 @@ export function ReportAssistantPageView({
             <ReportInputPanel {...reportInputPanelProps} />
           </div>
         ) : (
-          <CollapsedInputSummaryBar
-            reportType={reportInputPanelProps.reportType}
-            reportTitle={reportInputPanelProps.reportTitle}
-            reportVersion={reportInputPanelProps.reportVersion}
-            reportRcVersion={reportInputPanelProps.reportRcVersion}
-            testSheets={reportInputPanelProps.testSheets}
-            jiraIssueSheet={reportInputPanelProps.jiraIssueSheet}
-            onEditInput={onShowInputDashboard}
-          />
+          <div className="mx-auto w-full max-w-[1280px]">
+            <CollapsedInputSummaryBar
+              reportType={reportInputPanelProps.reportType}
+              reportTitle={reportInputPanelProps.reportTitle}
+              reportVersion={reportInputPanelProps.reportVersion}
+              reportRcVersion={reportInputPanelProps.reportRcVersion}
+              testSheets={reportInputPanelProps.testSheets}
+              jiraIssueSheet={reportInputPanelProps.jiraIssueSheet}
+              onEditInput={onShowInputDashboard}
+            />
+          </div>
         )}
         {analysisSummary && (
           <AnalysisResultSection

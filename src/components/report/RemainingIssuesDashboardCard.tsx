@@ -28,10 +28,10 @@ function RepresentativeIssueRows({ issues }: { issues: RemainingIssue[] }) {
       {issues.map((issue, index) => (
         <article
           key={`${issue.key}-${index}`}
-          className="border-t border-slate-100 bg-slate-50 px-3 py-2 first:border-t-0"
+          className="border-t border-slate-100 bg-slate-50 px-3 py-1.5 first:border-t-0"
         >
-          <div className="grid gap-2 xl:grid-cols-[auto_1fr_auto] xl:items-center">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="grid min-w-0 gap-1.5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <span
                 className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityClassName(
                   issue.priority
@@ -46,10 +46,10 @@ function RepresentativeIssueRows({ issues }: { issues: RemainingIssue[] }) {
                 {issue.key}
               </span>
             </div>
-            <p className="min-w-0 truncate text-sm font-medium text-slate-950">
+            <p className="min-w-0 truncate text-xs font-medium leading-5 text-slate-950">
               {issue.summary}
             </p>
-            <span className="justify-self-start rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-500 xl:justify-self-end">
+            <span className="justify-self-start rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-500 md:justify-self-end">
               {issue.version || "-"}
             </span>
           </div>
@@ -89,7 +89,7 @@ export function RemainingIssuesDashboardCard({
   ];
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
@@ -110,11 +110,11 @@ export function RemainingIssuesDashboardCard({
         </p>
       ) : (
         <>
-          <dl className="mt-4 grid grid-cols-5 gap-2">
+          <dl className="mt-4 grid grid-cols-5 gap-1.5">
             {summaryItems.map((item) => (
               <div
                 key={item.label}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2"
               >
                 <dt className="truncate text-[11px] font-medium text-slate-500">
                   {item.label}

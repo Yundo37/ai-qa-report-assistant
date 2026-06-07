@@ -44,7 +44,7 @@ export function ReleaseRiskSummaryCard({
     {
       label: "Remaining Total",
       value: remainingTotal,
-      help: "현재 남아 있는 이슈",
+      help: "현재 남은 이슈",
       className: "border-slate-200 bg-slate-50 text-slate-900",
     },
     {
@@ -86,7 +86,7 @@ export function ReleaseRiskSummaryCard({
   ];
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
@@ -105,17 +105,19 @@ export function ReleaseRiskSummaryCard({
         </p>
       </div>
 
-      <dl className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <div
             key={item.label}
-            className={`rounded-2xl border px-4 py-4 ${item.className}`}
+            className={`min-w-0 rounded-2xl border px-3 py-3 ${item.className}`}
           >
-            <dt className="text-xs font-medium opacity-80">{item.label}</dt>
-            <dd className="mt-2 text-3xl font-bold">
+            <dt className="truncate text-xs font-medium opacity-80">
+              {item.label}
+            </dt>
+            <dd className="mt-2 text-2xl font-bold">
               {item.value.toLocaleString()}
             </dd>
-            <p className="mt-2 text-xs opacity-75">{item.help}</p>
+            <p className="mt-1 truncate text-xs opacity-75">{item.help}</p>
           </div>
         ))}
       </dl>
