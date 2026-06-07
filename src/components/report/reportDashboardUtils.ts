@@ -48,20 +48,20 @@ export function createOverallDashboardMetrics(
   const status: DashboardStatus =
     highRisk > 0
       ? {
-          label: "위험",
+          label: "Risk",
           tone: "risk",
-          description: "High / Highest Remaining 이슈 확인이 필요합니다.",
+          description: "High / Highest Remaining issues require follow-up.",
         }
       : remaining > 0 || blocked > 0 || mediumRemaining > 0
         ? {
-            label: "주의 필요",
+            label: "Attention Needed",
             tone: "caution",
-            description: "Remaining 또는 Blocked 항목을 확인해주세요.",
+            description: "Remaining or Blocked items need review.",
           }
         : {
-            label: "안정",
+            label: "Stable",
             tone: "stable",
-            description: "현재 상단 KPI 기준 주요 위험 신호가 없습니다.",
+            description: "No major risk signal in the top dashboard metrics.",
           };
 
   return {

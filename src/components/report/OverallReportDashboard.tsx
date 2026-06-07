@@ -40,7 +40,7 @@ export function OverallReportDashboard({
   children,
 }: OverallReportDashboardProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <ReportDashboardHeader
         analysisSummary={analysisSummary}
         reportScopeText={reportScopeText}
@@ -59,7 +59,7 @@ export function OverallReportDashboard({
         onAnalyze={onAnalyze}
       />
       <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
-      <div className="grid items-start gap-5 lg:grid-cols-3">
+      <div className="grid items-stretch gap-5 lg:grid-cols-3">
         <div className="min-w-0">
           <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
         </div>
@@ -70,7 +70,7 @@ export function OverallReportDashboard({
           <FeatureQaSummaryTable analysisSummary={analysisSummary} />
         </div>
       </div>
-      <div className="grid items-start gap-5 md:grid-cols-2">
+      <div className="grid items-stretch gap-5 md:grid-cols-2">
         <div className="min-w-0">
           <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
         </div>

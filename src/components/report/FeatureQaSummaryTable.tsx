@@ -43,7 +43,7 @@ export function FeatureQaSummaryTable({
   const hiddenCount = Math.max(rows.length - visibleRows.length, 0);
 
   return (
-    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
@@ -95,15 +95,14 @@ export function FeatureQaSummaryTable({
             );
           })}
           {hiddenCount > 0 && (
-            <div className="border-t border-slate-100 bg-white px-4 py-3 text-sm text-slate-500">
-              추가 Feature {hiddenCount}개는 Detailed QA Data에서 확인할 수
-              있습니다.
+            <div className="border-t border-slate-100 bg-white px-4 py-3 text-xs text-slate-500">
+              + {hiddenCount} more feature(s) in Detailed QA Data.
             </div>
           )}
         </div>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          표시할 Feature QA Summary가 없습니다.
+          No Feature QA Summary to display.
         </p>
       )}
     </section>

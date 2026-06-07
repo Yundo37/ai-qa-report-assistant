@@ -30,14 +30,14 @@ function createConclusionText(
   remaining: number
 ) {
   if (tone === "risk") {
-    return `현재 Overall QA는 High Risk Remaining ${highRisk.toLocaleString()}건과 Blocked ${blocked.toLocaleString()}건의 영향이 남아 있어 배포 전 추가 확인이 필요한 상태입니다.`;
+    return `Overall QA still has ${highRisk.toLocaleString()} high-risk Remaining issue(s) and ${blocked.toLocaleString()} Blocked item(s), so release follow-up is needed before closure.`;
   }
 
   if (tone === "caution") {
-    return `현재 Overall QA는 Remaining ${remaining.toLocaleString()}건을 중심으로 후속 확인이 필요한 상태입니다.`;
+    return `Overall QA has ${remaining.toLocaleString()} Remaining issue(s) that should be reviewed as follow-up items.`;
   }
 
-  return "현재 Overall QA는 상단 지표 기준 안정적인 흐름이며, 주요 위험 신호는 크지 않습니다.";
+  return "Overall QA is stable in the top dashboard metrics, with no major risk signal visible.";
 }
 
 export function AiExecutiveSummaryCard({
@@ -80,28 +80,28 @@ export function AiExecutiveSummaryCard({
     {
       label:
         highRisk > 0
-          ? "High / Highest Remaining 이슈가 주요 리스크로 확인됩니다."
-          : "High / Highest Remaining 이슈는 현재 상단 리스크로 크지 않습니다.",
+          ? "High / Highest Remaining is the primary release risk."
+          : "High / Highest Remaining is not a top risk signal.",
       value: highRisk,
       tone: highRisk > 0 ? ("High" as const) : ("Low" as const),
     },
     {
       label:
         blockedCount > 0
-          ? "Blocked 항목이 기능 검증 범위에 영향을 줄 수 있습니다."
-          : "Blocked 항목은 현재 낮은 수준입니다.",
+          ? "Blocked items may affect feature validation scope."
+          : "Blocked items are currently low.",
       value: blockedCount,
       tone: blockedCount > 0 ? ("Medium" as const) : ("Low" as const),
     },
     {
       label: patternItems[0]
-        ? `${patternItems[0].name} 패턴이 반복 관찰됩니다.`
-        : "반복 이슈 패턴은 추가 데이터에서 확인합니다.",
+        ? `${patternItems[0].name} appears as a repeated pattern.`
+        : "Repeated patterns need more issue data.",
       value: patternItems[0]?.count ?? 0,
       tone: patternItems[0] ? ("Medium" as const) : ("Low" as const),
     },
     {
-      label: "RC 잔여 흐름은 RC Progress에서 함께 확인합니다.",
+      label: "RC remaining flow is tracked in RC Progress.",
       value: analysisSummary.rcProgress.remainingIssues,
       tone:
         analysisSummary.rcProgress.remainingIssues > 0
@@ -111,16 +111,16 @@ export function AiExecutiveSummaryCard({
   ];
   const recommendationItems = [
     highRisk > 0
-      ? "상위 Remaining 이슈는 배포 전 재확인이 필요합니다."
-      : "상위 Remaining 이슈는 정기적으로 상태를 확인합니다.",
+      ? "Re-check top Remaining issues before release closure."
+      : "Keep monitoring top Remaining issues on a regular cadence.",
     blockedCount > 0
-      ? "Blocked 항목은 선행 이슈 해결 후 재검증이 필요합니다."
-      : "Blocked 항목은 보조 모니터링 대상으로 유지합니다.",
+      ? "Re-test Blocked items after upstream issues are resolved."
+      : "Keep Blocked items as a monitoring bucket.",
     nextEventCount > 0
-      ? "Next Event 항목은 후속 일정에서 별도 관리하는 것이 좋습니다."
-      : "Next Event가 추가되면 후속 확인 대상으로 분리합니다.",
+      ? "Track Next Event items separately as follow-up work."
+      : "Separate any new Next Event items as follow-up work.",
     analysisSummary.qaFollowUps[0] ??
-      "QA Comment / Follow-up 원문은 Detailed QA Data에서 확인합니다.",
+      "Review raw QA comments in Detailed QA Data when needed.",
   ];
   const evidenceItems = [
     {
@@ -138,17 +138,17 @@ export function AiExecutiveSummaryCard({
 
   if (!hasAnalysis && !isLoading) {
     return (
-      <section className="min-w-0 rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
+      <section className="min-w-0 rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/60 p-5 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
               AI Executive Summary
             </p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-              AI 기반 QA 요약
+              AI QA Summary
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              AI Analysis를 생성하면 QA 데이터 기반 요약을 확인할 수 있습니다.
+              Generate AI Analysis to view a QA data based release summary.
             </p>
           </div>
           <button
@@ -156,7 +156,7 @@ export function AiExecutiveSummaryCard({
             onClick={onAnalyze}
             className="w-fit rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
           >
-            AI Analysis 생성
+            Generate AI Analysis
           </button>
         </div>
       </section>
@@ -164,23 +164,23 @@ export function AiExecutiveSummaryCard({
   }
 
   return (
-    <section className="min-w-0 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/90 via-violet-50/70 to-white p-5 shadow-lg shadow-indigo-100/70 sm:p-6">
+    <section className="min-w-0 rounded-[2rem] border border-indigo-200 bg-gradient-to-br from-indigo-100/80 via-violet-50 to-white p-5 shadow-xl shadow-indigo-100/70 sm:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-bold text-white">
-              AI
+            <span className="grid size-8 place-items-center rounded-full bg-indigo-600 text-sm font-black text-white">
+              ai
             </span>
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
               AI Executive Summary
             </p>
           </div>
           <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
-            결론 중심 QA Release 요약
+            AI Generated Release Analysis
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            QA 데이터와 Jira 이슈를 기반으로 결론, 리스크, 후속 확인,
-            근거 데이터를 순서대로 정리합니다.
+            Conclusion, risk signals, follow-up direction, and evidence sources
+            are organized from the current QA and Jira data.
           </p>
         </div>
         <button
@@ -189,20 +189,20 @@ export function AiExecutiveSummaryCard({
           disabled={isLoading}
           className="w-fit rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Analyzing..." : "AI Analysis 다시 생성"}
+          {isLoading ? "Analyzing..." : "Regenerate AI Analysis"}
         </button>
       </div>
 
       {isLoading ? (
-        <p className="mt-5 rounded-2xl border border-indigo-100 bg-white/80 p-4 text-sm leading-6 text-slate-500">
-          AI Analysis 생성 중...
+        <p className="mt-5 rounded-2xl border border-indigo-100 bg-white/85 p-4 text-sm leading-6 text-slate-500">
+          Generating AI Analysis...
         </p>
       ) : (
         <>
-          <div className="mt-5 grid overflow-hidden rounded-3xl border border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-4">
+          <div className="mt-5 grid overflow-hidden rounded-3xl border border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                AI 종합 진단
+                AI Overall Diagnosis
               </p>
               <span
                 className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ring-1 ${
@@ -215,8 +215,8 @@ export function AiExecutiveSummaryCard({
                 {conclusionText}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-2xl bg-slate-50 px-3 py-2">
-                  <p className="text-slate-500">Pass Rate</p>
+                <div className="rounded-2xl bg-indigo-50 px-3 py-2">
+                  <p className="text-indigo-500">Pass Rate</p>
                   <p className="mt-1 text-lg font-bold text-slate-950">
                     {metrics.passRate}%
                   </p>
@@ -273,7 +273,7 @@ export function AiExecutiveSummaryCard({
                 Evidence Sources
               </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                이번 리포트에 사용된 QA / Jira 데이터 기준입니다.
+                Data used for this QA / Jira report.
               </p>
               <dl className="mt-4 space-y-3">
                 {evidenceItems.map((item) => (
@@ -289,8 +289,8 @@ export function AiExecutiveSummaryCard({
                 ))}
               </dl>
               <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-700">
-                Medium {mediumRisk.toLocaleString()} · Low{" "}
-                {lowRisk.toLocaleString()} · Next Event{" "}
+                Medium {mediumRisk.toLocaleString()} / Low{" "}
+                {lowRisk.toLocaleString()} / Next Event{" "}
                 {nextEventCount.toLocaleString()}
               </div>
             </div>
@@ -303,7 +303,7 @@ export function AiExecutiveSummaryCard({
                 onClick={() => setIsDetailOpen((value) => !value)}
                 className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300"
               >
-                {isDetailOpen ? "AI 요약 접기" : "AI 요약 상세보기"}
+                {isDetailOpen ? "Hide full AI summary" : "View full AI summary"}
               </button>
               {isDetailOpen && (
                 <div className="mt-4 space-y-4 rounded-2xl border border-indigo-100 bg-white p-4 text-[15px] leading-8 text-slate-700">

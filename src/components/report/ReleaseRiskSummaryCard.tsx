@@ -43,10 +43,10 @@ export function ReleaseRiskSummaryCard({
   const lowRisk = low + lowest;
   const riskMessage =
     highRisk > 0
-      ? "High / Highest Remaining 이슈가 남아 있어 배포 전 후속 확인이 필요합니다."
+      ? "High / Highest Remaining issues need release follow-up."
       : medium > 0 || blocked > 0
-        ? "Medium Remaining 또는 Blocked 항목을 중심으로 추가 확인이 필요합니다."
-        : "상단 리스크 지표 기준 주요 위험 신호가 크지 않습니다.";
+        ? "Medium Remaining or Blocked items need review."
+        : "No major risk signal is visible in the top risk metrics.";
   const conclusionClass =
     highRisk > 0
       ? "border-red-200 bg-red-50 text-red-700"
@@ -84,21 +84,24 @@ export function ReleaseRiskSummaryCard({
   ];
 
   return (
-    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
-          Release Risk
-        </p>
-        <h2 className="text-xl font-bold tracking-tight text-slate-950">
-          Release Risk Summary
-        </h2>
-        <p className="text-sm leading-6 text-slate-500">
-          Remaining 우선순위와 QA 진행 상태를 기준으로 배포 전 확인 포인트를
-          요약합니다.
-        </p>
+    <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
+            Release Risk
+          </p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
+            Release Risk Summary
+          </h2>
+        </div>
+        <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+          Total {remainingTotal}
+        </span>
       </div>
 
-      <p className={`mt-4 rounded-2xl border px-3 py-3 text-sm font-semibold leading-6 ${conclusionClass}`}>
+      <p
+        className={`mt-4 rounded-2xl border px-3 py-3 text-sm font-semibold leading-6 ${conclusionClass}`}
+      >
         {riskMessage}
       </p>
 
@@ -128,10 +131,9 @@ export function ReleaseRiskSummaryCard({
         ))}
       </div>
 
-      <p className="mt-3 text-xs leading-5 text-slate-400">
-        Remaining Total {remainingTotal.toLocaleString()} · Reopened{" "}
-        {reopened.toLocaleString()} · Next Event는 현재 릴리즈 실패가 아닌 후속
-        확인 항목입니다.
+      <p className="mt-auto pt-3 text-xs leading-5 text-slate-400">
+        Reopened {reopened.toLocaleString()} / Next Event is tracked as
+        follow-up, not as direct release failure.
       </p>
     </section>
   );

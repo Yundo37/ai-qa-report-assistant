@@ -32,7 +32,7 @@ export function RemainingIssuesDashboardCard({
   const hiddenIssueCount = Math.max(issues.length - representativeIssues.length, 0);
 
   return (
-    <section className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
@@ -49,7 +49,7 @@ export function RemainingIssuesDashboardCard({
 
       {issues.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          현재 남아있는 Remaining Issue가 없습니다.
+          No Remaining Issue is currently open.
         </p>
       ) : (
         <>
@@ -122,8 +122,7 @@ export function RemainingIssuesDashboardCard({
 
           {hiddenIssueCount > 0 && (
             <p className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-500">
-              추가 Remaining Issue {hiddenIssueCount}개는 Detailed QA Data에서
-              확인할 수 있습니다.
+              + {hiddenIssueCount} more Remaining Issue(s) in Detailed QA Data.
             </p>
           )}
         </>
