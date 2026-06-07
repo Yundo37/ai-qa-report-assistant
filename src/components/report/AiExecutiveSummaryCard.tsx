@@ -17,10 +17,10 @@ const STATUS_BADGE_CLASS = {
   risk: "bg-red-50 text-red-700 ring-red-100",
 };
 
-function getPriorityTone(priority: "High" | "Medium" | "Low") {
-  if (priority === "High") return "border-red-100 bg-red-50 text-red-700";
-  if (priority === "Medium") return "border-amber-100 bg-amber-50 text-amber-700";
-  return "border-emerald-100 bg-emerald-50 text-emerald-700";
+function priorityBadgeClass(tone: "High" | "Medium" | "Low") {
+  if (tone === "High") return "bg-red-50 text-red-700";
+  if (tone === "Medium") return "bg-amber-50 text-amber-700";
+  return "bg-emerald-50 text-emerald-700";
 }
 
 export function AiExecutiveSummaryCard({
@@ -40,11 +40,6 @@ export function AiExecutiveSummaryCard({
     analysisSummary.qaIssueOverview?.remaining?.prioritySummary;
   const highRisk =
     (remainingPriority?.Highest ?? 0) + (remainingPriority?.High ?? 0);
-  const mediumRisk = remainingPriority?.Medium ?? 0;
-  const lowRisk =
-    (remainingPriority?.Low ?? 0) + (remainingPriority?.Lowest ?? 0);
-  const failCount =
-    analysisSummary.overallQaSummary?.Fail ?? analysisSummary.qaTotal.Fail ?? 0;
   const blockedCount =
     analysisSummary.overallQaSummary?.Blocked ??
     analysisSummary.qaTotal.Blocked ??
@@ -53,16 +48,52 @@ export function AiExecutiveSummaryCard({
     analysisSummary.overallQaSummary?.NextEvent ??
     analysisSummary.qaTotal.NextEvent ??
     0;
-  const followUps = analysisSummary.qaFollowUps.slice(0, 3);
-  const insightItems = [
-    `Pass Rate ${metrics.passRate}% 기준으로 전체 TC 흐름을 확인합니다.`,
-    `Fail ${failCount.toLocaleString()}건, Blocked ${blockedCount.toLocaleString()}건이 집계되었습니다.`,
-    `Remaining ${metrics.remaining.toLocaleString()}건 중 High / Highest ${metrics.highRisk.toLocaleString()}건을 우선 확인합니다.`,
-  ];
+  const features =
+    analysisSummary.overallTestSheets?.length || analysisSummary.testSheets.length;
+  const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 2);
   const riskItems = [
-    { label: "High / Highest", value: highRisk, tone: "High" as const },
-    { label: "Medium", value: mediumRisk, tone: "Medium" as const },
-    { label: "Low / Lowest", value: lowRisk, tone: "Low" as const },
+    {
+      label: "High / Highest Remaining",
+      value: highRisk,
+      tone: "High" as const,
+    },
+    { label: "Blocked TC", value: blockedCount, tone: "Medium" as const },
+    {
+      label: patternItems[0]?.name ?? "반복 이슈 패턴",
+      value: patternItems[0]?.count ?? 0,
+      tone: "Medium" as const,
+    },
+    {
+      label: "RC Remaining",
+      value: analysisSummary.rcProgress.remainingIssues,
+      tone: "Low" as const,
+    },
+  ];
+  const recommendationItems = [
+    highRisk > 0
+      ? "High / Highest Remaining 이슈를 우선 확인합니다."
+      : "상위 Remaining 이슈 상태를 정기적으로 확인합니다.",
+    blockedCount > 0
+      ? "Blocked TC 원인과 담당 액션을 재확인합니다."
+      : "Blocked TC는 현재 보조 모니터링 항목으로 관리합니다.",
+    nextEventCount > 0
+      ? "Next Event 항목은 후속 일정과 재확인 기준을 정리합니다."
+      : "Next Event 항목이 추가될 경우 후속 확인 대상으로 관리합니다.",
+    analysisSummary.qaFollowUps[0] ??
+      "QA Comment / Follow-up 항목은 Detailed QA Data에서 함께 확인합니다.",
+  ];
+  const evidenceItems = [
+    {
+      label: "Test Cases",
+      value:
+        analysisSummary.overallQaSummary?.Total ??
+        analysisSummary.qaTotal.Total ??
+        0,
+    },
+    { label: "Jira Issues", value: analysisSummary.jiraMatchedRows },
+    { label: "Features", value: features },
+    { label: "RC Versions", value: analysisSummary.rcProgress.items.length },
+    { label: "Data Sources", value: analysisSummary.testSheets.length + 1 },
   ];
 
   if (!hasAnalysis && !isLoading) {
@@ -93,7 +124,7 @@ export function AiExecutiveSummaryCard({
   }
 
   return (
-    <section className="min-w-0 rounded-3xl border border-indigo-200 bg-gradient-to-br from-white via-white to-violet-50/80 p-5 shadow-sm sm:p-6">
+    <section className="min-w-0 rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-violet-50/60 to-white p-5 shadow-md shadow-indigo-100/70 sm:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -127,130 +158,96 @@ export function AiExecutiveSummaryCard({
         </p>
       ) : (
         <>
-          <div className="mt-5 grid gap-4 xl:grid-cols-[250px_minmax(0,1fr)]">
-            <div className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
+          <div className="mt-5 grid overflow-hidden rounded-3xl border border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-4">
+            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                Overall QA 상태
+                AI 종합 진단
               </p>
-              <div className="mt-4 flex items-center gap-4">
+              <span
+                className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ring-1 ${
+                  STATUS_BADGE_CLASS[metrics.status.tone]
+                }`}
+              >
+                {metrics.status.label}
+              </span>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {metrics.status.description}
+              </p>
+              <div className="mt-5 grid place-items-center">
                 <div
-                  className="grid size-24 place-items-center rounded-full"
+                  className="grid size-28 place-items-center rounded-full"
                   style={{
-                    background: `conic-gradient(#4f46e5 ${metrics.passRate}%, #e2e8f0 0)`,
+                    background: `conic-gradient(#7c3aed ${metrics.passRate}%, #e2e8f0 0)`,
                   }}
                 >
-                  <div className="grid size-16 place-items-center rounded-full bg-white text-center">
-                    <span className="text-lg font-bold text-slate-950">
+                  <div className="grid size-20 place-items-center rounded-full bg-white text-center">
+                    <span className="text-xl font-bold text-slate-950">
                       {metrics.passRate}%
                     </span>
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ring-1 ${
-                      STATUS_BADGE_CLASS[metrics.status.tone]
-                    }`}
-                  >
-                    {metrics.status.label}
-                  </span>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">
-                    {metrics.status.description}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl bg-indigo-50 px-3 py-2">
-                  <p className="text-[11px] font-semibold text-indigo-600">
-                    Remaining
-                  </p>
-                  <p className="mt-1 text-lg font-bold text-indigo-900">
-                    {metrics.remaining.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-red-50 px-3 py-2">
-                  <p className="text-[11px] font-semibold text-red-600">
-                    High Risk
-                  </p>
-                  <p className="mt-1 text-lg font-bold text-red-700">
-                    {metrics.highRisk.toLocaleString()}
-                  </p>
-                </div>
               </div>
             </div>
 
-            <div className="grid gap-3">
-              <div className="grid gap-3 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Key QA Insight
-                  </p>
-                  <ul className="mt-3 space-y-2">
-                    {insightItems.map((item) => (
-                      <li
-                        key={item}
-                        className="rounded-xl bg-slate-50 px-3 py-2 text-sm leading-5 text-slate-700"
-                      >
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                AI Risk Detection
+              </p>
+              <ul className="mt-4 space-y-3">
+                {riskItems.map((item) => (
+                  <li
+                    key={item.label}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="min-w-0 truncate text-slate-700">
+                      {item.label}
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadgeClass(
+                        item.tone
+                      )}`}
+                    >
+                      {item.value.toLocaleString()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Remaining Risk Summary
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {riskItems.map((item) => (
-                      <div
-                        key={item.label}
-                        className={`rounded-xl border px-3 py-2 ${getPriorityTone(
-                          item.tone
-                        )}`}
-                      >
-                        <p className="truncate text-[11px] font-semibold">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-lg font-bold">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-xl bg-orange-50 px-3 py-2 text-orange-700">
-                      <p className="text-[11px] font-semibold">Blocked</p>
-                      <p className="mt-1 text-base font-bold">{blockedCount}</p>
-                    </div>
-                    <div className="rounded-xl bg-indigo-50 px-3 py-2 text-indigo-700">
-                      <p className="text-[11px] font-semibold">Next Event</p>
-                      <p className="mt-1 text-base font-bold">
-                        {nextEventCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                AI Recommendation
+              </p>
+              <ul className="mt-4 space-y-3">
+                {recommendationItems.map((item) => (
+                  <li key={item} className="flex gap-2 text-sm leading-5">
+                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-indigo-500" />
+                    <span className="line-clamp-2 text-slate-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Follow-up / Monitoring
-                </p>
-                {followUps.length > 0 ? (
-                  <ul className="mt-3 grid gap-2 md:grid-cols-3">
-                    {followUps.map((followUp) => (
-                      <li
-                        key={followUp}
-                        className="min-w-0 rounded-xl bg-slate-50 px-3 py-2 text-sm leading-5 text-slate-700"
-                      >
-                        <span className="line-clamp-2">{followUp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-500">
-                    후속 확인 항목이 없습니다.
-                  </p>
-                )}
-              </div>
+            <div className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Evidence Sources
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                이번 리포트에 사용된 QA / Jira 데이터 기준입니다.
+              </p>
+              <dl className="mt-4 space-y-3">
+                {evidenceItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <dt className="text-sm text-slate-500">{item.label}</dt>
+                    <dd className="text-sm font-bold text-slate-950">
+                      {item.value.toLocaleString()}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           </div>
 

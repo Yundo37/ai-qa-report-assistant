@@ -39,7 +39,7 @@ export function FeatureQaSummaryTable({
       rows: sheet.rows,
       summary: toOverallSummary(sheet.summary),
     }));
-  const visibleRows = rows.slice(0, 8);
+  const visibleRows = rows.slice(0, 6);
   const hiddenCount = Math.max(rows.length - visibleRows.length, 0);
 
   return (
@@ -59,75 +59,42 @@ export function FeatureQaSummaryTable({
       </div>
 
       {rows.length > 0 ? (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+          <div className="grid grid-cols-[minmax(0,1fr)_54px_54px_58px_56px] bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-500">
+            <span>Feature</span>
+            <span>Total</span>
+            <span>Pass</span>
+            <span>Remain</span>
+            <span>Risk</span>
+          </div>
           {visibleRows.map((row) => {
             const passRate = calculatePassRate(row.summary);
-            const status =
-              row.summary.Fail > 0 || row.summary.Blocked > 0
-                ? "주의"
-                : "안정";
+            const remaining = row.summary.Fail + row.summary.Blocked + row.summary.NextEvent;
+            const highRisk = row.summary.Fail + row.summary.Blocked;
 
             return (
-              <article
+              <div
                 key={row.title}
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                className="grid grid-cols-[minmax(0,1fr)_54px_54px_58px_56px] items-center border-t border-slate-100 px-3 py-2 text-xs"
               >
-                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-950">
-                        {row.title}
-                      </p>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                          status === "안정"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-indigo-500"
-                        style={{ width: `${passRate}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <dl className="grid grid-cols-4 gap-2 text-xs xl:min-w-[260px]">
-                    <div>
-                      <dt className="text-slate-400">Pass</dt>
-                      <dd className="mt-1 font-bold text-slate-950">
-                        {passRate}%
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400">Fail</dt>
-                      <dd className="mt-1 font-bold text-red-700">
-                        {row.summary.Fail}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400">Blocked</dt>
-                      <dd className="mt-1 font-bold text-amber-700">
-                        {row.summary.Blocked}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-slate-400">Next</dt>
-                      <dd className="mt-1 font-bold text-indigo-700">
-                        {row.summary.NextEvent}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-              </article>
+                <span className="truncate font-semibold text-slate-950">
+                  {row.title}
+                </span>
+                <span className="font-semibold text-slate-700">
+                  {row.summary.Total || row.rows}
+                </span>
+                <span className="font-semibold text-indigo-700">
+                  {passRate}%
+                </span>
+                <span className="font-semibold text-amber-700">
+                  {remaining}
+                </span>
+                <span className="font-semibold text-red-700">{highRisk}</span>
+              </div>
             );
           })}
           {hiddenCount > 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500">
+            <div className="border-t border-slate-100 bg-white px-4 py-3 text-sm text-slate-500">
               추가 Feature {hiddenCount}개는 Detailed QA Data에서 확인할 수
               있습니다.
             </div>

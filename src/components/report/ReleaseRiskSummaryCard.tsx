@@ -100,32 +100,43 @@ export function ReleaseRiskSummaryCard({
         </p>
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <div className={`rounded-3xl border p-5 shadow-sm ${highRiskCardClass}`}>
-          <p className="text-xs font-semibold uppercase tracking-wide">
-            High / Highest
-          </p>
-          <p className="mt-3 text-5xl font-bold">{highRisk}</p>
-          <p className="mt-3 text-sm leading-6">{riskMessage}</p>
+      <div className="mt-5 space-y-3">
+        <div className="grid grid-cols-3 gap-2">
+          <div className={`rounded-2xl border px-3 py-3 ${highRiskCardClass}`}>
+            <p className="truncate text-xs font-semibold">High / Highest</p>
+            <p className="mt-2 text-3xl font-bold">{highRisk}</p>
+          </div>
+          <div className="rounded-2xl bg-amber-50 px-3 py-3 text-amber-700">
+            <p className="truncate text-xs font-semibold">Medium</p>
+            <p className="mt-2 text-3xl font-bold">{medium}</p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 px-3 py-3 text-emerald-700">
+            <p className="truncate text-xs font-semibold">Low</p>
+            <p className="mt-2 text-3xl font-bold">{low + lowest}</p>
+          </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {supportItems.map((item) => (
-            <div
-              key={item.label}
-              className={`min-w-0 rounded-2xl px-3 py-3 ${item.className}`}
-            >
-              <p className="truncate text-xs font-semibold opacity-80">
-                {item.label}
-              </p>
-              <p className="mt-2 text-2xl font-bold">{item.value}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-3 gap-2">
+          {supportItems
+            .filter((item) =>
+              ["Remaining Total", "Blocked", "Next Event"].includes(item.label)
+            )
+            .map((item) => (
+              <div
+                key={item.label}
+                className={`min-w-0 rounded-2xl px-3 py-2.5 ${item.className}`}
+              >
+                <p className="truncate text-[11px] font-semibold opacity-80">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-xl font-bold">{item.value}</p>
+              </div>
+            ))}
         </div>
       </div>
 
-      <p className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs leading-5 text-indigo-700">
-        Next Event는 현재 릴리즈 실패가 아닌 후속 확인 항목입니다.
+      <p className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs leading-5 text-indigo-700">
+        {riskMessage} Next Event는 후속 확인 항목입니다.
       </p>
     </section>
   );
