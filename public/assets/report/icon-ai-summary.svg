@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="optiona-summary-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="optiona-summary-riskg" x1="14" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F43F5E"/><stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="optiona-summary-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#optiona-summary-s)" stroke-linecap="round" stroke-linejoin="round">
+
+    <path d="M24.5 44.5C18.5 42.2 15 37.4 15 31.5C15 24.2 20.6 18.5 28 18.5C34.8 18.5 40 22.7 41.1 28.8C45.5 29.9 49 33.4 49 38C49 43.2 44.8 47 39.8 47H27.5" stroke="url(#optiona-summary-g)" stroke-width="3.3"/>
+    <path d="M29 24.5V39.5M35.5 25.8V39.5M23.5 31.5h17.5M25 38h13" stroke="#475569" stroke-opacity="0.72" stroke-width="2.6"/>
+    <path d="M47.5 17.5h8m-4-4v8M15.5 15.5h5m-2.5-2.5v5" stroke="#8B5CF6" stroke-width="2.3"/>
+
+  </g>
+</svg>

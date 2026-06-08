@@ -508,6 +508,7 @@ export default function Home() {
   const [message, setMessage] = useState<MessageState>(null);
   const [analysisSummary, setAnalysisSummary] =
     useState<AnalysisSummaryState>(null);
+  const [reportGeneratedAt, setReportGeneratedAt] = useState("");
   const [isInputDashboardVisible, setIsInputDashboardVisible] = useState(true);
   const [testSheetMetadataList, setTestSheetMetadataList] = useState<
     Array<SpreadsheetInfo | null>
@@ -581,6 +582,7 @@ export default function Home() {
   const resetReportState = () => {
     setMessage(null);
     setAnalysisSummary(null);
+    setReportGeneratedAt("");
     setIsInputDashboardVisible(true);
     clearAiAnalysisResult();
     setResultSheetMessage(null);
@@ -1245,6 +1247,15 @@ export default function Home() {
         console.log("Analysis Summary Payload Before setAnalysisSummary:", nextAnalysisSummary);
         hasNoMatchingJiraIssues = filteredJiraIssues.length === 0;
 
+        setReportGeneratedAt(
+          new Intl.DateTimeFormat("ko-KR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date())
+        );
         setAnalysisSummary(nextAnalysisSummary);
         setIsInputDashboardVisible(false);
       }
@@ -1416,6 +1427,7 @@ export default function Home() {
       resultSheetUrl={resultSheetUrl}
       reportScopeText={reportScopeText}
       reportPeriodText={reportPeriodText}
+      generatedAtText={reportGeneratedAt}
       isInputDashboardVisible={isInputDashboardVisible}
       onShowInputDashboard={() => setIsInputDashboardVisible(true)}
       onHideInputDashboard={() => setIsInputDashboardVisible(false)}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="risk-note-mini-primary" x1="4" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="0.52" stop-color="#6D5EF6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="risk-note-mini-accent" x1="5" y1="4" x2="20" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#6D5EF6"/>
+    </linearGradient>
+    <filter id="risk-note-mini-shadow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1.6" flood-color="#4F46E5" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect x="1.75" y="1.75" width="20.5" height="20.5" rx="7" fill="#F8FAFC" fill-opacity="0.82"/>
+  <g filter="url(#risk-note-mini-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.25 5.7H14.7L17.25 8.25V17.8C17.25 18.65 16.58 19.3 15.73 19.3H7.25C6.4 19.3 5.75 18.65 5.75 17.8V7.2C5.75 6.35 6.4 5.7 7.25 5.7Z" fill="white" fill-opacity="0.78" stroke="url(#risk-note-mini-primary)" stroke-width="1.55"/>
+    <path d="M14.65 5.85V8.35H17.05" stroke="url(#risk-note-mini-primary)" stroke-width="1.35"/>
+    <path d="M8.7 11.2H15.1" stroke="#64748B" stroke-opacity="0.62" stroke-width="1.15"/>
+    <path d="M8.7 14.25H13.75" stroke="#64748B" stroke-opacity="0.48" stroke-width="1.15"/>
+    <circle cx="7" cy="6.8" r="1.35" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="0.9"/>
+    <path d="M17.5 17.7C18.1 17.3 18.55 16.75 18.85 16.05" stroke="#38BDF8" stroke-opacity="0.7" stroke-width="1.05"/>
+  </g>
+</svg>

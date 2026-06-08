@@ -16,6 +16,9 @@ type OverallReportDashboardProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   reportScopeText: string;
   reportPeriodText: string;
+  reportVersionText: string;
+  reportRcText: string;
+  generatedAtText: string;
   aiAnalysisText: string;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
@@ -30,6 +33,9 @@ export function OverallReportDashboard({
   analysisSummary,
   reportScopeText,
   reportPeriodText,
+  reportVersionText,
+  reportRcText,
+  generatedAtText,
   aiAnalysisText,
   isAiAnalyzing,
   onAnalyze,
@@ -45,6 +51,9 @@ export function OverallReportDashboard({
         analysisSummary={analysisSummary}
         reportScopeText={reportScopeText}
         reportPeriodText={reportPeriodText}
+        reportVersionText={reportVersionText}
+        reportRcText={reportRcText}
+        generatedAtText={generatedAtText}
         onCreateResultSheet={onCreateResultSheet}
         isCreatingResultSheet={isCreatingResultSheet}
         resultSheetMessage={resultSheetMessage}

@@ -23,6 +23,7 @@ type ReportAssistantPageViewProps = ReportInputPanelProps & {
   resultSheetUrl: string;
   reportScopeText: string;
   reportPeriodText: string;
+  generatedAtText: string;
   isInputDashboardVisible: boolean;
   onShowInputDashboard: () => void;
   onHideInputDashboard: () => void;
@@ -40,6 +41,7 @@ export function ReportAssistantPageView({
   resultSheetUrl,
   reportScopeText,
   reportPeriodText,
+  generatedAtText,
   isInputDashboardVisible,
   onShowInputDashboard,
   onHideInputDashboard,
@@ -90,6 +92,9 @@ export function ReportAssistantPageView({
             resultSheetUrl={resultSheetUrl}
             reportScopeText={reportScopeText}
             reportPeriodText={reportPeriodText}
+            reportVersionText={reportInputPanelProps.reportVersion}
+            reportRcText={reportInputPanelProps.reportRcVersion}
+            generatedAtText={generatedAtText}
           />
         )}
         <AppFooter />

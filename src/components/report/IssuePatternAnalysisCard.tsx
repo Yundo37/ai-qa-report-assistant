@@ -1,3 +1,4 @@
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState } from "@/types/report";
 
 function DistributionBars({
@@ -136,13 +137,20 @@ export function IssuePatternAnalysisCard({
 
           <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 to-white p-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-950">
-                  Pattern Evidence Chart
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Distribution based on actual sourceTypes and versions.
-                </p>
+              <div className="flex min-w-0 items-start gap-3">
+                <ReportAssetSlot
+                  type="pattern"
+                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-5"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-950">
+                    Pattern Evidence Chart
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Distribution based on actual sourceTypes and versions.
+                  </p>
+                </div>
               </div>
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-700">
                 Evidence based
@@ -150,14 +158,19 @@ export function IssuePatternAnalysisCard({
             </div>
 
             <div
-              className="mt-4 rounded-3xl border border-indigo-100 bg-white/80 p-4"
+              className="relative mt-4 overflow-hidden rounded-3xl border border-indigo-100 bg-white/80 p-4"
               style={{
                 backgroundImage:
                   "linear-gradient(to right, rgba(99,102,241,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(99,102,241,0.08) 1px, transparent 1px)",
                 backgroundSize: "32px 32px",
               }}
             >
-              <div className="grid gap-4 md:grid-cols-2">
+              <ReportAssetSlot
+                type="pattern"
+                className="pointer-events-none absolute -right-3 top-2 h-28 w-56 rounded-3xl bg-transparent bg-none opacity-25 shadow-none"
+                imageClassName="size-full p-1"
+              />
+              <div className="relative z-10 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Source Type

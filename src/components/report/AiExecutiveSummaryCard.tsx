@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createOverallDashboardMetrics } from "@/components/report/reportDashboardUtils";
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState } from "@/types/report";
 
 type AiExecutiveSummaryCardProps = {
@@ -135,6 +136,33 @@ export function AiExecutiveSummaryCard({
     { label: "RC Versions", value: analysisSummary.rcProgress.items.length },
     { label: "Data Sources", value: analysisSummary.testSheets.length + 1 },
   ];
+  const metricStripItems = [
+    {
+      label: "Total Test Cases",
+      value: evidenceItems[0].value,
+      slotType: "metric-test-cases" as const,
+    },
+    {
+      label: "Jira Issues",
+      value: evidenceItems[1].value,
+      slotType: "metric-jira-issues" as const,
+    },
+    {
+      label: "Features",
+      value: evidenceItems[2].value,
+      slotType: "metric-features" as const,
+    },
+    {
+      label: "RC Versions",
+      value: evidenceItems[3].value,
+      slotType: "metric-rc-versions" as const,
+    },
+    {
+      label: "Data Sources",
+      value: evidenceItems[4].value,
+      slotType: "metric-data-sources" as const,
+    },
+  ];
 
   if (!hasAnalysis && !isLoading) {
     return (
@@ -201,9 +229,16 @@ export function AiExecutiveSummaryCard({
         <>
           <div className="mt-5 grid overflow-hidden rounded-3xl border border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                AI Overall Diagnosis
-              </p>
+              <div className="flex items-center gap-3">
+                <ReportAssetSlot
+                  type="ai-summary"
+                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-5"
+                />
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+                  AI Overall Diagnosis
+                </p>
+              </div>
               <span
                 className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ring-1 ${
                   STATUS_BADGE_CLASS[metrics.status.tone]
@@ -231,9 +266,16 @@ export function AiExecutiveSummaryCard({
             </div>
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                AI Risk Detection
-              </p>
+              <div className="flex items-center gap-3">
+                <ReportAssetSlot
+                  type="risk"
+                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-red-100"
+                  imageClassName="size-5"
+                />
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                  AI Risk Detection
+                </p>
+              </div>
               <ul className="mt-4 space-y-3">
                 {riskItems.map((item) => (
                   <li key={item.label} className="text-sm">
@@ -255,9 +297,16 @@ export function AiExecutiveSummaryCard({
             </div>
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                AI Recommendation
-              </p>
+              <div className="flex items-center gap-3">
+                <ReportAssetSlot
+                  type="recommendation"
+                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-5"
+                />
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                  AI Recommendation
+                </p>
+              </div>
               <ul className="mt-4 space-y-3">
                 {recommendationItems.map((item) => (
                   <li key={item} className="flex gap-2 text-sm leading-5">
@@ -269,9 +318,16 @@ export function AiExecutiveSummaryCard({
             </div>
 
             <div className="p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                Evidence Sources
-              </p>
+              <div className="flex items-center gap-3">
+                <ReportAssetSlot
+                  type="evidence"
+                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-violet-100"
+                  imageClassName="size-5"
+                />
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                  Evidence Sources
+                </p>
+              </div>
               <p className="mt-2 text-xs leading-5 text-slate-500">
                 Data used for this QA / Jira report.
               </p>
@@ -281,7 +337,10 @@ export function AiExecutiveSummaryCard({
                     key={item.label}
                     className="flex items-center justify-between gap-3"
                   >
-                    <dt className="text-sm text-slate-500">{item.label}</dt>
+                    <dt className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
+                      <span className="size-1.5 shrink-0 rounded-full bg-violet-300" />
+                      <span className="truncate">{item.label}</span>
+                    </dt>
                     <dd className="text-sm font-bold text-slate-950">
                       {item.value.toLocaleString()}
                     </dd>
@@ -294,6 +353,29 @@ export function AiExecutiveSummaryCard({
                 {nextEventCount.toLocaleString()}
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 rounded-3xl border border-indigo-100 bg-white/80 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+            {metricStripItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex min-w-0 items-center gap-3 rounded-2xl bg-indigo-50/50 px-3 py-2"
+              >
+                <ReportAssetSlot
+                  type={item.slotType}
+                  className="size-8 rounded-xl bg-white/85 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-5"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-0.5 text-base font-bold text-slate-950">
+                    {item.value.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
 
           {hasAnalysis && (

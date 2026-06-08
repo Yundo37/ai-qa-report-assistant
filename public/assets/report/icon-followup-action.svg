@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="optiona-follow-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="optiona-follow-riskg" x1="14" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F43F5E"/><stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="optiona-follow-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#optiona-follow-s)" stroke-linecap="round" stroke-linejoin="round">
+
+    <rect x="16" y="15" width="32" height="38" rx="10" stroke="url(#optiona-follow-g)" stroke-width="3.2"/>
+    <path d="M24 27h16M24 35h10" stroke="#475569" stroke-opacity="0.65" stroke-width="2.5"/>
+    <circle cx="24" cy="44" r="2.8" fill="#6D5EF6"/>
+    <path d="M31 44h7" stroke="#475569" stroke-opacity="0.55" stroke-width="2.5"/>
+    <circle cx="45" cy="43" r="7.5" stroke="#8B5CF6" stroke-width="2.6"/>
+    <path d="M45 39.5v4.2l3.2 1.8" stroke="#8B5CF6" stroke-width="2.3"/>
+
+  </g>
+</svg>

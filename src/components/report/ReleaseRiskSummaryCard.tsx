@@ -1,3 +1,4 @@
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState, RemainingIssue } from "@/types/report";
 
 function countByPriority(issues: RemainingIssue[]) {
@@ -75,11 +76,13 @@ export function ReleaseRiskSummaryCard({
       label: "Blocked",
       value: blocked,
       className: "bg-orange-50 text-orange-700",
+      slotType: "risk-blocked" as const,
     },
     {
       label: "Next Event",
       value: nextEvent,
       className: "bg-indigo-50 text-indigo-700",
+      slotType: "risk-next-event" as const,
     },
   ];
 
@@ -123,18 +126,32 @@ export function ReleaseRiskSummaryCard({
             key={item.label}
             className={`min-w-0 rounded-2xl px-3 py-2.5 ${item.className}`}
           >
-            <p className="truncate text-[11px] font-semibold opacity-80">
-              {item.label}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-[11px] font-semibold opacity-80">
+                {item.label}
+              </p>
+              <ReportAssetSlot
+                type={item.slotType}
+                className="size-6 rounded-lg bg-white/75 bg-none shadow-sm ring-1 ring-white/80"
+                imageClassName="size-4"
+              />
+            </div>
             <p className="mt-1 text-xl font-bold">{item.value}</p>
           </div>
         ))}
       </div>
 
-      <p className="mt-auto pt-3 text-xs leading-5 text-slate-400">
-        Reopened {reopened.toLocaleString()} / Next Event is tracked as
-        follow-up, not as direct release failure.
-      </p>
+      <div className="mt-auto flex items-start gap-2 pt-3 text-xs leading-5 text-slate-400">
+        <ReportAssetSlot
+          type="risk-note"
+          className="mt-0.5 size-5 rounded-lg bg-violet-50 bg-none shadow-sm ring-1 ring-violet-100"
+          imageClassName="size-3.5"
+        />
+        <p>
+          Reopened {reopened.toLocaleString()} / Next Event is tracked as
+          follow-up, not as direct release failure.
+        </p>
+      </div>
     </section>
   );
 }

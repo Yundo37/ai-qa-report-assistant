@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" fill="none">
+
+  <defs>
+    <linearGradient id="optiona-hero-grad-main" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="0.48" stop-color="#6D5EF6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="optiona-hero-grad-soft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#EEF2FF" stop-opacity="0.76"/>
+    </linearGradient>
+    <linearGradient id="optiona-hero-grad-risk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F43F5E"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <radialGradient id="optiona-hero-glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.35"/>
+      <stop offset="0.55" stop-color="#6D5EF6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#6D5EF6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="optiona-hero-shadow" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#4F46E5" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#6D5EF6" flood-opacity="0.12"/>
+    </filter>
+    <filter id="optiona-hero-soft-shadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#4F46E5" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="640" height="360" fill="transparent"/>
+  <ellipse cx="328" cy="182" rx="220" ry="128" fill="url(#optiona-hero-glow)"/>
+  <path d="M118 222C180 108 454 70 526 184" stroke="#6D5EF6" stroke-opacity="0.20" stroke-width="2" stroke-linecap="round" stroke-dasharray="7 12"/>
+  <path d="M146 169C230 287 464 282 538 142" stroke="#38BDF8" stroke-opacity="0.18" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 14"/>
+  <g filter="url(#optiona-hero-shadow)">
+    <ellipse cx="320" cy="285" rx="112" ry="28" fill="#4F46E5" fill-opacity="0.10"/>
+    <path d="M320 102L411 154V252L320 304L229 252V154L320 102Z" fill="url(#optiona-hero-grad-soft)" stroke="#6D5EF6" stroke-opacity="0.25" stroke-width="2"/>
+    <path d="M320 102L411 154L320 205L229 154L320 102Z" fill="url(#optiona-hero-grad-main)" fill-opacity="0.88"/>
+    <path d="M229 154L320 205V304L229 252V154Z" fill="#4F46E5" fill-opacity="0.82"/>
+    <path d="M411 154L320 205V304L411 252V154Z" fill="#8B5CF6" fill-opacity="0.72"/>
+    <path d="M272 180L320 207L368 180" stroke="white" stroke-opacity="0.42" stroke-width="2" stroke-linecap="round"/>
+    <path d="M320 207V263" stroke="white" stroke-opacity="0.30" stroke-width="2" stroke-linecap="round"/>
+    <path d="M258 166L320 132L382 166" stroke="white" stroke-opacity="0.24" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="320" cy="204" r="12" fill="white" fill-opacity="0.22"/>
+    <circle cx="320" cy="204" r="4" fill="white" fill-opacity="0.86"/>
+  </g>
+  <g stroke="#6D5EF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.72">
+    <path d="M201 106h22m-11-11v22"/>
+    <path d="M482 100h18m-9-9v18" opacity="0.62"/>
+    <path d="M503 249h16m-8-8v16" opacity="0.55"/>
+  </g>
+  <g filter="url(#optiona-hero-soft-shadow)">
+    <circle cx="176" cy="211" r="7" fill="#6D5EF6" fill-opacity="0.85"/>
+    <circle cx="510" cy="183" r="8" fill="#38BDF8" fill-opacity="0.84"/>
+    <circle cx="444" cy="96" r="5" fill="#8B5CF6" fill-opacity="0.78"/>
+    <circle cx="226" cy="278" r="5" fill="#A78BFA" fill-opacity="0.74"/>
+    <path d="M176 211C214 193 236 176 263 158" stroke="#6D5EF6" stroke-opacity="0.24" stroke-width="2" stroke-linecap="round"/>
+    <path d="M378 131C402 113 421 102 444 96" stroke="#8B5CF6" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/>
+    <path d="M407 235C442 222 482 204 510 183" stroke="#38BDF8" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.48" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round">
+    <path d="M86 287h82"/>
+    <path d="M455 286h86"/>
+    <path d="M105 268h42"/>
+    <path d="M500 267h56"/>
+  </g>
+</svg>

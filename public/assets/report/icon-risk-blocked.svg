@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="risk-blocked-mini-primary" x1="4" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="0.52" stop-color="#6D5EF6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="risk-blocked-mini-accent" x1="5" y1="4" x2="20" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDBA74"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <filter id="risk-blocked-mini-shadow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1.6" flood-color="#4F46E5" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect x="1.75" y="1.75" width="20.5" height="20.5" rx="7" fill="#FFF7ED" fill-opacity="0.48"/>
+  <g filter="url(#risk-blocked-mini-shadow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.4 10.7V8.7C7.4 6.15 9.25 4.55 12 4.55C14.75 4.55 16.6 6.15 16.6 8.7V10.7" stroke="url(#risk-blocked-mini-primary)" stroke-width="1.75"/>
+    <rect x="5.65" y="9.75" width="12.7" height="9.3" rx="3.2" fill="white" fill-opacity="0.78" stroke="url(#risk-blocked-mini-primary)" stroke-width="1.75"/>
+    <path d="M10.25 13.15V15.75" stroke="url(#risk-blocked-mini-accent)" stroke-width="1.65"/>
+    <path d="M13.75 13.15V15.75" stroke="url(#risk-blocked-mini-accent)" stroke-width="1.65"/>
+    <path d="M8.55 10.35C9.25 9.9 10.55 9.65 12 9.65C13.45 9.65 14.75 9.9 15.45 10.35" stroke="white" stroke-opacity="0.75" stroke-width="0.9"/>
+    <circle cx="17.65" cy="7" r="1.65" fill="#FFF7ED" stroke="url(#risk-blocked-mini-accent)" stroke-width="1.15"/>
+  </g>
+</svg>

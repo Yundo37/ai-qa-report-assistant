@@ -1,44 +1,60 @@
 "use client";
 
-import { useMemo } from "react";
 import { MessagePanel } from "@/components/report/MessagePanel";
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState, MessageState } from "@/types/report";
 
 type ReportDashboardHeaderProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   reportScopeText: string;
   reportPeriodText: string;
+  reportVersionText: string;
+  reportRcText: string;
+  generatedAtText: string;
   onCreateResultSheet: () => void;
   isCreatingResultSheet: boolean;
   resultSheetMessage: MessageState;
   resultSheetUrl: string;
 };
 
+function stripRcFromVersion(value: string) {
+  return value
+    .replace(/\s+RC\s*\d+\b/gi, "")
+    .replace(/\s+\(.*?RC\s*\d+.*?\)/gi, "")
+    .trim();
+}
+
+function extractRc(value: string) {
+  const match = value.match(/\bRC\s*\d+\b/i);
+  return match ? match[0].replace(/\s+/g, "").toUpperCase() : "";
+}
+
 export function ReportDashboardHeader({
   analysisSummary,
   reportScopeText,
   reportPeriodText,
+  reportVersionText,
+  reportRcText,
+  generatedAtText,
   onCreateResultSheet,
   isCreatingResultSheet,
   resultSheetMessage,
   resultSheetUrl,
 }: ReportDashboardHeaderProps) {
-  const targetVersion =
-    analysisSummary.inferredTargetVersion || reportScopeText || "-";
+  const fallbackScope =
+    analysisSummary.inferredTargetVersion || reportScopeText || "";
+  const versionText =
+    reportVersionText.trim() || stripRcFromVersion(fallbackScope) || "-";
+  const rcLabel =
+    reportRcText.trim() ||
+    analysisSummary.rcProgress?.rcLabel ||
+    extractRc(fallbackScope) ||
+    "-";
   const scopeLabel = reportPeriodText ? "QA Period" : "Target Scope";
-  const scopeValue = reportPeriodText || reportScopeText || "-";
-  const rcLabel = analysisSummary.rcProgress?.rcLabel || "-";
-  const generatedAt = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date()),
-    []
-  );
+  const scopeValue =
+    reportPeriodText ||
+    [versionText, rcLabel === "-" ? "" : rcLabel].filter(Boolean).join(" ") ||
+    "-";
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/80 p-5 shadow-lg shadow-indigo-100/50 sm:p-6">
@@ -58,7 +74,7 @@ export function ReportDashboardHeader({
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
             Overall QA Result Report based on Google Spreadsheet QA data.
           </p>
-          <dl className="mt-5 grid gap-2 text-sm sm:grid-cols-3">
+          <dl className="mt-5 grid gap-2 text-sm sm:grid-cols-4">
             <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
               <dt className="text-xs font-medium text-slate-500">
                 {scopeLabel}
@@ -70,30 +86,26 @@ export function ReportDashboardHeader({
             <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
               <dt className="text-xs font-medium text-slate-500">Version</dt>
               <dd className="mt-1 truncate font-semibold text-slate-900">
-                {targetVersion}
+                {versionText}
+              </dd>
+            </div>
+            <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
+              <dt className="text-xs font-medium text-slate-500">RC</dt>
+              <dd className="mt-1 truncate font-semibold text-slate-900">
+                {rcLabel}
               </dd>
             </div>
             <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
               <dt className="text-xs font-medium text-slate-500">Generated</dt>
               <dd className="mt-1 truncate font-semibold text-slate-900">
-                {generatedAt}
+                {generatedAtText || "-"}
               </dd>
             </div>
           </dl>
         </div>
 
         <div className="rounded-[1.75rem] border border-indigo-100 bg-white/85 p-4 shadow-sm">
-          <div className="relative h-36 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-100 via-violet-100 to-white">
-            <div className="absolute inset-4 rounded-full border border-indigo-200/70" />
-            <div className="absolute inset-x-10 top-8 h-20 rounded-full border border-violet-200/70" />
-            <div className="absolute left-1/2 top-1/2 grid size-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 text-2xl font-black text-white shadow-xl shadow-indigo-300/70">
-              AI
-            </div>
-            <span className="absolute left-7 top-8 size-2 rounded-full bg-violet-500" />
-            <span className="absolute right-9 top-10 size-2 rounded-full bg-indigo-400" />
-            <span className="absolute bottom-9 left-12 size-1.5 rounded-full bg-indigo-300" />
-            <span className="absolute bottom-8 right-12 size-1.5 rounded-full bg-violet-300" />
-          </div>
+          <ReportAssetSlot type="ai-hero" />
 
           <button
             type="button"

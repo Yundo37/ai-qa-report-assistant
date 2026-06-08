@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 
 const ACTION_BADGES = ["Priority check", "Follow-up", "Policy check", "Monitor"];
 
@@ -45,13 +46,20 @@ export function QaFollowUpDashboardCard({
               key={followUp}
               className="flex items-start justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3"
             >
-              <div className="min-w-0">
-                <p className="line-clamp-1 text-sm font-semibold text-slate-950">
-                  {followUp}
-                </p>
-                <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                  Based on QA Comment / Follow-up text.
-                </p>
+              <div className="flex min-w-0 items-start gap-3">
+                <ReportAssetSlot
+                  type="follow-up"
+                  className="size-7 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-4"
+                />
+                <div className="min-w-0">
+                  <p className="line-clamp-1 text-sm font-semibold text-slate-950">
+                    {followUp}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                    Based on QA Comment / Follow-up text.
+                  </p>
+                </div>
               </div>
               <span className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-100">
                 {ACTION_BADGES[index % ACTION_BADGES.length]}

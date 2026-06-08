@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="optiona-evidence-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="optiona-evidence-riskg" x1="14" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F43F5E"/><stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="optiona-evidence-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#optiona-evidence-s)" stroke-linecap="round" stroke-linejoin="round">
+
+    <path d="M18 20C18 16.7 24.3 14 32 14C39.7 14 46 16.7 46 20V44C46 47.3 39.7 50 32 50C24.3 50 18 47.3 18 44V20Z" stroke="url(#optiona-evidence-g)" stroke-width="3.2"/>
+    <path d="M18 20C18 23.3 24.3 26 32 26C39.7 26 46 23.3 46 20M18 32C18 35.3 24.3 38 32 38C39.7 38 46 35.3 46 32" stroke="#475569" stroke-opacity="0.60" stroke-width="2.5"/>
+    <path d="M41 12h7v7" stroke="#8B5CF6" stroke-width="2.4"/>
+
+  </g>
+</svg>

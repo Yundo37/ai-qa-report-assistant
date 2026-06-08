@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="optiona-recommend-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="optiona-recommend-riskg" x1="14" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F43F5E"/><stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="optiona-recommend-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#optiona-recommend-s)" stroke-linecap="round" stroke-linejoin="round">
+
+    <rect x="16" y="16" width="32" height="34" rx="10" stroke="url(#optiona-recommend-g)" stroke-width="3.2"/>
+    <path d="M23.5 33.5l5 5l11.5-13" stroke="#6D5EF6" stroke-width="3.2"/>
+    <path d="M24 45h16" stroke="#475569" stroke-opacity="0.62" stroke-width="2.4"/>
+    <path d="M24 13h16" stroke="#8B5CF6" stroke-width="3.2"/>
+
+  </g>
+</svg>

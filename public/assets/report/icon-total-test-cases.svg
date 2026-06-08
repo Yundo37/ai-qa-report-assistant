@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+
+  <defs>
+    <linearGradient id="metric-tc-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="metric-tc-accent" x1="14" y1="10" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="metric-tc-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#metric-tc-s)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15.5H39.5L47 23V47.5C47 50.1 44.9 52 42.4 52H21C18.5 52 16.5 50 16.5 47.5V20C16.5 17.5 18.5 15.5 21 15.5Z" fill="white" fill-opacity="0.72" stroke="url(#metric-tc-g)" stroke-width="3"/>
+    <path d="M39.5 16V23.5H46.5" stroke="url(#metric-tc-g)" stroke-width="2.6"/>
+    <path d="M25 30.3l2.1 2.2l4.1-4.8" stroke="#6D5EF6" stroke-width="2.8"/>
+    <path d="M35 31H41.5" stroke="#475569" stroke-opacity="0.64" stroke-width="2.4"/>
+    <path d="M25 40.3l2.1 2.2l4.1-4.8" stroke="#38BDF8" stroke-width="2.8"/>
+    <path d="M35 41H41.5" stroke="#475569" stroke-opacity="0.64" stroke-width="2.4"/>
+    <circle cx="46.5" cy="18.5" r="3.2" fill="#EEF2FF" stroke="#8B5CF6" stroke-width="2"/>
+  </g>
+</svg>

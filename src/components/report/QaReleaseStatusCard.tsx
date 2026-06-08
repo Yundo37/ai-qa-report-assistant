@@ -1,4 +1,5 @@
 import { createOverallDashboardMetrics } from "@/components/report/reportDashboardUtils";
+import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState } from "@/types/report";
 
 const STATUS_PANEL_CLASS = {
@@ -53,6 +54,7 @@ export function QaReleaseStatusCard({
     { label: "Blocked", value: metrics.blocked, tone: "text-orange-700" },
     { label: "Remaining", value: metrics.remaining, tone: "text-slate-900" },
   ];
+  const isRiskStatus = metrics.status.tone === "risk";
 
   return (
     <section
@@ -61,21 +63,29 @@ export function QaReleaseStatusCard({
       }`}
     >
       <div className="grid gap-4 lg:grid-cols-[210px_minmax(0,1fr)_300px] lg:items-center">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-            AI Release Status
-          </p>
-          <div className="mt-2 flex items-center gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                STATUS_BADGE_CLASS[metrics.status.tone]
-              }`}
-            >
-              {metrics.status.label}
-            </span>
-            <span className="text-2xl font-bold tracking-tight">
-              {metrics.status.label}
-            </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <ReportAssetSlot
+            type="status"
+            className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-red-100"
+            imageClassName="size-4"
+            useAsset={isRiskStatus}
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+              AI Release Status
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  STATUS_BADGE_CLASS[metrics.status.tone]
+                }`}
+              >
+                {metrics.status.label}
+              </span>
+              <span className="text-2xl font-bold tracking-tight">
+                {metrics.status.label}
+              </span>
+            </div>
           </div>
         </div>
 

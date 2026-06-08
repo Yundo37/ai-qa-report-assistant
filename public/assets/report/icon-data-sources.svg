@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+
+  <defs>
+    <linearGradient id="metric-sources-g" x1="10" y1="8" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/><stop offset="0.54" stop-color="#6D5EF6"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="metric-sources-accent" x1="14" y1="10" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/><stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="metric-sources-s" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.12"/></filter>
+  </defs>
+
+  <rect x="7" y="7" width="50" height="50" rx="17" fill="#EEF2FF" fill-opacity="0.68"/>
+  <g filter="url(#metric-sources-s)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 20C20 16.9 25.4 14.5 32 14.5C38.6 14.5 44 16.9 44 20V38C44 41.1 38.6 43.5 32 43.5C25.4 43.5 20 41.1 20 38V20Z" fill="white" fill-opacity="0.64" stroke="url(#metric-sources-g)" stroke-width="2.9"/>
+    <path d="M20 20C20 23.1 25.4 25.5 32 25.5C38.6 25.5 44 23.1 44 20M20 29C20 32.1 25.4 34.5 32 34.5C38.6 34.5 44 32.1 44 29" stroke="#475569" stroke-opacity="0.55" stroke-width="2.25"/>
+    <path d="M44 28H49.2C51.3 28 53 29.7 53 31.8V38.8" stroke="#38BDF8" stroke-width="2.45"/>
+    <path d="M20 29H14.8C12.7 29 11 30.7 11 32.8V38.8" stroke="#8B5CF6" stroke-width="2.45"/>
+    <circle cx="11" cy="44" r="4.3" fill="#EEF2FF" stroke="#8B5CF6" stroke-width="2.2"/>
+    <circle cx="53" cy="44" r="4.3" fill="#EEF2FF" stroke="#38BDF8" stroke-width="2.2"/>
+    <path d="M28.5 48.5H35.5M32 43.5V48.5" stroke="#475569" stroke-opacity="0.58" stroke-width="2.25"/>
+  </g>
+</svg>
