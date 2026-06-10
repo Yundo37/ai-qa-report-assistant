@@ -20,17 +20,17 @@ export function ReportStatusKpiStrip({
   ];
 
   return (
-    <section className="rounded-[1.75rem] border border-indigo-100 bg-white p-4 shadow-sm">
+    <section className="rounded-[1.5rem] border border-slate-200 bg-white/85 p-3 shadow-sm shadow-slate-100/60">
       <dl className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="min-w-0 rounded-2xl border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/50 px-3 py-3"
+            className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2"
           >
-            <dt className="truncate text-xs font-medium text-slate-500">
+            <dt className="truncate text-[11px] font-medium text-slate-500">
               {kpi.label}
             </dt>
-            <dd className="mt-2 text-2xl font-bold text-slate-950">
+            <dd className="mt-1 text-lg font-bold text-slate-900">
               {kpi.value}
             </dd>
           </div>

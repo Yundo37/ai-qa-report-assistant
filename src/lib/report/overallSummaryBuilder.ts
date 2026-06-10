@@ -25,8 +25,14 @@ type CreateOverallSummaryBundleParams = {
   createIssuePatternAnalysis: (
     jiraRecords: CsvRecord[],
     remainingIssues: RemainingIssue[],
-    qaFollowUps: string[]
+    qaFollowUps: string[],
+    options?: {
+      startDateTime?: string;
+      endDateTime?: string | null;
+    }
   ) => IssuePatternAnalysisItem[];
+  jiraAnalysisStartDateTime?: string;
+  jiraAnalysisEndDateTime?: string | null;
 };
 
 export function createOverallSummaryBundle({
@@ -41,6 +47,8 @@ export function createOverallSummaryBundle({
   createBaseVersionIssueSummary,
   createIssuePatternSources,
   createIssuePatternAnalysis,
+  jiraAnalysisStartDateTime,
+  jiraAnalysisEndDateTime,
 }: CreateOverallSummaryBundleParams) {
   const overallQaSummary = createOverallQaSummary(allParsedTestSheetData);
   const overallTestSheets = parsedTestSheetDataList.map(
@@ -54,9 +62,13 @@ export function createOverallSummaryBundle({
   const versionSummary = createBaseVersionIssueSummary(parsedJiraIssueData);
   const issuePatternSources = createIssuePatternSources(parsedJiraIssueData);
   const issuePatternAnalysis = createIssuePatternAnalysis(
-    parsedJiraIssueData,
+    filteredJiraIssues,
     remainingIssues,
-    qaFollowUps
+    qaFollowUps,
+    {
+      startDateTime: jiraAnalysisStartDateTime,
+      endDateTime: jiraAnalysisEndDateTime,
+    }
   );
 
   return {

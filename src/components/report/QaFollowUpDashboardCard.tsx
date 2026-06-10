@@ -44,13 +44,13 @@ export function QaFollowUpDashboardCard({
           {visibleFollowUps.map((followUp, index) => (
             <li
               key={followUp}
-              className="flex items-start justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 px-4 py-3"
+              className="flex items-start justify-between gap-3 rounded-2xl border border-indigo-100 bg-white px-3.5 py-2.5 shadow-sm shadow-indigo-50/70"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <ReportAssetSlot
                   type="follow-up"
-                  className="size-7 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
-                  imageClassName="size-4"
+                  className="size-7 rounded-xl bg-indigo-50 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-3.5"
                 />
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-slate-950">

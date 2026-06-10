@@ -1,0 +1,22 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QA release status icon">
+  <defs>
+    <linearGradient id="statusHeroFill" x1="18" y1="12" x2="47" y2="53" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="0.52" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="statusHeroEdge" x1="18" y1="13" x2="47" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EDE9FE" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0.64"/>
+    </linearGradient>
+    <linearGradient id="statusHeroCheck" x1="25" y1="31" x2="41" y2="39" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 8.5L48.5 15.5V28.8C48.5 39.2 41.8 48.5 32 52.5C22.2 48.5 15.5 39.2 15.5 28.8V15.5L32 8.5Z" fill="url(#statusHeroFill)"/>
+  <path d="M32 8.5L48.5 15.5V28.8C48.5 39.2 41.8 48.5 32 52.5C22.2 48.5 15.5 39.2 15.5 28.8V15.5L32 8.5Z" stroke="url(#statusHeroEdge)" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M32 12.5L44.2 17.7V28.6C44.2 36.2 39.6 43.3 32 47C24.4 43.3 19.8 36.2 19.8 28.6V17.7L32 12.5Z" fill="#FFFFFF" fill-opacity="0.10"/>
+  <path d="M25.4 31.7L30.1 36.3L39.1 26.9" stroke="url(#statusHeroCheck)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M23 18.8L32 15L41 18.8" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

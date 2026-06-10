@@ -141,10 +141,10 @@ export function ReleaseRiskSummaryCard({
         ))}
       </div>
 
-      <div className="mt-auto flex items-start gap-2 pt-3 text-xs leading-5 text-slate-400">
+      <div className="mt-auto flex items-start gap-2 rounded-2xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-xs leading-5 text-slate-500">
         <ReportAssetSlot
           type="risk-note"
-          className="mt-0.5 size-5 rounded-lg bg-violet-50 bg-none shadow-sm ring-1 ring-violet-100"
+          className="mt-0.5 size-5 rounded-lg bg-white/80 bg-none shadow-sm ring-1 ring-violet-100"
           imageClassName="size-3.5"
         />
         <p>

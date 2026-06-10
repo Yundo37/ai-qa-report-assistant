@@ -127,6 +127,12 @@ export type IssuePatternAnalysisItem = {
   count: number;
   versions: string[];
   sourceTypes: string[];
+  trendBasis: "rc" | "version" | "period";
+  trend: Array<{
+    label: string;
+    title: string;
+    count: number;
+  }>;
 };
 
 export type QaAnalysisContext = {

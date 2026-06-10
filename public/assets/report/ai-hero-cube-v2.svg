@@ -1,0 +1,164 @@
+<svg width="640" height="360" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI hero cube visual">
+  <defs>
+    <radialGradient id="heroCoreGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(322 184) rotate(90) scale(132 238)">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.22"/>
+      <stop offset="0.46" stop-color="#A78BFA" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="heroOval" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(319 185) rotate(90) scale(124 229)">
+      <stop offset="0" stop-color="#DDD6FE" stop-opacity="0.34"/>
+      <stop offset="0.52" stop-color="#C4B5FD" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ovalStroke" x1="108" y1="116" x2="542" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C4B5FD" stop-opacity="0.10"/>
+      <stop offset="0.5" stop-color="#A78BFA" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="orbitStroke" x1="96" y1="78" x2="540" y2="272" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA" stop-opacity="0.08"/>
+      <stop offset="0.52" stop-color="#7C3AED" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.14"/>
+    </linearGradient>
+    <linearGradient id="nodeFill" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#C4B5FD"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+    <linearGradient id="cubeTop" x1="270" y1="82" x2="390" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5F3FF" stop-opacity="0.95"/>
+      <stop offset="0.42" stop-color="#A78BFA" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0.88"/>
+    </linearGradient>
+    <linearGradient id="cubeFront" x1="264" y1="122" x2="332" y2="239" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.58" stop-color="#6D5DF9"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="cubeSide" x1="330" y1="126" x2="401" y2="223" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="0.52" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="cubeEdge" x1="262" y1="86" x2="402" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.72"/>
+      <stop offset="0.5" stop-color="#C4B5FD" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#6366F1" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="faceGlass" x1="256" y1="130" x2="334" y2="231" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.52" stop-color="#FFFFFF" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#312E81" stop-opacity="0.10"/>
+    </linearGradient>
+    <linearGradient id="aiSurfaceFill" x1="277" y1="151" x2="324" y2="210" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.96"/>
+      <stop offset="0.64" stop-color="#EEF2FF" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#C7D2FE" stop-opacity="0.78"/>
+    </linearGradient>
+    <linearGradient id="surfaceOverlay" x1="263" y1="122" x2="335" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="0.45" stop-color="#A78BFA" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#312E81" stop-opacity="0.13"/>
+    </linearGradient>
+    <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="cubeShadow" x="190" y="45" width="260" height="245" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="15" stdDeviation="18" flood-color="#6D28D9" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#4F46E5" flood-opacity="0.10"/>
+    </filter>
+    <filter id="surfaceInset" x="246" y="126" width="104" height="130" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="0.9" flood-color="#312E81" flood-opacity="0.20"/>
+    </filter>
+    <clipPath id="frontFaceClip">
+      <path d="M264 121L332 156L332 236L264 201Z"/>
+    </clipPath>
+    <clipPath id="heroClip">
+      <rect width="640" height="360" rx="0"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#heroClip)">
+    <!-- soft lavender hero field from the design comp; transparent outside the visual -->
+    <ellipse cx="320" cy="184" rx="250" ry="142" fill="url(#heroCoreGlow)"/>
+    <ellipse cx="319" cy="185" rx="224" ry="124" fill="url(#heroOval)"/>
+    <ellipse cx="320" cy="184" rx="218" ry="118" stroke="url(#ovalStroke)" stroke-width="1.1" opacity="0.68"/>
+    <ellipse cx="320" cy="184" rx="184" ry="102" stroke="#C4B5FD" stroke-opacity="0.13" stroke-width="0.9"/>
+
+    <!-- orbit lines are secondary to the cube, matching the lighter density of the comp -->
+    <g stroke="url(#orbitStroke)" stroke-linecap="round" opacity="0.9">
+      <ellipse cx="320" cy="176" rx="226" ry="64" stroke-width="1.15"/>
+      <ellipse cx="320" cy="176" rx="218" ry="62" transform="rotate(-23 320 176)" stroke-width="1.15"/>
+      <ellipse cx="320" cy="176" rx="216" ry="62" transform="rotate(24 320 176)" stroke-width="1.05" opacity="0.74"/>
+      <ellipse cx="320" cy="176" rx="142" ry="88" transform="rotate(-67 320 176)" stroke-width="0.95" opacity="0.52"/>
+    </g>
+
+    <!-- sparse network map behind the hero cube -->
+    <g opacity="0.17" stroke="#8B5CF6" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M176 123L246 85L319 60L399 91L456 143L440 220L354 283L258 271L188 220Z"/>
+      <path d="M204 257L274 296L365 292L455 244"/>
+      <path d="M122 183L173 154L225 171"/>
+      <path d="M495 180L540 203L573 236"/>
+    </g>
+
+    <g>
+      <circle cx="199" cy="96" r="4.1" fill="url(#nodeFill)" opacity="0.72"/>
+      <circle cx="470" cy="110" r="4.8" fill="url(#nodeFill)" opacity="0.78"/>
+      <circle cx="512" cy="204" r="3.7" fill="url(#nodeFill)" opacity="0.52"/>
+      <circle cx="169" cy="202" r="3.5" fill="url(#nodeFill)" opacity="0.58"/>
+      <circle cx="416" cy="266" r="3" fill="url(#nodeFill)" opacity="0.42"/>
+      <circle cx="118" cy="151" r="2.1" fill="#A78BFA" opacity="0.30"/>
+      <circle cx="548" cy="135" r="2.2" fill="#8B5CF6" opacity="0.32"/>
+      <circle cx="96" cy="224" r="2" fill="#A78BFA" opacity="0.24"/>
+      <circle cx="556" cy="258" r="2" fill="#60A5FA" opacity="0.28"/>
+    </g>
+
+    <!-- soft base ellipse only; no platform block -->
+    <ellipse cx="322" cy="262" rx="105" ry="23" fill="#8B5CF6" opacity="0.16" filter="url(#softBlur)"/>
+    <ellipse cx="322" cy="252" rx="86" ry="18" fill="#C4B5FD" opacity="0.12"/>
+
+    <!-- cube: smaller part of the hero visual, not an app icon -->
+    <g filter="url(#cubeShadow)">
+      <path d="M264 121L332 85L400 121L332 156L264 121Z" fill="url(#cubeTop)"/>
+      <path d="M264 121L332 156L332 236L264 201Z" fill="url(#cubeFront)"/>
+      <path d="M332 156L400 121L400 201L332 236Z" fill="url(#cubeSide)"/>
+      <path d="M264 121L332 85L400 121L332 156L264 121Z" stroke="url(#cubeEdge)" stroke-width="1.25" stroke-linejoin="round"/>
+      <path d="M264 121L264 201L332 236L400 201L400 121" stroke="url(#cubeEdge)" stroke-width="1.25" stroke-linejoin="round"/>
+      <path d="M332 156V236" stroke="#C4B5FD" stroke-opacity="0.30" stroke-width="1.05"/>
+      <path d="M264 121L332 156L400 121" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1"/>
+
+      <!-- front face inner glass and clipped AI surface graphic -->
+      <path d="M264 121L332 156L332 236L264 201Z" fill="url(#faceGlass)"/>
+      <path d="M275 134L323 159L323 217L275 192Z" fill="#FFFFFF" fill-opacity="0.055" clip-path="url(#frontFaceClip)"/>
+
+      <!-- AI is drawn as vector strokes/shapes, transformed with the face's perspective vector. It is clipped to and shaded by the cube face. -->
+      <g clip-path="url(#frontFaceClip)" filter="url(#surfaceInset)">
+        <g transform="matrix(0.66 0.34 0 0.74 282 145)">
+          <!-- A left stem -->
+          <path d="M0 46L8.2 46L23.2 0L15 0L0 46Z" fill="url(#aiSurfaceFill)"/>
+          <!-- A right stem -->
+          <path d="M22.2 0L40 46L31.4 46L17.8 9.2L22.2 0Z" fill="url(#aiSurfaceFill)"/>
+          <!-- A crossbar -->
+          <path d="M10.4 28.5L27.6 28.5L30.2 35.1L8.2 35.1L10.4 28.5Z" fill="url(#aiSurfaceFill)"/>
+          <!-- I stem -->
+          <path d="M49.5 0H58V46H49.5V0Z" fill="url(#aiSurfaceFill)"/>
+          <path d="M0 46L8.2 46L23.2 0M22.2 0L40 46M49.5 0H58V46H49.5V0Z" stroke="#FFFFFF" stroke-opacity="0.20" stroke-width="1" vector-effect="non-scaling-stroke"/>
+        </g>
+      </g>
+
+      <!-- shading over the face after AI so the mark reads as printed/embedded in the cube surface -->
+      <path d="M264 121L332 156L332 236L264 201Z" fill="url(#surfaceOverlay)"/>
+      <path d="M272 130L326 158" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="0.8" clip-path="url(#frontFaceClip)"/>
+      <path d="M268 196L328 228" stroke="#312E81" stroke-opacity="0.11" stroke-width="0.8" clip-path="url(#frontFaceClip)"/>
+
+      <!-- small top facet spark from the source visual -->
+      <path d="M332 99L340 103.5L332 108L324 103.5L332 99Z" fill="#F5F3FF" fill-opacity="0.58"/>
+      <path d="M332 97V89" stroke="#C4B5FD" stroke-opacity="0.30" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="332" cy="87.5" r="2.2" fill="#A78BFA" fill-opacity="0.62"/>
+    </g>
+
+    <!-- very soft foreground orbit pass, kept subtle so AI cube remains integrated -->
+    <path d="M122 174C209 236 369 263 523 182" stroke="#8B5CF6" stroke-opacity="0.13" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M160 249C253 203 429 142 555 172" stroke="#60A5FA" stroke-opacity="0.10" stroke-width="1" stroke-linecap="round"/>
+  </g>
+</svg>

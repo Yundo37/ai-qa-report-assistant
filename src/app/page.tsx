@@ -315,11 +315,252 @@ function patternKeywordMatches(text: string, keyword: string) {
     normalizedText.includes(normalizedKeyword);
 }
 
+const ISSUE_PATTERN_TREND_DAY_MS = 24 * 60 * 60 * 1000;
+
+type IssuePatternTrendBucket = {
+  label: string;
+  title: string;
+  basis: "rc" | "version" | "period";
+  values?: string[];
+  start?: Date;
+  end?: Date;
+};
+
+function parseIssuePatternDateValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) return null;
+
+  const normalizedValue = trimmedValue
+    .replace(/\./g, "-")
+    .replace("T", " ")
+    .replace(/\s+/g, " ");
+  const dateTimeMatch = normalizedValue.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?/
+  );
+
+  if (dateTimeMatch) {
+    const [, year, month, day, hour = "0", minute = "0"] = dateTimeMatch;
+    const parsedDate = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute)
+    );
+
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
+  const parsedTime = Date.parse(trimmedValue);
+
+  return Number.isNaN(parsedTime) ? null : new Date(parsedTime);
+}
+
+function formatIssuePatternTrendDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeIssuePatternTrendValue(value: string) {
+  return value.toLowerCase().replace(/\s+/g, "");
+}
+
+function extractIssuePatternRcLabel(value: string) {
+  const match = value.match(/\brc\s*0*(\d+)\b/i);
+
+  return match ? `RC${Number(match[1])}` : "";
+}
+
+function getIssuePatternRecordRcLabels(record: CsvRecord) {
+  return Array.from(
+    new Set(
+      getJiraTargetVersionValues(record)
+        .map(extractIssuePatternRcLabel)
+        .filter(Boolean)
+    )
+  );
+}
+
+function getIssuePatternRecordVersionLabels(record: CsvRecord) {
+  return Array.from(
+    new Set(
+      getJiraTargetVersionValues(record)
+        .map(extractBaseVersion)
+        .filter(Boolean)
+    )
+  );
+}
+
+function createCategoricalIssuePatternTrendBuckets(
+  labels: string[],
+  basis: "rc" | "version"
+): IssuePatternTrendBucket[] {
+  const sortedLabels = Array.from(new Set(labels)).sort((first, second) => {
+    if (basis === "rc") {
+      return (
+        Number(first.match(/\d+/)?.[0] ?? 0) -
+          Number(second.match(/\d+/)?.[0] ?? 0) ||
+        first.localeCompare(second)
+      );
+    }
+
+    return (
+      getVersionIssueSortScore(first) - getVersionIssueSortScore(second) ||
+      first.localeCompare(second)
+    );
+  });
+
+  if (sortedLabels.length > 6) {
+    const recentLabels = sortedLabels.slice(-5);
+    const earlierLabels = sortedLabels.slice(0, -5);
+
+    return [
+      {
+        label: "Earlier",
+        title: `Earlier ${basis === "rc" ? "RC" : "Version"}: ${earlierLabels.join(", ")}`,
+        basis,
+        values: earlierLabels,
+      },
+      ...recentLabels.map((label) => ({
+        label,
+        title: label,
+        basis,
+        values: [label],
+      })),
+    ];
+  }
+
+  return sortedLabels.map((label) => ({
+    label,
+    title: label,
+    basis,
+    values: [label],
+  }));
+}
+
+function createPeriodIssuePatternTrendBuckets(
+  jiraRecords: CsvRecord[],
+  options?: {
+    startDateTime?: string;
+    endDateTime?: string | null;
+  }
+): IssuePatternTrendBucket[] {
+  const recordDates = jiraRecords
+    .map((record) => parseIssuePatternDateValue(getRecordValue(record, JIRA_CREATED_FIELDS)))
+    .filter((date): date is Date => Boolean(date))
+    .sort((first, second) => first.getTime() - second.getTime());
+  const optionStart = options?.startDateTime
+    ? parseIssuePatternDateValue(options.startDateTime)
+    : null;
+  const optionEnd = options?.endDateTime
+    ? parseIssuePatternDateValue(options.endDateTime)
+    : null;
+  const startDate = optionStart ?? recordDates[0] ?? null;
+  const endDate = optionEnd ?? recordDates[recordDates.length - 1] ?? null;
+
+  if (!startDate || !endDate || endDate.getTime() < startDate.getTime()) {
+    return [];
+  }
+
+  const rangeMs = Math.max(1, endDate.getTime() - startDate.getTime() + 1);
+  const daySpan = Math.max(1, Math.ceil(rangeMs / ISSUE_PATTERN_TREND_DAY_MS));
+  const bucketCount = Math.min(6, Math.max(1, daySpan <= 6 ? daySpan : 5));
+  const bucketSizeMs = rangeMs / bucketCount;
+
+  return Array.from({ length: bucketCount }, (_, index) => {
+    const bucketStart = new Date(startDate.getTime() + bucketSizeMs * index);
+    const bucketEnd =
+      index === bucketCount - 1
+        ? new Date(endDate)
+        : new Date(startDate.getTime() + bucketSizeMs * (index + 1) - 1);
+
+    return {
+      label: `P${index + 1}`,
+      title: `${formatIssuePatternTrendDate(bucketStart)} ~ ${formatIssuePatternTrendDate(bucketEnd)}`,
+      basis: "period",
+      start: bucketStart,
+      end: bucketEnd,
+    };
+  });
+}
+
+function createIssuePatternTrendBuckets(
+  jiraRecords: CsvRecord[],
+  options?: {
+    startDateTime?: string;
+    endDateTime?: string | null;
+  }
+): IssuePatternTrendBucket[] {
+  const rcLabels = jiraRecords.flatMap(getIssuePatternRecordRcLabels);
+
+  if (rcLabels.length > 0) {
+    return createCategoricalIssuePatternTrendBuckets(rcLabels, "rc");
+  }
+
+  const versionLabels = jiraRecords.flatMap(getIssuePatternRecordVersionLabels);
+
+  if (versionLabels.length > 0) {
+    return createCategoricalIssuePatternTrendBuckets(versionLabels, "version");
+  }
+
+  return createPeriodIssuePatternTrendBuckets(jiraRecords, options);
+}
+
+function getIssuePatternTrendBucketIndexes(
+  record: CsvRecord,
+  buckets: IssuePatternTrendBucket[]
+) {
+  const basis = buckets[0]?.basis;
+
+  if (basis === "rc" || basis === "version") {
+    const labels =
+      basis === "rc"
+        ? getIssuePatternRecordRcLabels(record)
+        : getIssuePatternRecordVersionLabels(record);
+    const normalizedLabels = new Set(labels.map(normalizeIssuePatternTrendValue));
+
+    return buckets
+      .map((bucket, index) =>
+        bucket.values?.some((value) =>
+          normalizedLabels.has(normalizeIssuePatternTrendValue(value))
+        )
+          ? index
+          : -1
+      )
+      .filter((index) => index >= 0);
+  }
+
+  const createdDate = parseIssuePatternDateValue(
+    getRecordValue(record, JIRA_CREATED_FIELDS)
+  );
+
+  if (!createdDate) return [];
+
+  const bucketIndex = buckets.findIndex(
+    (bucket) =>
+      bucket.start &&
+      bucket.end &&
+      createdDate.getTime() >= bucket.start.getTime() &&
+      createdDate.getTime() <= bucket.end.getTime()
+  );
+
+  return bucketIndex >= 0 ? [bucketIndex] : [];
+}
+
 function createIssuePatternAnalysis(
   jiraRecords: CsvRecord[],
   remainingIssues: RemainingIssue[],
-  qaFollowUps: string[]
+  qaFollowUps: string[],
+  options?: {
+    startDateTime?: string;
+    endDateTime?: string | null;
+  }
 ): IssuePatternAnalysisItem[] {
+  const trendBuckets = createIssuePatternTrendBuckets(jiraRecords, options);
   const patternMap = new Map<
     string,
     {
@@ -327,9 +568,15 @@ function createIssuePatternAnalysis(
       count: number;
       versions: Set<string>;
       sourceTypes: Set<string>;
+      trendCounts: number[];
     }
   >();
-  const addText = (text: string, sourceType: string, version = "") => {
+  const addText = (
+    text: string,
+    sourceType: string,
+    version = "",
+    trendBucketIndexes: number[] = []
+  ) => {
     if (!text.trim()) return;
 
     ISSUE_PATTERN_GROUPS.forEach((group) => {
@@ -346,12 +593,17 @@ function createIssuePatternAnalysis(
           count: 0,
           versions: new Set<string>(),
           sourceTypes: new Set<string>(),
+          trendCounts: Array.from({ length: trendBuckets.length }, () => 0),
         };
 
       current.count += 1;
       matchedKeywords.forEach((keyword) => current.keywords.add(keyword));
       if (version) current.versions.add(version);
       current.sourceTypes.add(sourceType);
+      Array.from(new Set(trendBucketIndexes)).forEach((trendBucketIndex) => {
+        current.trendCounts[trendBucketIndex] =
+          (current.trendCounts[trendBucketIndex] ?? 0) + 1;
+      });
       patternMap.set(group.name, current);
     });
   };
@@ -365,8 +617,17 @@ function createIssuePatternAnalysis(
       .map(extractBaseVersion)
       .filter(Boolean);
     const version = Array.from(new Set(versions)).join(", ");
+    const trendBucketIndexes = getIssuePatternTrendBucketIndexes(
+      record,
+      trendBuckets
+    );
 
-    addText([summaryText, categoryText].filter(Boolean).join(" "), "jiraSummary", version);
+    addText(
+      [summaryText, categoryText].filter(Boolean).join(" "),
+      "jiraSummary",
+      version,
+      trendBucketIndexes
+    );
   });
 
   remainingIssues.forEach((issue) => {
@@ -390,6 +651,12 @@ function createIssuePatternAnalysis(
         )
         .slice(0, 6),
       sourceTypes: Array.from(pattern.sourceTypes),
+      trendBasis: trendBuckets[0]?.basis ?? "period",
+      trend: trendBuckets.map((bucket, index) => ({
+        label: bucket.label,
+        title: bucket.title,
+        count: pattern.trendCounts[index] ?? 0,
+      })),
     }))
     .filter((pattern) => pattern.count >= 2)
     .sort(
@@ -1200,6 +1467,8 @@ export default function Home() {
                 createBaseVersionIssueSummary,
                 createIssuePatternSources,
                 createIssuePatternAnalysis,
+                jiraAnalysisStartDateTime: jiraAnalysisStartDateTime ?? "",
+                jiraAnalysisEndDateTime,
               })
             : {
                 overallQaSummary: undefined,

@@ -30,13 +30,13 @@ type ReportAssetSlotProps = {
 };
 
 const REPORT_ASSET_SRC: Record<ReportAssetSlotType, string> = {
-  "ai-hero": "/assets/report/ai-hero-cube.svg",
+  "ai-hero": "/assets/report/ai-hero-cube-v2.svg",
   "ai-summary": "/assets/report/icon-ai-summary.svg",
   risk: "/assets/report/icon-ai-risk.svg",
   recommendation: "/assets/report/icon-ai-recommendation.svg",
   evidence: "/assets/report/icon-evidence.svg",
   pattern: "/assets/report/pattern-chart-frame.svg",
-  status: "/assets/report/status-risk.svg",
+  status: "/assets/report/status-hero-v2.svg",
   "follow-up": "/assets/report/icon-followup-action.svg",
   "metric-test-cases": "/assets/report/icon-total-test-cases.svg",
   "metric-jira-issues": "/assets/report/icon-jira-issues.svg",

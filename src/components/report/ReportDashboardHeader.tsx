@@ -1,6 +1,7 @@
 "use client";
 
 import { MessagePanel } from "@/components/report/MessagePanel";
+import { QaReleaseStatusCard } from "@/components/report/QaReleaseStatusCard";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type { AnalysisSummaryState, MessageState } from "@/types/report";
 
@@ -29,6 +30,40 @@ function extractRc(value: string) {
   return match ? match[0].replace(/\s+/g, "").toUpperCase() : "";
 }
 
+function HeaderMetaIcon({ type }: { type: "date" | "version" | "generated" }) {
+  if (type === "date") {
+    return (
+      <span
+        aria-hidden="true"
+        className="relative size-4 shrink-0 rounded-[4px] border border-indigo-300 bg-white/80"
+      >
+        <span className="absolute inset-x-[3px] top-[4px] h-px bg-indigo-300" />
+        <span className="absolute left-[3px] top-[2px] size-0.5 rounded-full bg-indigo-500" />
+        <span className="absolute right-[3px] top-[2px] size-0.5 rounded-full bg-indigo-500" />
+      </span>
+    );
+  }
+
+  if (type === "generated") {
+    return (
+      <span
+        aria-hidden="true"
+        className="relative size-4 shrink-0 rounded-full border border-indigo-300 bg-white/80"
+      >
+        <span className="absolute left-1/2 top-1/2 h-[5px] w-px -translate-x-1/2 -translate-y-full bg-indigo-500" />
+        <span className="absolute left-1/2 top-1/2 h-px w-[5px] -translate-y-1/2 bg-indigo-500" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="size-2 shrink-0 rounded-full bg-indigo-500 shadow-sm shadow-indigo-200"
+    />
+  );
+}
+
 export function ReportDashboardHeader({
   analysisSummary,
   reportScopeText,
@@ -55,10 +90,23 @@ export function ReportDashboardHeader({
     reportPeriodText ||
     [versionText, rcLabel === "-" ? "" : rcLabel].filter(Boolean).join(" ") ||
     "-";
+  const metaItems = [
+    {
+      label: scopeLabel,
+      value: reportPeriodText ? scopeValue : `Target Scope ${scopeValue}`,
+      icon: "date" as const,
+    },
+    { label: "Version", value: `Version ${versionText}`, icon: "version" as const },
+    {
+      label: "Generated",
+      value: `Generated ${generatedAtText || "-"}`,
+      icon: "generated" as const,
+    },
+  ];
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/80 p-5 shadow-lg shadow-indigo-100/50 sm:p-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             QA Release Dashboard
@@ -74,63 +122,64 @@ export function ReportDashboardHeader({
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
             Overall QA Result Report based on Google Spreadsheet QA data.
           </p>
-          <dl className="mt-5 grid gap-2 text-sm sm:grid-cols-4">
-            <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
-              <dt className="text-xs font-medium text-slate-500">
-                {scopeLabel}
-              </dt>
-              <dd className="mt-1 truncate font-semibold text-slate-900">
-                {scopeValue}
-              </dd>
-            </div>
-            <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
-              <dt className="text-xs font-medium text-slate-500">Version</dt>
-              <dd className="mt-1 truncate font-semibold text-slate-900">
-                {versionText}
-              </dd>
-            </div>
-            <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
-              <dt className="text-xs font-medium text-slate-500">RC</dt>
-              <dd className="mt-1 truncate font-semibold text-slate-900">
-                {rcLabel}
-              </dd>
-            </div>
-            <div className="rounded-2xl border border-indigo-100 bg-white/85 px-3 py-2.5 shadow-sm">
-              <dt className="text-xs font-medium text-slate-500">Generated</dt>
-              <dd className="mt-1 truncate font-semibold text-slate-900">
-                {generatedAtText || "-"}
-              </dd>
-            </div>
+          <dl className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+            {metaItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex min-w-0 items-center gap-2"
+              >
+                <HeaderMetaIcon type={item.icon} />
+                <dt className="sr-only">{item.label}</dt>
+                <dd className="max-w-[300px] truncate font-semibold text-slate-700">
+                  {item.value}
+                </dd>
+              </div>
+            ))}
           </dl>
+
+          <div className="mt-6">
+            <QaReleaseStatusCard
+              analysisSummary={analysisSummary}
+              rcLabel={rcLabel}
+            />
+          </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-indigo-100 bg-white/85 p-4 shadow-sm">
-          <ReportAssetSlot type="ai-hero" />
-
-          <button
-            type="button"
-            onClick={onCreateResultSheet}
-            disabled={isCreatingResultSheet}
-            className="mt-4 w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isCreatingResultSheet
-              ? "Exporting..."
-              : "Export to Google Sheet"}
-          </button>
-          {resultSheetUrl && (
+        <div className="flex h-full flex-col">
+          <div className="space-y-2 lg:self-end">
             <button
               type="button"
-              onClick={() => window.open(resultSheetUrl, "_blank")}
-              className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+              onClick={onCreateResultSheet}
+              disabled={isCreatingResultSheet}
+              className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
             >
-              Open Result Report
+              {isCreatingResultSheet
+                ? "Exporting..."
+                : "Export to Google Sheet"}
             </button>
-          )}
-          {resultSheetMessage && (
-            <div className="mt-4">
-              <MessagePanel message={resultSheetMessage} />
-            </div>
-          )}
+            {resultSheetUrl && (
+              <button
+                type="button"
+                onClick={() => window.open(resultSheetUrl, "_blank")}
+                className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 lg:w-auto"
+              >
+                Open Result Report
+              </button>
+            )}
+            {resultSheetMessage && (
+              <div className="max-w-[300px] rounded-xl bg-white/80 p-2 shadow-sm ring-1 ring-indigo-100">
+                <MessagePanel message={resultSheetMessage} />
+              </div>
+            )}
+          </div>
+
+          <div className="relative mt-4 min-h-[190px] flex-1 overflow-hidden rounded-[1.75rem]">
+            <ReportAssetSlot
+              type="ai-hero"
+              className="h-full min-h-[190px] border-0 bg-transparent bg-none shadow-none ring-0"
+              imageClassName="scale-125 p-0"
+            />
+          </div>
         </div>
       </div>
     </section>

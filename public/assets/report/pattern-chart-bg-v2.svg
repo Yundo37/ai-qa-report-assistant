@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" fill="none">
+  <defs>
+    <linearGradient id="pcb2-panel-surface" x1="40" y1="34" x2="680" y2="326" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FAFF" stop-opacity="0.30"/>
+      <stop offset="0.48" stop-color="#F5F3FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#EFF6FF" stop-opacity="0.28"/>
+    </linearGradient>
+
+    <linearGradient id="pcb2-panel-frame" x1="42" y1="35" x2="678" y2="325" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA" stop-opacity="0.50"/>
+      <stop offset="0.52" stop-color="#6366F1" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#93C5FD" stop-opacity="0.40"/>
+    </linearGradient>
+
+    <linearGradient id="pcb2-inner-frame" x1="66" y1="62" x2="654" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA" stop-opacity="0.32"/>
+      <stop offset="0.5" stop-color="#6366F1" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.24"/>
+    </linearGradient>
+
+    <linearGradient id="pcb2-corner" x1="58" y1="58" x2="662" y2="302" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.58"/>
+      <stop offset="0.52" stop-color="#6366F1" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0.46"/>
+    </linearGradient>
+
+    <radialGradient id="pcb2-center-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(360 178) rotate(90) scale(142 306)">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.22"/>
+      <stop offset="0.42" stop-color="#A78BFA" stop-opacity="0.14"/>
+      <stop offset="0.70" stop-color="#C4B5FD" stop-opacity="0.055"/>
+      <stop offset="1" stop-color="#C4B5FD" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="pcb2-focus-band" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(360 176) rotate(90) scale(82 260)">
+      <stop offset="0" stop-color="#6366F1" stop-opacity="0.13"/>
+      <stop offset="0.74" stop-color="#8B5CF6" stop-opacity="0.035"/>
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="pcb2-left-aura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(138 104) rotate(35) scale(185 112)">
+      <stop offset="0" stop-color="#60A5FA" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#60A5FA" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="pcb2-right-aura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(590 250) rotate(137) scale(190 112)">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.085"/>
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="pcb2-fade-h" x1="74" y1="0" x2="646" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white" stop-opacity="0"/>
+      <stop offset="0.14" stop-color="white" stop-opacity="0.92"/>
+      <stop offset="0.86" stop-color="white" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="pcb2-fade-v" x1="0" y1="64" x2="0" y2="296" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="white" stop-opacity="0"/>
+      <stop offset="0.18" stop-color="white" stop-opacity="0.88"/>
+      <stop offset="0.82" stop-color="white" stop-opacity="0.88"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+
+    <mask id="pcb2-guide-mask" maskUnits="userSpaceOnUse" x="62" y="54" width="596" height="252">
+      <rect x="62" y="54" width="596" height="252" fill="url(#pcb2-fade-h)"/>
+      <rect x="62" y="54" width="596" height="252" fill="url(#pcb2-fade-v)" opacity="0.84"/>
+    </mask>
+
+    <clipPath id="pcb2-panel-clip">
+      <rect x="38" y="34" width="644" height="292" rx="34"/>
+    </clipPath>
+  </defs>
+
+  <rect width="720" height="360" fill="transparent"/>
+
+  <g clip-path="url(#pcb2-panel-clip)">
+    <rect x="38" y="34" width="644" height="292" rx="34" fill="url(#pcb2-panel-surface)"/>
+    <rect x="38" y="34" width="644" height="292" rx="34" fill="url(#pcb2-center-glow)"/>
+    <rect x="38" y="34" width="644" height="292" rx="34" fill="url(#pcb2-left-aura)"/>
+    <rect x="38" y="34" width="644" height="292" rx="34" fill="url(#pcb2-right-aura)"/>
+
+    <rect x="94" y="104" width="532" height="144" rx="72" fill="url(#pcb2-focus-band)" opacity="0.90"/>
+    <rect x="118" y="128" width="484" height="96" rx="48" fill="#8B5CF6" fill-opacity="0.028"/>
+
+    <g mask="url(#pcb2-guide-mask)" stroke-linecap="round">
+      <g stroke="#64748B" stroke-opacity="0.112" stroke-width="1.15">
+        <path d="M76 104H644"/>
+        <path d="M76 143H644"/>
+        <path d="M76 182H644"/>
+        <path d="M76 221H644"/>
+        <path d="M76 260H644"/>
+      </g>
+      <g stroke="#64748B" stroke-opacity="0.088" stroke-width="1.1">
+        <path d="M128 70V292"/>
+        <path d="M224 70V292"/>
+        <path d="M320 70V292"/>
+        <path d="M416 70V292"/>
+        <path d="M512 70V292"/>
+        <path d="M608 70V292"/>
+      </g>
+      <g stroke="#8B5CF6" stroke-opacity="0.060" stroke-width="18">
+        <path d="M112 118H608"/>
+        <path d="M112 242H608"/>
+      </g>
+    </g>
+  </g>
+
+  <rect x="38.5" y="34.5" width="643" height="291" rx="33.5" stroke="url(#pcb2-panel-frame)" stroke-width="1.45"/>
+  <rect x="64.5" y="60.5" width="591" height="239" rx="25.5" stroke="url(#pcb2-inner-frame)" stroke-width="1.35"/>
+
+  <g stroke="url(#pcb2-corner)" stroke-width="2.55" stroke-linecap="round" stroke-linejoin="round" opacity="0.90">
+    <path d="M64 98V60H104"/>
+    <path d="M656 98V60H616"/>
+    <path d="M64 262V300H104"/>
+    <path d="M656 262V300H616"/>
+  </g>
+
+  <g stroke="#8B5CF6" stroke-opacity="0.21" stroke-width="1.9" stroke-linecap="round">
+    <path d="M112 76H214"/>
+    <path d="M506 76H608"/>
+    <path d="M112 284H214"/>
+    <path d="M506 284H608"/>
+  </g>
+
+  <g stroke="#6366F1" stroke-opacity="0.105" stroke-width="1.25" stroke-linecap="round">
+    <path d="M86 89H650"/>
+    <path d="M86 271H650"/>
+  </g>
+</svg>

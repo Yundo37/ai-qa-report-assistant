@@ -12,11 +12,24 @@ type AiExecutiveSummaryCardProps = {
   onAnalyze: () => void;
 };
 
-const STATUS_BADGE_CLASS = {
-  stable: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-  caution: "bg-amber-50 text-amber-700 ring-amber-100",
-  risk: "bg-red-50 text-red-700 ring-red-100",
+const STATUS_LABEL = {
+  stable: "\uC548\uC815",
+  caution: "\uC8FC\uC758 \uD544\uC694",
+  risk: "\uC704\uD5D8",
 };
+
+const STATUS_TEXT_CLASS = {
+  stable: "text-emerald-600",
+  caution: "text-amber-600",
+  risk: "text-red-600",
+};
+
+// TEMP_DESIGN_PREVIEW_ONLY: remove this mock when AI Summary UI review no longer needs a local preview.
+const TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT = [
+  "현재 Overall QA는 High / Highest Remaining과 Blocked 항목 확인이 필요한 상태입니다. 상단 Remaining 이슈와 RC별 잔여 흐름을 함께 검토하면 릴리즈 전 우선 확인 범위를 빠르게 좁힐 수 있습니다.",
+  "주요 리스크는 High Priority Remaining, Blocked 항목, 반복 이슈 패턴에서 확인됩니다. 특히 반복 패턴이 여러 데이터 소스에 걸쳐 나타나는 경우 기능 검증 범위와 후속 확인 항목을 분리해 관리하는 것이 좋습니다.",
+  "후속 액션은 Top Remaining Issue 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
+].join("\n\n");
 
 function priorityBadgeClass(tone: "High" | "Medium" | "Low") {
   if (tone === "High") return "bg-red-50 text-red-700";
@@ -48,7 +61,13 @@ export function AiExecutiveSummaryCard({
   onAnalyze,
 }: AiExecutiveSummaryCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const paragraphs = analysisText
+  const hasRealAnalysisText = Boolean(analysisText.trim());
+  const effectiveAnalysisText =
+    (hasRealAnalysisText ? analysisText.trim() : "") ||
+    (analysisSummary.reportType === "OVERALL"
+      ? TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT
+      : "");
+  const paragraphs = effectiveAnalysisText
     .split(/\n+/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
@@ -120,9 +139,7 @@ export function AiExecutiveSummaryCard({
     nextEventCount > 0
       ? "Track Next Event items separately as follow-up work."
       : "Separate any new Next Event items as follow-up work.",
-    analysisSummary.qaFollowUps[0] ??
-      "Review raw QA comments in Detailed QA Data when needed.",
-  ];
+  ].slice(0, 3);
   const evidenceItems = [
     {
       label: "Test Cases",
@@ -163,6 +180,11 @@ export function AiExecutiveSummaryCard({
       slotType: "metric-data-sources" as const,
     },
   ];
+  const passRatePercent = Math.max(0, Math.min(metrics.passRate, 100));
+  const passRateDonutStyle = {
+    background: `conic-gradient(#6d5dfc ${passRatePercent}%, #ece9ff ${passRatePercent}% 100%)`,
+  };
+  const statusLabel = STATUS_LABEL[metrics.status.tone];
 
   if (!hasAnalysis && !isLoading) {
     return (
@@ -192,7 +214,7 @@ export function AiExecutiveSummaryCard({
   }
 
   return (
-    <section className="min-w-0 rounded-[2rem] border border-indigo-200 bg-gradient-to-br from-indigo-100/80 via-violet-50 to-white p-5 shadow-xl shadow-indigo-100/70 sm:p-6">
+    <section className="min-w-0 rounded-[2rem] border border-indigo-200 bg-gradient-to-br from-indigo-100/90 via-violet-50 to-white p-5 shadow-xl shadow-indigo-100/80 sm:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -203,7 +225,7 @@ export function AiExecutiveSummaryCard({
               AI Executive Summary
             </p>
           </div>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">
+          <h2 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
             AI Generated Release Analysis
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
@@ -217,7 +239,11 @@ export function AiExecutiveSummaryCard({
           disabled={isLoading}
           className="w-fit rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Analyzing..." : "Regenerate AI Analysis"}
+          {isLoading
+            ? "Analyzing..."
+            : hasRealAnalysisText
+              ? "Regenerate AI Analysis"
+              : "Generate AI Analysis"}
         </button>
       </div>
 
@@ -227,55 +253,43 @@ export function AiExecutiveSummaryCard({
         </p>
       ) : (
         <>
-          <div className="mt-5 grid overflow-hidden rounded-3xl border border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
+          <div className="mt-5 grid overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <div className="flex items-center gap-3">
-                <ReportAssetSlot
-                  type="ai-summary"
-                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
-                  imageClassName="size-5"
-                />
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                  AI Overall Diagnosis
-                </p>
-              </div>
-              <span
-                className={`mt-4 inline-flex rounded-full px-3 py-1 text-sm font-bold ring-1 ${
-                  STATUS_BADGE_CLASS[metrics.status.tone]
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+                AI Overall Diagnosis
+              </p>
+              <h3
+                className={`mt-4 text-center text-3xl font-black tracking-tight ${
+                  STATUS_TEXT_CLASS[metrics.status.tone]
                 }`}
               >
-                {metrics.status.label}
-              </span>
-              <p className="mt-3 text-sm font-semibold leading-6 text-slate-800">
+                {statusLabel}
+              </h3>
+              <p className="mt-3 text-center text-sm font-semibold leading-6 text-slate-800">
                 {conclusionText}
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-2xl bg-indigo-50 px-3 py-2">
-                  <p className="text-indigo-500">Pass Rate</p>
-                  <p className="mt-1 text-lg font-bold text-slate-950">
-                    {metrics.passRate}%
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 px-3 py-2">
-                  <p className="text-slate-500">Remaining</p>
-                  <p className="mt-1 text-lg font-bold text-slate-950">
-                    {metrics.remaining.toLocaleString()}
-                  </p>
+              <div className="mt-5 flex justify-center">
+                <div
+                  className="grid size-36 place-items-center rounded-full shadow-inner shadow-indigo-100"
+                  style={passRateDonutStyle}
+                  aria-label={`Pass Rate ${passRatePercent}%`}
+                >
+                  <div className="flex size-28 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
+                    <span className="block text-3xl font-black leading-none text-indigo-700">
+                      {passRatePercent}%
+                    </span>
+                    <span className="mt-1 block text-[11px] font-semibold leading-none text-slate-500">
+                      Pass Rate
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <div className="flex items-center gap-3">
-                <ReportAssetSlot
-                  type="risk"
-                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-red-100"
-                  imageClassName="size-5"
-                />
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                  AI Risk Detection
-                </p>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                AI Risk Detection
+              </p>
               <ul className="mt-4 space-y-3">
                 {riskItems.map((item) => (
                   <li key={item.label} className="text-sm">
@@ -297,37 +311,23 @@ export function AiExecutiveSummaryCard({
             </div>
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
-              <div className="flex items-center gap-3">
-                <ReportAssetSlot
-                  type="recommendation"
-                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-indigo-100"
-                  imageClassName="size-5"
-                />
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                  AI Recommendation
-                </p>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                AI Recommendation
+              </p>
               <ul className="mt-4 space-y-3">
                 {recommendationItems.map((item) => (
                   <li key={item} className="flex gap-2 text-sm leading-5">
                     <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-indigo-500" />
-                    <span className="line-clamp-2 text-slate-700">{item}</span>
+                    <span className="text-slate-700">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className="p-5">
-              <div className="flex items-center gap-3">
-                <ReportAssetSlot
-                  type="evidence"
-                  className="size-8 rounded-xl bg-white/80 bg-none shadow-sm ring-1 ring-violet-100"
-                  imageClassName="size-5"
-                />
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                  Evidence Sources
-                </p>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Evidence Sources
+              </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
                 Data used for this QA / Jira report.
               </p>
@@ -355,16 +355,16 @@ export function AiExecutiveSummaryCard({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2 rounded-3xl border border-indigo-100 bg-white/80 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 rounded-b-3xl border-x border-b border-indigo-100 bg-white/85 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
             {metricStripItems.map((item) => (
               <div
                 key={item.label}
-                className="flex min-w-0 items-center gap-3 rounded-2xl bg-indigo-50/50 px-3 py-2"
+                className="flex min-w-0 items-center gap-3 rounded-2xl bg-indigo-50/45 px-3 py-2"
               >
                 <ReportAssetSlot
                   type={item.slotType}
-                  className="size-8 rounded-xl bg-white/85 bg-none shadow-sm ring-1 ring-indigo-100"
-                  imageClassName="size-5"
+                  className="size-9 rounded-xl bg-white/85 bg-none shadow-sm ring-1 ring-indigo-100"
+                  imageClassName="size-7"
                 />
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-semibold text-slate-500">
