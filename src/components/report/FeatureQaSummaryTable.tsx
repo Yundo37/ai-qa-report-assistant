@@ -81,6 +81,10 @@ export function FeatureQaSummaryTable({
             const passRate = calculatePassRate(row.summary);
             const remaining =
               row.summary.Fail + row.summary.Blocked + row.summary.NextEvent;
+            const passValueClass =
+              passRate < 60 ? "text-rose-700" : "text-indigo-700";
+            const remainingValueClass =
+              remaining >= 10 ? "text-rose-700" : "text-amber-700";
 
             return (
               <div
@@ -93,10 +97,14 @@ export function FeatureQaSummaryTable({
                 <span className="text-center font-semibold text-slate-700">
                   {row.summary.Total || row.rows}
                 </span>
-                <span className="text-center font-semibold text-indigo-700">
+                <span
+                  className={`text-center font-semibold ${passValueClass}`}
+                >
                   {passRate}%
                 </span>
-                <span className="text-center font-semibold text-amber-700">
+                <span
+                  className={`text-center font-semibold ${remainingValueClass}`}
+                >
                   {remaining}
                 </span>
               </div>

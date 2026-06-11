@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 
-const ACTION_BADGES = ["Priority check", "Follow-up", "Policy check", "Monitor"];
+const ACTION_BADGES = ["Priority", "Retest", "Policy", "Monitor"];
 
 export function QaFollowUpDashboardCard({
   followUps,
@@ -19,10 +19,11 @@ export function QaFollowUpDashboardCard({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-950">
-            AI Follow-up Actions
+            QA Review Items
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Follow-up candidates organized from QA comments and report data.
+            QA Comment와 Remaining Issue를 기준으로 추가 확인이 필요한
+            항목을 정리합니다.
           </p>
         </div>
         {followUps.length > 5 && (
@@ -54,7 +55,7 @@ export function QaFollowUpDashboardCard({
                     {followUp}
                   </p>
                   <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                    Based on QA Comment / Follow-up text.
+                    QA Comment / Follow-up text 기반
                   </p>
                 </div>
               </div>
@@ -66,7 +67,7 @@ export function QaFollowUpDashboardCard({
         </ul>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          No QA Follow-up Action to display.
+          No QA Review Item to display.
         </p>
       )}
     </section>

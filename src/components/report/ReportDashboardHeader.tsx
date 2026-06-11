@@ -120,7 +120,8 @@ export function ReportDashboardHeader({
             </span>
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-            Overall QA Result Report based on Google Spreadsheet QA data.
+            Google Spreadsheet QA 데이터와 Jira 이슈를 기반으로 전체 릴리즈
+            QA 상태를 요약합니다.
           </p>
           <dl className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
             {metaItems.map((item) => (

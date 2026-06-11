@@ -1,6 +1,10 @@
-import type { AnalysisSummaryState, IssuePatternAnalysisItem } from "@/types/report";
+import type {
+  AnalysisSummaryState,
+  VersionIssueSummaryItem,
+} from "@/types/report";
 
-const TREND_COLORS = ["#6d5ef6", "#f97316", "#06b6d4", "#ec4899", "#64748b"];
+const TOTAL_ISSUE_COLOR = "#6d5ef6";
+const HIGH_ISSUE_COLOR = "#e11d48";
 const CHART_WIDTH = 720;
 const CHART_HEIGHT = 360;
 const CHART_PADDING = {
@@ -10,16 +14,6 @@ const CHART_PADDING = {
   left: 66,
 };
 
-const SOURCE_TYPE_LABELS: Record<string, string> = {
-  jiraSummary: "Jira Summary",
-  remainingIssue: "Remaining",
-  qaComment: "QA Comment",
-};
-
-function truncatePatternName(name: string, maxLength = 24) {
-  return name.length > maxLength ? `${name.slice(0, maxLength - 1)}...` : name;
-}
-
 function createTrendPath(points: Array<{ x: number; y: number }>) {
   if (points.length === 0) return "";
 
@@ -28,44 +22,92 @@ function createTrendPath(points: Array<{ x: number; y: number }>) {
     .join(" ");
 }
 
-function PatternTrendChart({
-  patterns,
+function clampChartLabelY(value: number) {
+  return Math.max(CHART_PADDING.top - 22, Math.min(CHART_HEIGHT - 34, value));
+}
+
+function getVersionSortScore(version: string) {
+  return (
+    version
+      .match(/\d+(?:\.\d+)*/)?.[0]
+      ?.split(".")
+      .map(Number)
+      .reduce((score, number) => score * 100 + number, 0) ?? 0
+  );
+}
+
+function extractBaseVersion(value: string) {
+  return value.match(/\d+(?:\.\d+)+/)?.[0] ?? "";
+}
+
+function createVersionTrendItems({
+  versionSummary,
+  currentVersion,
 }: {
-  patterns: IssuePatternAnalysisItem[];
+  versionSummary: VersionIssueSummaryItem[];
+  currentVersion: string;
 }) {
-  const trendBuckets =
-    patterns.find((pattern) => (pattern.trend ?? []).length > 0)?.trend ?? [];
-  const trendBasis =
-    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ??
-    "period";
+  const grouped = new Map<string, VersionIssueSummaryItem>();
+
+  versionSummary.forEach((item) => {
+    const baseVersion = extractBaseVersion(item.version);
+
+    if (!baseVersion) return;
+
+    const current =
+      grouped.get(baseVersion) ??
+      ({
+        version: baseVersion,
+        highHighest: 0,
+        medium: 0,
+        low: 0,
+        total: 0,
+      } satisfies VersionIssueSummaryItem);
+
+    current.highHighest += item.highHighest;
+    current.medium += item.medium;
+    current.low += item.low;
+    current.total += item.total;
+    grouped.set(baseVersion, current);
+  });
+
+  const sortedItems = Array.from(grouped.values()).sort(
+    (first, second) =>
+      getVersionSortScore(first.version) - getVersionSortScore(second.version) ||
+      first.version.localeCompare(second.version)
+  );
+  const currentVersionIndex = sortedItems.findIndex(
+    (item) => item.version === currentVersion
+  );
+
+  if (currentVersionIndex >= 0) {
+    return sortedItems.slice(
+      Math.max(0, currentVersionIndex - 4),
+      currentVersionIndex + 1
+    );
+  }
+
+  return sortedItems.slice(-5);
+}
+
+function VersionIssueTrendChart({
+  items,
+}: {
+  items: VersionIssueSummaryItem[];
+}) {
   const plotWidth =
     CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
   const plotHeight =
     CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
-  const trendSeries = patterns.map((pattern, patternIndex) => ({
-    pattern,
-    color: TREND_COLORS[patternIndex % TREND_COLORS.length],
-    points: trendBuckets.map((bucket, bucketIndex) => ({
-      label: bucket.label,
-      title: bucket.title,
-      count: pattern.trend?.[bucketIndex]?.count ?? 0,
-    })),
-  }));
-  const maxTrendCount = Math.max(
-    ...trendSeries.flatMap((series) =>
-      series.points.map((point) => point.count)
-    ),
+  const maxIssueCount = Math.max(
+    ...items.flatMap((item) => [item.total, item.highHighest]),
     0
   );
-  const hasTrendData =
-    trendBuckets.length >= 1 &&
-    trendSeries.some((series) =>
-      series.points.some((point) => point.count > 0)
-    );
+  const hasTrendData = items.length >= 2 && items.some((item) => item.total > 0);
   const yAxisTicks = Array.from(
     new Set(
       [1, 0.66, 0.33, 0].map((ratio) =>
-        Math.round(Math.max(maxTrendCount, 1) * ratio)
+        Math.round(Math.max(maxIssueCount, 1) * ratio)
       )
     )
   ).sort((first, second) => second - first);
@@ -77,10 +119,10 @@ function PatternTrendChart({
         <div className="relative z-10 grid h-full place-items-center px-6 text-center">
           <div>
             <p className="text-sm font-semibold text-slate-800">
-              Trend data is limited for the selected period.
+              Version Trend 데이터가 부족합니다.
             </p>
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              Pattern counts are summarized from Jira and QA evidence.
+              버전별 이슈 추이를 표시할 데이터가 충분하지 않습니다.
             </p>
           </div>
         </div>
@@ -90,22 +132,21 @@ function PatternTrendChart({
 
   return (
     <div className="mt-2 overflow-hidden rounded-3xl bg-white/10">
-      <div className="grid gap-x-3 gap-y-1 px-2 py-1 sm:grid-cols-2">
-        {trendSeries.map((series) => (
-          <div
-            key={series.pattern.name}
-            className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-slate-500"
-            title={series.pattern.name}
-          >
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: series.color }}
-            />
-            <span className="truncate">
-              {truncatePatternName(series.pattern.name)}
-            </span>
-          </div>
-        ))}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-1 text-[10px] font-medium text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: TOTAL_ISSUE_COLOR }}
+          />
+          <span>Total Issues</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: HIGH_ISSUE_COLOR }}
+          />
+          <span>High+ Issues</span>
+        </span>
       </div>
 
       <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-2xl bg-white/55">
@@ -115,13 +156,13 @@ function PatternTrendChart({
           preserveAspectRatio="none"
           className="absolute inset-0 z-10 h-full w-full"
           role="img"
-          aria-label={`Pattern trend chart by ${trendBasis}`}
+          aria-label="Version issue trend chart"
         >
           {yAxisTicks.map((tick) => {
             const y =
               CHART_PADDING.top +
               plotHeight -
-              (tick / Math.max(maxTrendCount, 1)) * plotHeight;
+              (tick / Math.max(maxIssueCount, 1)) * plotHeight;
 
             return (
               <g key={tick}>
@@ -146,15 +187,15 @@ function PatternTrendChart({
             );
           })}
 
-          {trendBuckets.map((bucket, index) => {
+          {items.map((item, index) => {
             const x =
-              trendBuckets.length > 1
+              items.length > 1
                 ? CHART_PADDING.left +
-                  (plotWidth / (trendBuckets.length - 1)) * index
+                  (plotWidth / (items.length - 1)) * index
                 : CHART_PADDING.left + plotWidth / 2;
 
             return (
-              <g key={`${bucket.label}-${bucket.title}`}>
+              <g key={item.version}>
                 <line
                   x1={x}
                   y1={CHART_PADDING.top}
@@ -170,72 +211,115 @@ function PatternTrendChart({
                   textAnchor="middle"
                   className="fill-slate-500 text-[10px] font-bold"
                 >
-                  <title>{bucket.title}</title>
-                  {bucket.label}
+                  {item.version}
                 </text>
               </g>
             );
           })}
 
-          {trendSeries.map((series) => {
-            const points = series.points.map((point, index) => {
+          {(() => {
+            const totalPoints = items.map((item, index) => {
               const x =
-                series.points.length > 1
+                items.length > 1
                   ? CHART_PADDING.left +
-                    (plotWidth / (series.points.length - 1)) * index
+                    (plotWidth / (items.length - 1)) * index
                   : CHART_PADDING.left + plotWidth / 2;
               const y =
                 CHART_PADDING.top +
                 plotHeight -
-                (point.count / Math.max(maxTrendCount, 1)) * plotHeight;
+                (item.total / Math.max(maxIssueCount, 1)) * plotHeight;
 
-              return { ...point, x, y };
+              return { ...item, x, y };
+            });
+            const highPoints = items.map((item, index) => {
+              const x =
+                items.length > 1
+                  ? CHART_PADDING.left +
+                    (plotWidth / (items.length - 1)) * index
+                  : CHART_PADDING.left + plotWidth / 2;
+              const y =
+                CHART_PADDING.top +
+                plotHeight -
+                (item.highHighest / Math.max(maxIssueCount, 1)) * plotHeight;
+
+              return { ...item, x, y };
             });
 
             return (
-              <g key={series.pattern.name}>
+              <g>
                 <path
-                  d={createTrendPath(points)}
+                  d={createTrendPath(totalPoints)}
                   fill="none"
-                  stroke={series.color}
+                  stroke={TOTAL_ISSUE_COLOR}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth="2"
+                  strokeWidth="3"
                   opacity="0.84"
                 />
-                {points.map((point) => (
-                  <circle
-                    key={`${series.pattern.name}-${point.label}`}
-                    cx={point.x}
-                    cy={point.y}
-                    r="3"
-                    fill="white"
-                    stroke={series.color}
-                    strokeWidth="1.6"
-                  >
-                    <title>
-                      {series.pattern.name} / {point.title}: {point.count}
-                    </title>
-                  </circle>
+                <path
+                  d={createTrendPath(highPoints)}
+                  fill="none"
+                  stroke={HIGH_ISSUE_COLOR}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  opacity="0.78"
+                />
+                {totalPoints.map((point) => (
+                  <g key={`total-${point.version}`}>
+                    <text
+                      x={point.x}
+                      y={clampChartLabelY(point.y - 12)}
+                      textAnchor="middle"
+                      className="fill-indigo-700 text-[10px] font-black"
+                    >
+                      {point.total.toLocaleString()}
+                    </text>
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="4"
+                      fill="white"
+                      stroke={TOTAL_ISSUE_COLOR}
+                      strokeWidth="2"
+                    >
+                      <title>
+                        {point.version}: {point.total.toLocaleString()} total issues
+                      </title>
+                    </circle>
+                  </g>
+                ))}
+                {highPoints.map((point) => (
+                  <g key={`high-${point.version}`}>
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="3.5"
+                      fill="white"
+                      stroke={HIGH_ISSUE_COLOR}
+                      strokeWidth="1.8"
+                    >
+                      <title>
+                        {point.version}: {point.highHighest.toLocaleString()} High+ issues
+                      </title>
+                    </circle>
+                    <text
+                      x={point.x}
+                      y={clampChartLabelY(point.y + 20)}
+                      textAnchor="middle"
+                      className="fill-rose-600 text-[10px] font-black"
+                    >
+                      {point.highHighest.toLocaleString()}
+                    </text>
+                  </g>
                 ))}
               </g>
             );
-          })}
+          })()}
         </svg>
       </div>
     </div>
   );
-}
-
-function getPatternTrendSubtitle(
-  trendBasis: IssuePatternAnalysisItem["trendBasis"]
-) {
-  if (trendBasis === "rc") return "Repeated pattern signals by RC flow.";
-  if (trendBasis === "version") {
-    return "Repeated pattern signals by version flow.";
-  }
-
-  return "Repeated pattern signals by selected period.";
 }
 
 export function IssuePatternAnalysisCard({
@@ -249,40 +333,13 @@ export function IssuePatternAnalysisCard({
     0
   );
   const maxCount = Math.max(...patterns.map((pattern) => pattern.count), 0);
-  const sourceTypeCounts = patterns.reduce<Record<string, number>>(
-    (summary, pattern) => {
-      pattern.sourceTypes.forEach((sourceType) => {
-        summary[sourceType] = (summary[sourceType] ?? 0) + pattern.count;
-      });
-      return summary;
-    },
-    {}
-  );
-  const versionCounts = patterns.reduce<Record<string, number>>(
-    (summary, pattern) => {
-      pattern.versions.forEach((version) => {
-        summary[version] = (summary[version] ?? 0) + pattern.count;
-      });
-      return summary;
-    },
-    {}
-  );
-  const sourceRows = Object.entries(sourceTypeCounts)
-    .sort(([, left], [, right]) => right - left)
-    .slice(0, 3);
-  const versionRows = Object.entries(versionCounts)
-    .sort(([, left], [, right]) => right - left)
-    .slice(0, 3);
-  const trendBasis =
-    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ??
-    "period";
-  const sourceSummary = sourceRows
-    .map(
-      ([label, count]) =>
-        `${SOURCE_TYPE_LABELS[label] ?? label} ${count.toLocaleString()}`
-    )
-    .join(" / ");
-  const versionSummary = versionRows.map(([label]) => label).join(", ");
+  const currentBaseVersion =
+    extractBaseVersion(analysisSummary.inferredTargetVersion) ||
+    extractBaseVersion(analysisSummary.versionSummary?.at(-1)?.version ?? "");
+  const versionTrendItems = createVersionTrendItems({
+    versionSummary: analysisSummary.versionSummary ?? [],
+    currentVersion: currentBaseVersion,
+  });
 
   return (
     <section className="rounded-[2rem] border border-indigo-100 bg-white p-5 shadow-sm">
@@ -292,10 +349,10 @@ export function IssuePatternAnalysisCard({
             Issue Pattern
           </p>
           <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-            Issue Pattern Analysis
+            Issue Pattern & Version Risk
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Repeated issue patterns detected from Jira and QA evidence.
+            반복 이슈 패턴과 릴리즈 버전별 이슈 규모를 함께 확인합니다.
           </p>
         </div>
         <span className="w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
@@ -303,12 +360,12 @@ export function IssuePatternAnalysisCard({
         </span>
       </div>
 
-      {patterns.length > 0 ? (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
-          <div className="h-fit rounded-3xl border border-slate-200 bg-slate-50/70 px-4 py-4">
-            <p className="text-sm font-semibold text-slate-950">
-              Top 5 Pattern Signals
-            </p>
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
+        <div className="h-fit rounded-3xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+          <p className="text-sm font-semibold text-slate-950">
+            Top 5 Pattern Signals
+          </p>
+          {patterns.length > 0 ? (
             <div className="mt-4 divide-y divide-slate-200/80">
               {patterns.map((pattern, index) => {
                 const ratio = maxCount > 0 ? (pattern.count / maxCount) * 100 : 0;
@@ -344,40 +401,31 @@ export function IssuePatternAnalysisCard({
                 );
               })}
             </div>
+          ) : (
+            <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+              No repeated issue pattern data to display.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/50 p-5 shadow-sm shadow-indigo-50">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950">
+              Version Issue Trend
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              이전 릴리즈와 현재 버전의 전체 Jira 이슈 수 추이를 비교합니다.
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/50 p-5 shadow-sm shadow-indigo-50">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-950">
-                  Pattern Trend
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {getPatternTrendSubtitle(trendBasis)}
-                </p>
-              </div>
-              <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-indigo-700">
-                Evidence based
-              </span>
-            </div>
+          <VersionIssueTrendChart items={versionTrendItems} />
 
-            <PatternTrendChart patterns={patterns} />
-
-            <div className="mt-2 px-1 text-[11px] leading-5 text-slate-400">
-              {(sourceSummary || versionSummary) && (
-                <p className="truncate">
-                  Evidence: {sourceSummary || "Source unavailable"}
-                  {versionSummary ? ` / Version ${versionSummary}` : ""}
-                </p>
-              )}
-            </div>
+          <div className="mt-3 rounded-2xl border border-indigo-100 bg-white/70 px-3 py-2 text-[11px] leading-5 text-slate-500">
+            Version Trend는 업데이트 버전 비교이며, RC Progress는 현재{" "}
+            {currentBaseVersion || "릴리즈"} RC 흐름 기준입니다.
           </div>
         </div>
-      ) : (
-        <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          No repeated issue pattern data to display.
-        </p>
-      )}
+      </div>
     </section>
   );
 }

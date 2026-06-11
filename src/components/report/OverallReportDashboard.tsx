@@ -63,7 +63,6 @@ export function OverallReportDashboard({
         isLoading={isAiAnalyzing}
         onAnalyze={onAnalyze}
       />
-      <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
       <div className="grid items-stretch gap-5 lg:grid-cols-3">
         <div className="min-w-0">
           <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
@@ -75,6 +74,7 @@ export function OverallReportDashboard({
           <FeatureQaSummaryTable analysisSummary={analysisSummary} />
         </div>
       </div>
+      <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
       <div className="grid items-stretch gap-5 md:grid-cols-2">
         <div className="min-w-0">
           <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />

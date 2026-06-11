@@ -16,9 +16,8 @@ export function DetailedSummarySection({ children }: { children: ReactNode }) {
             Detailed QA Data
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Raw summaries and verification data are preserved here, including
-            Jira Summary, Version Summary, Report Preview, Remaining Issues,
-            and Follow-up lists.
+            Jira Summary, Version Summary, Remaining Issues, QA Comment 등 상세
+            검증 데이터를 보관합니다.
           </p>
         </div>
         <button

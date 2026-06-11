@@ -12,18 +12,6 @@ type AiExecutiveSummaryCardProps = {
   onAnalyze: () => void;
 };
 
-const STATUS_LABEL = {
-  stable: "\uC548\uC815",
-  caution: "\uC8FC\uC758 \uD544\uC694",
-  risk: "\uC704\uD5D8",
-};
-
-const STATUS_TEXT_CLASS = {
-  stable: "text-emerald-600",
-  caution: "text-amber-600",
-  risk: "text-red-600",
-};
-
 // TEMP_DESIGN_PREVIEW_ONLY: remove this mock when AI Summary UI review no longer needs a local preview.
 const TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT = [
   "현재 Overall QA는 High / Highest Remaining과 Blocked 항목 확인이 필요한 상태입니다. 상단 Remaining 이슈와 RC별 잔여 흐름을 함께 검토하면 릴리즈 전 우선 확인 범위를 빠르게 좁힐 수 있습니다.",
@@ -44,14 +32,30 @@ function createConclusionText(
   remaining: number
 ) {
   if (tone === "risk") {
-    return `Overall QA still has ${highRisk.toLocaleString()} high-risk Remaining issue(s) and ${blocked.toLocaleString()} Blocked item(s), so release follow-up is needed before closure.`;
+    return `High / Highest Remaining ${highRisk.toLocaleString()}건과 Blocked ${blocked.toLocaleString()}건이 주요 확인 신호입니다.`;
   }
 
   if (tone === "caution") {
-    return `Overall QA has ${remaining.toLocaleString()} Remaining issue(s) that should be reviewed as follow-up items.`;
+    return `Remaining Issue ${remaining.toLocaleString()}건을 중심으로 후속 추이를 확인합니다.`;
   }
 
-  return "Overall QA is stable in the top dashboard metrics, with no major risk signal visible.";
+  return "주요 대시보드 지표에서 즉시 확인이 필요한 큰 리스크 신호는 보이지 않습니다.";
+}
+
+function createReleaseJudgmentLabel({
+  highRisk,
+  blocked,
+  remaining,
+  nextEvent,
+}: {
+  highRisk: number;
+  blocked: number;
+  remaining: number;
+  nextEvent: number;
+}) {
+  if (highRisk > 0 || blocked > 0) return "추가 검증 필요";
+  if (remaining > 0 || nextEvent > 0) return "모니터링 필요";
+  return "안정권";
 }
 
 export function AiExecutiveSummaryCard({
@@ -87,9 +91,7 @@ export function AiExecutiveSummaryCard({
     analysisSummary.overallQaSummary?.NextEvent ??
     analysisSummary.qaTotal.NextEvent ??
     0;
-  const features =
-    analysisSummary.overallTestSheets?.length || analysisSummary.testSheets.length;
-  const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 2);
+  const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 3);
   const conclusionText = createConclusionText(
     metrics.status.tone,
     highRisk,
@@ -140,51 +142,52 @@ export function AiExecutiveSummaryCard({
       ? "Track Next Event items separately as follow-up work."
       : "Separate any new Next Event items as follow-up work.",
   ].slice(0, 3);
-  const evidenceItems = [
-    {
-      label: "Test Cases",
-      value:
-        analysisSummary.overallQaSummary?.Total ??
-        analysisSummary.qaTotal.Total ??
-        0,
-    },
-    { label: "Jira Issues", value: analysisSummary.jiraMatchedRows },
-    { label: "Features", value: features },
-    { label: "RC Versions", value: analysisSummary.rcProgress.items.length },
-    { label: "Data Sources", value: analysisSummary.testSheets.length + 1 },
-  ];
+  const patternInsightItems = patternItems.map((item) => ({
+    label: item.name,
+    value: item.count,
+    trendLabel: item.trend[0]?.label,
+  }));
+  const totalTestCases =
+    analysisSummary.overallQaSummary?.Total ??
+    analysisSummary.qaTotal.Total ??
+    0;
   const metricStripItems = [
     {
       label: "Total Test Cases",
-      value: evidenceItems[0].value,
+      value: totalTestCases,
       slotType: "metric-test-cases" as const,
     },
     {
       label: "Jira Issues",
-      value: evidenceItems[1].value,
+      value: analysisSummary.jiraMatchedRows,
       slotType: "metric-jira-issues" as const,
     },
     {
-      label: "Features",
-      value: evidenceItems[2].value,
-      slotType: "metric-features" as const,
+      label: "Remaining Issues",
+      value: metrics.remaining,
+      slotType: "risk" as const,
     },
     {
       label: "RC Versions",
-      value: evidenceItems[3].value,
+      value: analysisSummary.rcProgress.items.length,
       slotType: "metric-rc-versions" as const,
     },
     {
-      label: "Data Sources",
-      value: evidenceItems[4].value,
-      slotType: "metric-data-sources" as const,
+      label: "QA Comments",
+      value: analysisSummary.qaFollowUps.length,
+      slotType: "follow-up" as const,
     },
   ];
   const passRatePercent = Math.max(0, Math.min(metrics.passRate, 100));
   const passRateDonutStyle = {
     background: `conic-gradient(#6d5dfc ${passRatePercent}%, #ece9ff ${passRatePercent}% 100%)`,
   };
-  const statusLabel = STATUS_LABEL[metrics.status.tone];
+  const releaseJudgmentLabel = createReleaseJudgmentLabel({
+    highRisk,
+    blocked: blockedCount,
+    remaining: metrics.remaining,
+    nextEvent: nextEventCount,
+  });
 
   if (!hasAnalysis && !isLoading) {
     return (
@@ -229,8 +232,8 @@ export function AiExecutiveSummaryCard({
             AI Generated Release Analysis
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            Conclusion, risk signals, follow-up direction, and evidence sources
-            are organized from the current QA and Jira data.
+            현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단, 리스크 신호,
+            반복 패턴, QA 확인 항목을 정리합니다.
           </p>
         </div>
         <button
@@ -256,15 +259,11 @@ export function AiExecutiveSummaryCard({
           <div className="mt-5 grid overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                AI Overall Diagnosis
+                Release Judgment
               </p>
-              <h3
-                className={`mt-4 text-center text-3xl font-black tracking-tight ${
-                  STATUS_TEXT_CLASS[metrics.status.tone]
-                }`}
-              >
-                {statusLabel}
-              </h3>
+              <p className="mt-4 text-center text-xl font-black tracking-tight text-indigo-700">
+                {releaseJudgmentLabel}
+              </p>
               <p className="mt-3 text-center text-sm font-semibold leading-6 text-slate-800">
                 {conclusionText}
               </p>
@@ -288,7 +287,7 @@ export function AiExecutiveSummaryCard({
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                AI Risk Detection
+                Risk Signals
               </p>
               <ul className="mt-4 space-y-3">
                 {riskItems.map((item) => (
@@ -312,7 +311,43 @@ export function AiExecutiveSummaryCard({
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                AI Recommendation
+                Pattern Insight
+              </p>
+              {patternInsightItems.length > 0 ? (
+                <>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Repeated issue patterns detected from existing issue data.
+                  </p>
+                  <ul className="mt-4 space-y-3">
+                    {patternInsightItems.map((item) => (
+                      <li key={item.label} className="text-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="min-w-0 leading-5 text-slate-700">
+                            {item.label}
+                            {item.trendLabel ? (
+                              <span className="mt-1 block text-xs text-slate-400">
+                                Trend basis: {item.trendLabel}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
+                            {item.value.toLocaleString()}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-500">
+                  Pattern data is limited.
+                </p>
+              )}
+            </div>
+
+            <div className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                QA Checkpoints
               </p>
               <ul className="mt-4 space-y-3">
                 {recommendationItems.map((item) => (
@@ -322,31 +357,6 @@ export function AiExecutiveSummaryCard({
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                Evidence Sources
-              </p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">
-                Data used for this QA / Jira report.
-              </p>
-              <dl className="mt-4 space-y-3">
-                {evidenceItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <dt className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
-                      <span className="size-1.5 shrink-0 rounded-full bg-violet-300" />
-                      <span className="truncate">{item.label}</span>
-                    </dt>
-                    <dd className="text-sm font-bold text-slate-950">
-                      {item.value.toLocaleString()}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
               <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-700">
                 Medium {mediumRisk.toLocaleString()} / Low{" "}
                 {lowRisk.toLocaleString()} / Next Event{" "}
