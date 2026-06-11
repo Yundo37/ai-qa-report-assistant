@@ -1,13 +1,13 @@
 import type { AnalysisSummaryState, IssuePatternAnalysisItem } from "@/types/report";
 
 const TREND_COLORS = ["#6d5ef6", "#f97316", "#06b6d4", "#ec4899", "#64748b"];
-const CHART_WIDTH = 560;
-const CHART_HEIGHT = 230;
+const CHART_WIDTH = 720;
+const CHART_HEIGHT = 360;
 const CHART_PADDING = {
-  top: 18,
-  right: 18,
-  bottom: 36,
-  left: 42,
+  top: 62,
+  right: 62,
+  bottom: 58,
+  left: 66,
 };
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
@@ -36,7 +36,8 @@ function PatternTrendChart({
   const trendBuckets =
     patterns.find((pattern) => (pattern.trend ?? []).length > 0)?.trend ?? [];
   const trendBasis =
-    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ?? "period";
+    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ??
+    "period";
   const plotWidth =
     CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
   const plotHeight =
@@ -51,7 +52,9 @@ function PatternTrendChart({
     })),
   }));
   const maxTrendCount = Math.max(
-    ...trendSeries.flatMap((series) => series.points.map((point) => point.count)),
+    ...trendSeries.flatMap((series) =>
+      series.points.map((point) => point.count)
+    ),
     0
   );
   const hasTrendData =
@@ -69,16 +72,9 @@ function PatternTrendChart({
 
   if (!hasTrendData) {
     return (
-      <div
-        className="relative mt-3 min-h-[230px] overflow-hidden rounded-3xl border border-indigo-100 bg-white/75 p-4"
-        style={{
-          backgroundImage: "url('/assets/report/pattern-chart-bg-v2.svg')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
-      >
-        <div className="grid h-full min-h-[196px] place-items-center rounded-2xl border border-dashed border-indigo-200 bg-white/50 px-6 text-center">
+      <div className="relative mt-3 aspect-[2/1] w-full overflow-hidden rounded-3xl bg-white/65">
+        <div className="absolute inset-0 bg-[url('/assets/report/pattern-chart-bg-v2.svg')] bg-cover bg-center bg-no-repeat" />
+        <div className="relative z-10 grid h-full place-items-center px-6 text-center">
           <div>
             <p className="text-sm font-semibold text-slate-800">
               Trend data is limited for the selected period.
@@ -93,7 +89,7 @@ function PatternTrendChart({
   }
 
   return (
-    <div className="mt-2 overflow-hidden rounded-3xl bg-white/25 p-1">
+    <div className="mt-2 overflow-hidden rounded-3xl bg-white/10">
       <div className="grid gap-x-3 gap-y-1 px-2 py-1 sm:grid-cols-2">
         {trendSeries.map((series) => (
           <div
@@ -112,18 +108,12 @@ function PatternTrendChart({
         ))}
       </div>
 
-      <div
-        className="relative mt-2 overflow-hidden rounded-2xl bg-white/60 p-1"
-        style={{
-          backgroundImage: "url('/assets/report/pattern-chart-bg-v2.svg')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
-      >
+      <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-2xl bg-white/55">
+        <div className="absolute inset-0 bg-[url('/assets/report/pattern-chart-bg-v2.svg')] bg-cover bg-center bg-no-repeat" />
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          className="relative z-10 h-[230px] w-full"
+          preserveAspectRatio="none"
+          className="absolute inset-0 z-10 h-full w-full"
           role="img"
           aria-label={`Pattern trend chart by ${trendBasis}`}
         >
@@ -141,14 +131,14 @@ function PatternTrendChart({
                   x2={CHART_WIDTH - CHART_PADDING.right}
                   y2={y}
                   stroke="#c7d2fe"
-                  opacity="0.32"
+                  opacity="0.22"
                   strokeWidth="1"
                 />
                 <text
-                  x={CHART_PADDING.left - 10}
+                  x={CHART_PADDING.left - 12}
                   y={y + 4}
                   textAnchor="end"
-                  className="fill-slate-400 text-[10px] font-semibold opacity-70"
+                  className="fill-slate-400 text-[10px] font-semibold opacity-55"
                 >
                   {tick}
                 </text>
@@ -171,12 +161,12 @@ function PatternTrendChart({
                   x2={x}
                   y2={CHART_PADDING.top + plotHeight}
                   stroke="#e0e7ff"
-                  opacity="0.28"
+                  opacity="0.2"
                   strokeWidth="1"
                 />
                 <text
                   x={x}
-                  y={CHART_HEIGHT - 12}
+                  y={CHART_HEIGHT - 18}
                   textAnchor="middle"
                   className="fill-slate-500 text-[10px] font-bold"
                 >
@@ -191,7 +181,8 @@ function PatternTrendChart({
             const points = series.points.map((point, index) => {
               const x =
                 series.points.length > 1
-                  ? CHART_PADDING.left + (plotWidth / (series.points.length - 1)) * index
+                  ? CHART_PADDING.left +
+                    (plotWidth / (series.points.length - 1)) * index
                   : CHART_PADDING.left + plotWidth / 2;
               const y =
                 CHART_PADDING.top +
@@ -209,18 +200,18 @@ function PatternTrendChart({
                   stroke={series.color}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth="2.15"
-                  opacity="0.88"
+                  strokeWidth="2"
+                  opacity="0.84"
                 />
                 {points.map((point) => (
                   <circle
                     key={`${series.pattern.name}-${point.label}`}
                     cx={point.x}
                     cy={point.y}
-                    r="3.2"
+                    r="3"
                     fill="white"
                     stroke={series.color}
-                    strokeWidth="1.7"
+                    strokeWidth="1.6"
                   >
                     <title>
                       {series.pattern.name} / {point.title}: {point.count}
@@ -236,7 +227,9 @@ function PatternTrendChart({
   );
 }
 
-function getPatternTrendSubtitle(trendBasis: IssuePatternAnalysisItem["trendBasis"]) {
+function getPatternTrendSubtitle(
+  trendBasis: IssuePatternAnalysisItem["trendBasis"]
+) {
   if (trendBasis === "rc") return "Repeated pattern signals by RC flow.";
   if (trendBasis === "version") {
     return "Repeated pattern signals by version flow.";
@@ -251,7 +244,10 @@ export function IssuePatternAnalysisCard({
   analysisSummary: NonNullable<AnalysisSummaryState>;
 }) {
   const patterns = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 5);
-  const totalPatterns = patterns.reduce((total, pattern) => total + pattern.count, 0);
+  const totalPatterns = patterns.reduce(
+    (total, pattern) => total + pattern.count,
+    0
+  );
   const maxCount = Math.max(...patterns.map((pattern) => pattern.count), 0);
   const sourceTypeCounts = patterns.reduce<Record<string, number>>(
     (summary, pattern) => {
@@ -278,13 +274,14 @@ export function IssuePatternAnalysisCard({
     .sort(([, left], [, right]) => right - left)
     .slice(0, 3);
   const trendBasis =
-    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ?? "period";
+    patterns.find((pattern) => pattern.trend?.length > 0)?.trendBasis ??
+    "period";
   const sourceSummary = sourceRows
     .map(
       ([label, count]) =>
         `${SOURCE_TYPE_LABELS[label] ?? label} ${count.toLocaleString()}`
     )
-    .join(" · ");
+    .join(" / ");
   const versionSummary = versionRows.map(([label]) => label).join(", ");
 
   return (
@@ -370,7 +367,7 @@ export function IssuePatternAnalysisCard({
               {(sourceSummary || versionSummary) && (
                 <p className="truncate">
                   Evidence: {sourceSummary || "Source unavailable"}
-                  {versionSummary ? ` · Version ${versionSummary}` : ""}
+                  {versionSummary ? ` / Version ${versionSummary}` : ""}
                 </p>
               )}
             </div>

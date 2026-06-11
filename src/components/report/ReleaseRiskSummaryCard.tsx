@@ -15,6 +15,12 @@ function countByPriority(issues: RemainingIssue[]) {
   );
 }
 
+function formatRiskPercentage(value: number, total: number) {
+  if (total <= 0) return "0.0%";
+
+  return `${((value / total) * 100).toFixed(1)}%`;
+}
+
 export function ReleaseRiskSummaryCard({
   analysisSummary,
 }: {
@@ -39,35 +45,29 @@ export function ReleaseRiskSummaryCard({
     analysisSummary.overallQaSummary?.NextEvent ??
     analysisSummary.qaTotal.NextEvent ??
     0;
-  const reopened = analysisSummary.rcProgress?.reopenedIssues ?? 0;
+  const totalTestCases =
+    analysisSummary.overallQaSummary?.Total ?? analysisSummary.qaTotal.Total ?? 0;
   const highRisk = highest + high;
   const lowRisk = low + lowest;
-  const riskMessage =
-    highRisk > 0
-      ? "High / Highest Remaining issues need release follow-up."
-      : medium > 0 || blocked > 0
-        ? "Medium Remaining or Blocked items need review."
-        : "No major risk signal is visible in the top risk metrics.";
-  const conclusionClass =
-    highRisk > 0
-      ? "border-red-200 bg-red-50 text-red-700"
-      : medium > 0 || blocked > 0
-        ? "border-amber-200 bg-amber-50 text-amber-700"
-        : "border-emerald-200 bg-emerald-50 text-emerald-700";
+  const releaseRiskNote =
+    "Reopened / Next Event\uB294 \uD6C4\uC18D \uD655\uC778 \uD56D\uBAA9\uC73C\uB85C \uAD00\uB9AC\uD569\uB2C8\uB2E4.";
   const priorityItems = [
     {
       label: "High / Highest",
       value: highRisk,
+      percentage: formatRiskPercentage(highRisk, remainingTotal),
       className: "border-red-200 bg-red-50 text-red-700",
     },
     {
       label: "Medium",
       value: medium,
+      percentage: formatRiskPercentage(medium, remainingTotal),
       className: "border-amber-200 bg-amber-50 text-amber-700",
     },
     {
       label: "Low / Lowest",
       value: lowRisk,
+      percentage: formatRiskPercentage(lowRisk, remainingTotal),
       className: "border-emerald-200 bg-emerald-50 text-emerald-700",
     },
   ];
@@ -75,13 +75,15 @@ export function ReleaseRiskSummaryCard({
     {
       label: "Blocked",
       value: blocked,
-      className: "bg-orange-50 text-orange-700",
+      percentage: formatRiskPercentage(blocked, totalTestCases),
+      className: "text-orange-700",
       slotType: "risk-blocked" as const,
     },
     {
       label: "Next Event",
       value: nextEvent,
-      className: "bg-indigo-50 text-indigo-700",
+      percentage: formatRiskPercentage(nextEvent, totalTestCases),
+      className: "text-indigo-700",
       slotType: "risk-next-event" as const,
     },
   ];
@@ -89,68 +91,64 @@ export function ReleaseRiskSummaryCard({
   return (
     <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-red-600">
-            Release Risk
-          </p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-            Release Risk Summary
-          </h2>
-        </div>
-        <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+        <h2 className="text-base font-bold leading-5 tracking-tight text-slate-950">
+          Release Risk Summary
+        </h2>
+        <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold leading-5 text-slate-500">
           Total {remainingTotal}
         </span>
       </div>
 
-      <p
-        className={`mt-4 rounded-2xl border px-3 py-3 text-sm font-semibold leading-6 ${conclusionClass}`}
-      >
-        {riskMessage}
-      </p>
-
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-5 grid grid-cols-3 gap-2">
         {priorityItems.map((item) => (
           <div
             key={item.label}
-            className={`rounded-2xl border px-3 py-3 ${item.className}`}
+            className={`flex min-h-24 flex-col items-center justify-center rounded-2xl border px-2 py-3 text-center ${item.className}`}
           >
-            <p className="truncate text-xs font-semibold">{item.label}</p>
-            <p className="mt-2 text-3xl font-bold">{item.value}</p>
+            <p className="text-[11px] font-semibold leading-tight">
+              {item.label}
+            </p>
+            <p className="mt-2 text-3xl font-bold leading-none">{item.value}</p>
+            <p className="mt-1 text-[11px] font-semibold opacity-70">
+              {item.percentage}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         {supportItems.map((item) => (
           <div
             key={item.label}
-            className={`min-w-0 rounded-2xl px-3 py-2.5 ${item.className}`}
+            className="flex min-w-0 items-start gap-2 text-indigo-600"
           >
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-[11px] font-semibold opacity-80">
+            <ReportAssetSlot
+              type={item.slotType}
+              className="mt-0.5 size-5 shrink-0 rounded-md bg-transparent bg-none shadow-none"
+              imageClassName="size-4 opacity-80"
+            />
+            <div className="min-w-0 leading-none">
+              <p className="text-[11px] font-semibold text-slate-500">
                 {item.label}
               </p>
-              <ReportAssetSlot
-                type={item.slotType}
-                className="size-6 rounded-lg bg-white/75 bg-none shadow-sm ring-1 ring-white/80"
-                imageClassName="size-4"
-              />
+              <p className={`mt-1 text-sm font-bold ${item.className}`}>
+                {item.value}
+              </p>
+              <p className={`mt-0.5 text-[10px] font-semibold ${item.className}`}>
+                {item.percentage}
+              </p>
             </div>
-            <p className="mt-1 text-xl font-bold">{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-auto flex items-start gap-2 rounded-2xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-xs leading-5 text-slate-500">
+      <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-indigo-50/45 px-2.5 py-1 text-[10px] leading-4 text-slate-400">
         <ReportAssetSlot
           type="risk-note"
-          className="mt-0.5 size-5 rounded-lg bg-white/80 bg-none shadow-sm ring-1 ring-violet-100"
-          imageClassName="size-3.5"
+          className="size-4 shrink-0 rounded-md bg-transparent bg-none shadow-none"
+          imageClassName="size-3.5 opacity-65"
         />
-        <p>
-          Reopened {reopened.toLocaleString()} / Next Event is tracked as
-          follow-up, not as direct release failure.
-        </p>
+        <p>{releaseRiskNote}</p>
       </div>
     </section>
   );
