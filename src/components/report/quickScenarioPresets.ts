@@ -73,6 +73,42 @@ const CAUTION_DUMMY_SCENARIO = {
   labels: ["주의필요", "더미"],
   labelMatchMode: "ALL",
 } satisfies QuickScenarioPreset;
+function createOverallScenario({
+  mainSpreadsheetUrl,
+  subSpreadsheetUrl,
+}: {
+  mainSpreadsheetUrl: string;
+  subSpreadsheetUrl: string;
+}) {
+  return {
+    featureName: "A프로젝트 v2.0.0",
+    version: "2.0.0",
+    rcVersion: "RC3",
+    spreadsheetUrl: mainSpreadsheetUrl,
+    testSheetTitles: ["메인피쳐1", "메인피쳐2", "메인피쳐3", "메인피쳐4"],
+    jiraSheetTitle: "지라 데이터",
+    testSheetGroups: [
+      {
+        spreadsheetUrl: mainSpreadsheetUrl,
+        testSheetTitles: ["메인피쳐1", "메인피쳐2", "메인피쳐3", "메인피쳐4"],
+        jiraSheetTitle: "지라 데이터",
+      },
+      {
+        spreadsheetUrl: subSpreadsheetUrl,
+        testSheetTitles: ["서브피쳐1", "서브피쳐2"],
+      },
+    ],
+    startDate: "2026-05-01",
+    startHour: "09",
+    startMinute: "30",
+    endDate: "2026-05-13",
+    endHour: "13",
+    endMinute: "00",
+    labels: [],
+    labelMatchMode: "ANY",
+  } satisfies QuickScenarioPreset;
+}
+
 const OVERALL_SCENARIO = {
   featureName: "A프로젝트 v2.0.0",
   version: "2.0.0",
@@ -115,6 +151,24 @@ const OVERALL_SCENARIO = {
   labels: [],
   labelMatchMode: "ANY",
 } satisfies QuickScenarioPreset;
+const OVERALL_STABLE_SCENARIO = createOverallScenario({
+  mainSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1F2SQAstP_iaJHmiDYEDg5o15jMh6BFR0Q5KbPKFBDx8/edit?gid=1977195543#gid=1977195543",
+  subSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1VDVe6qKkah9LRVo0TrOERIbMmAiPugG4-xxfdMbsU8U/edit?gid=803334489#gid=803334489",
+});
+const OVERALL_CAUTION_SCENARIO = createOverallScenario({
+  mainSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1RXVzMylgOZdX-9nMGlCFPG1WO1UMwt70UF5l5TWl-eA/edit?gid=1324222698#gid=1324222698",
+  subSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1tCBPDSFfwhm2uxDC73ZdxAdlyh7i_jrlFrF-S0kMh90/edit?gid=318563170#gid=318563170",
+});
+const OVERALL_RISK_SCENARIO = createOverallScenario({
+  mainSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1PYUF8FrojmdmyH-QzH3e3OORRCFQpQjqmlphhfe1tB4/edit?gid=56886862#gid=56886862",
+  subSpreadsheetUrl:
+    "https://docs.google.com/spreadsheets/d/1WWNvtrspGmOrK0yZWWWmiWHc4piLEdagRYV0WnswjUQ/edit?gid=1324240821#gid=1324240821",
+});
 export const QUICK_SCENARIO_PRESETS = {
   메인피쳐: MAIN_FEATURE_SCENARIO,
   서브피쳐: SUB_FEATURE_SCENARIO,
@@ -123,4 +177,7 @@ export const QUICK_SCENARIO_PRESETS = {
 } satisfies Record<string, QuickScenarioPreset>;
 export const OVERALL_QUICK_SCENARIO_PRESETS = {
   "전체 결과": OVERALL_SCENARIO,
+  "전체 결과 : 안정": OVERALL_STABLE_SCENARIO,
+  "전체 결과 : 주의 필요": OVERALL_CAUTION_SCENARIO,
+  "전체 결과 : 위험": OVERALL_RISK_SCENARIO,
 } satisfies Record<string, QuickScenarioPreset>;
