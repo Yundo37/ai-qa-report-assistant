@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { getQaReleaseStatusTone } from "@/lib/report/qaReleaseStatus";
 
 type CountSummary = Record<string, number>;
 
@@ -1613,44 +1614,22 @@ function createFormatRequests(sheetId: number, sheet: DashboardSheet) {
 }
 
 function createTemplateSystemAnalysisState({
-  highRemainingCount,
+  totalTc,
   blockedCount,
-  remainingCount,
-  reopenedCount,
-  nextEventCount,
   remainingPrioritySummary,
 }: {
-  highRemainingCount: number;
+  totalTc: number;
   blockedCount: number;
-  remainingCount: number;
-  reopenedCount: number;
-  nextEventCount: number;
   remainingPrioritySummary: RcPrioritySummary;
 }): QaJudgmentState {
-  const mediumRemainingCount = remainingPrioritySummary.Medium ?? 0;
-  const lowRiskRemainingCount =
-    (remainingPrioritySummary.Low ?? 0) +
-    (remainingPrioritySummary.Lowest ?? 0);
+  const tone = getQaReleaseStatusTone({
+    totalTc,
+    blockedCount,
+    remainingPriority: remainingPrioritySummary,
+  });
 
-  if (
-    highRemainingCount > 0 ||
-    blockedCount >= 5 ||
-    reopenedCount >= 3 ||
-    remainingCount >= 15
-  ) {
-    return "위험";
-  }
-
-  if (
-    mediumRemainingCount > 0 ||
-    blockedCount > 0 ||
-    reopenedCount > 0 ||
-    nextEventCount >= 5 ||
-    remainingCount > lowRiskRemainingCount
-  ) {
-    return "주의 필요";
-  }
-
+  if (tone === "risk") return "위험";
+  if (tone === "caution") return "주의 필요";
   return "안정";
 }
 
@@ -1851,7 +1830,6 @@ function createTemplateValues(
     body.jiraFilteredSummary,
     "High / Highest Remaining"
   );
-  const reopenedCount = getSummaryCount(body.jiraStatusSummary, "다시열림");
   const issueOverview = createTemplateIssueOverview(body);
   const remainingPrioritySummary = createPrioritySummaryFromIssues(
     body.remainingIssues ?? []
@@ -1879,11 +1857,8 @@ function createTemplateValues(
     ),
   };
   const state = createTemplateSystemAnalysisState({
-    highRemainingCount,
+    totalTc,
     blockedCount,
-    remainingCount,
-    reopenedCount,
-    nextEventCount,
     remainingPrioritySummary: effectiveRemainingPrioritySummary,
   });
   const systemRiskMessage = createTemplateRiskMessage({

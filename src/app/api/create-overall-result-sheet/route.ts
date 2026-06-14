@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { readFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { getQaReleaseStatusTone } from "@/lib/report/qaReleaseStatus";
 
 type CountSummary = Record<string, number>;
 
@@ -418,21 +419,22 @@ function createFallbackQaIssueOverview(
 }
 
 function createSystemState({
-  highRemainingCount,
+  totalTc,
   blockedCount,
-  remainingCount,
-  nextEventCount,
+  remainingPrioritySummary,
 }: {
-  highRemainingCount: number;
+  totalTc: number;
   blockedCount: number;
-  remainingCount: number;
-  nextEventCount: number;
+  remainingPrioritySummary: RcPrioritySummary;
 }) {
-  if (highRemainingCount >= 5 || blockedCount >= 5) return "위험";
-  if (highRemainingCount > 0 || blockedCount > 0 || remainingCount > 0) {
-    return "주의 필요";
-  }
-  if (nextEventCount > 0) return "모니터링 필요";
+  const tone = getQaReleaseStatusTone({
+    totalTc,
+    blockedCount,
+    remainingPriority: remainingPrioritySummary,
+  });
+
+  if (tone === "risk") return "위험";
+  if (tone === "caution") return "주의 필요";
   return "안정";
 }
 
@@ -1461,10 +1463,9 @@ function createOverallValueUpdates({
   } = getQaSummaryMetrics(body);
   const issueOverview = body.qaIssueOverview ?? createFallbackQaIssueOverview(body);
   const state = createSystemState({
-    highRemainingCount,
+    totalTc,
     blockedCount,
-    remainingCount,
-    nextEventCount,
+    remainingPrioritySummary: issueOverview.remaining.prioritySummary,
   });
   const quotedSheetName = quoteSheetName(sheetName);
   const shiftedRow = (row: number) => row + summaryDelta;

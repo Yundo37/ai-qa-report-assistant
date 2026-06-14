@@ -44,17 +44,24 @@ function createConclusionText(
 
 function createReleaseJudgmentLabel({
   highRisk,
+  mediumRemaining,
   blocked,
+  blockedRate,
   remaining,
   nextEvent,
 }: {
   highRisk: number;
+  mediumRemaining: number;
   blocked: number;
+  blockedRate: number;
   remaining: number;
   nextEvent: number;
 }) {
-  if (highRisk > 0 || blocked > 0) return "추가 검증 필요";
-  if (remaining > 0 || nextEvent > 0) return "모니터링 필요";
+  if (highRisk > 0 || blockedRate >= 0.2) return "추가 검증 필요";
+  if (mediumRemaining > 0 || blockedRate >= 0.1) return "모니터링 필요";
+  if (remaining > 0 || nextEvent > 0 || blocked > 0) {
+    return "운영 모니터링 중심";
+  }
   return "안정권";
 }
 
@@ -184,7 +191,9 @@ export function AiExecutiveSummaryCard({
   };
   const releaseJudgmentLabel = createReleaseJudgmentLabel({
     highRisk,
+    mediumRemaining: mediumRisk,
     blocked: blockedCount,
+    blockedRate: metrics.blockedRate,
     remaining: metrics.remaining,
     nextEvent: nextEventCount,
   });
