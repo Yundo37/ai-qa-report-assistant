@@ -1,5 +1,6 @@
 "use client";
 
+import { AiAnalysisToggle } from "@/components/report/AiAnalysisToggle";
 import { JiraIssueSheetInput } from "@/components/report/JiraIssueSheetInput";
 import { JiraLabelInputList } from "@/components/report/JiraLabelInputList";
 import { JiraPeriodInput } from "@/components/report/JiraPeriodInput";
@@ -12,6 +13,7 @@ import { ReportBasicInfoForm } from "@/components/report/ReportBasicInfoForm";
 import { ReportTypeSelector } from "@/components/report/ReportTypeSelector";
 import { TestSheetInputList } from "@/components/report/TestSheetInputList";
 import type {
+  AiAnalysisToggleProps,
   QuickScenarioPreset,
   ReportBasicInfoFormProps,
   ReportTypeSelectorProps,
@@ -31,8 +33,10 @@ export type ReportInputPanelProps = {
   quickScenarioPresets: Record<string, QuickScenarioPreset>;
   legacyQuickScenarioPresets: Record<string, QuickScenarioPreset>;
   applyingQuickScenario: string;
+  analysisMode: AiAnalysisToggleProps["analysisMode"];
   onReportTypeChange: ReportTypeSelectorProps["onReportTypeChange"];
   onApplyQuickScenario: (scenarioName: string, preset: QuickScenarioPreset) => void;
+  onAnalysisModeChange: AiAnalysisToggleProps["onAnalysisModeChange"];
   reportTitle: string;
   setReportTitle: ReportBasicInfoFormProps["setReportTitle"];
   reportVersion: string;
@@ -89,8 +93,10 @@ export function ReportInputPanel({
   quickScenarioPresets,
   legacyQuickScenarioPresets,
   applyingQuickScenario,
+  analysisMode,
   onReportTypeChange,
   onApplyQuickScenario,
+  onAnalysisModeChange,
   reportTitle,
   setReportTitle,
   reportVersion,
@@ -276,6 +282,10 @@ export function ReportInputPanel({
               isFeatureReport={isFeatureReport}
               isGenerating={isGenerating}
               onGenerateReport={handleGenerateReport}
+            />
+            <AiAnalysisToggle
+              analysisMode={analysisMode}
+              onAnalysisModeChange={onAnalysisModeChange}
             />
             {message && <MessagePanel message={message} />}
           </div>

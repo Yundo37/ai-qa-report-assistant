@@ -6,7 +6,10 @@ import {
   OVERALL_QUICK_SCENARIO_PRESETS,
   QUICK_SCENARIO_PRESETS,
 } from "@/components/report/quickScenarioPresets";
-import type { QuickScenarioPreset } from "@/components/report/reportInputTypes";
+import type {
+  AnalysisMode,
+  QuickScenarioPreset,
+} from "@/components/report/reportInputTypes";
 import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
 import { createGenerateInputValidation } from "@/lib/report/generateValidation";
@@ -786,6 +789,8 @@ export default function Home() {
   const [expandedTestSheetSelections, setExpandedTestSheetSelections] =
     useState<boolean[]>([false]);
   const [applyingQuickScenario, setApplyingQuickScenario] = useState("");
+  const [analysisMode, setAnalysisMode] =
+    useState<AnalysisMode>("AI_ENHANCED");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
   const [aiAnalysisText, setAiAnalysisText] = useState("");
@@ -834,6 +839,7 @@ export default function Home() {
     jiraAnalysisEndMinute,
     jiraLabels,
     labelMatchMode,
+    analysisMode,
     clearAiAnalysisResult,
   ]);
 
@@ -874,6 +880,7 @@ export default function Home() {
     setJiraAnalysisEndMinute("00");
     setJiraLabels([""]);
     setLabelMatchMode("ANY");
+    setAnalysisMode("AI_ENHANCED");
     setIsGenerating(false);
     setIsAiAnalyzing(false);
     setIsCreatingResultSheet(false);
@@ -1183,7 +1190,7 @@ export default function Home() {
     setter(value);
   };
 
-  const runGenerateReport = async () => {
+  const runGenerateReport = async (): Promise<Exclude<AnalysisSummaryState, null> | null> => {
     clearAiAnalysisResult();
     setAnalysisSummary(null);
     setResultSheetMessage(null);
@@ -1219,7 +1226,7 @@ export default function Home() {
         title: "입력값을 확인해주세요.",
         items: missingItems,
       });
-      return;
+      return null;
     }
 
     const {
@@ -1238,7 +1245,7 @@ export default function Home() {
         title: "Google Spreadsheet URL 형식을 확인해주세요.",
         items: invalidFormatItems,
       });
-      return;
+      return null;
     }
 
     if (invalidParsedItems.length > 0) {
@@ -1247,7 +1254,7 @@ export default function Home() {
         title: "Google Spreadsheet URL 정보를 확인해주세요.",
         items: invalidParsedItems,
       });
-      return;
+      return null;
     }
 
     const reportInput = {
@@ -1319,10 +1326,11 @@ export default function Home() {
         title: "입력값을 확인해주세요.",
         items: ["분석할 Test Sheet 탭을 선택해주세요."],
       });
-      return;
+      return null;
     }
 
     let hasNoMatchingJiraIssues = false;
+    let generatedAnalysisSummary: Exclude<AnalysisSummaryState, null> | null = null;
 
     try {
       const parsedTestSheetDataList: CsvRecord[][] = [];
@@ -1526,6 +1534,7 @@ export default function Home() {
           }).format(new Date())
         );
         setAnalysisSummary(nextAnalysisSummary);
+        generatedAnalysisSummary = nextAnalysisSummary;
         setIsInputDashboardVisible(false);
       }
     } catch (error) {
@@ -1539,7 +1548,7 @@ export default function Home() {
           "입력한 Test Sheet 또는 Jira Issue Sheet URL을 확인해주세요.",
         ],
       });
-      return;
+      return null;
     }
 
     if (hasNoMatchingJiraIssues) {
@@ -1571,17 +1580,8 @@ export default function Home() {
         ],
       });
     }
-  };
 
-  const handleGenerateReport = async () => {
-    if (isGenerating) return;
-    clearAiAnalysisResult();
-    setIsGenerating(true);
-    try {
-      await runGenerateReport();
-    } finally {
-      setIsGenerating(false);
-    }
+    return generatedAnalysisSummary;
   };
 
   const handleAiAnalysisTest = useAiAnalysisAction({
@@ -1593,6 +1593,21 @@ export default function Home() {
     reportTitle,
     createReportTitle,
   });
+
+  const handleGenerateReport = async () => {
+    if (isGenerating) return;
+    clearAiAnalysisResult();
+    setIsGenerating(true);
+    try {
+      const generatedAnalysisSummary = await runGenerateReport();
+
+      if (analysisMode === "AI_ENHANCED" && generatedAnalysisSummary) {
+        await handleAiAnalysisTest(generatedAnalysisSummary);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleCreateResultSheet = useResultSheetAction({
     analysisSummary,
@@ -1637,8 +1652,10 @@ export default function Home() {
       quickScenarioPresets={activeQuickScenarioPresets}
       legacyQuickScenarioPresets={QUICK_SCENARIO_PRESETS}
       applyingQuickScenario={applyingQuickScenario}
+      analysisMode={analysisMode}
       onReportTypeChange={handleReportTypeChange}
       onApplyQuickScenario={applyQuickScenario}
+      onAnalysisModeChange={setAnalysisMode}
       reportTitle={reportTitle}
       setReportTitle={setReportTitle}
       reportVersion={reportVersion}

@@ -6,6 +6,8 @@ import type {
   SpreadsheetSheetInfo,
 } from "@/types/report";
 
+export type AnalysisMode = "AI_ENHANCED" | "BASIC";
+
 export type QuickScenarioPreset = {
   featureName: string;
   version: string;
@@ -39,6 +41,11 @@ export type QuickScenarioSelectorProps = {
   legacyQuickScenarioPresets: Record<string, QuickScenarioPreset>;
   applyingQuickScenario: string;
   onApplyQuickScenario: (scenarioName: string, preset: QuickScenarioPreset) => void;
+};
+
+export type AiAnalysisToggleProps = {
+  analysisMode: AnalysisMode;
+  onAnalysisModeChange: (mode: AnalysisMode) => void;
 };
 
 export type ReportBasicInfoFormProps = {

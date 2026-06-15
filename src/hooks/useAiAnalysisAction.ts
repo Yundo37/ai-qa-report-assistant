@@ -25,8 +25,10 @@ export function useAiAnalysisAction({
   reportTitle,
   createReportTitle,
 }: UseAiAnalysisActionParams) {
-  return useCallback(async () => {
-    if (!analysisSummary || isAiAnalyzing) return;
+  return useCallback(async (analysisSummaryOverride?: NonNullable<AnalysisSummaryState>) => {
+    const targetAnalysisSummary = analysisSummaryOverride ?? analysisSummary;
+
+    if (!targetAnalysisSummary || isAiAnalyzing) return;
     const requestId = aiAnalysisRequestIdRef.current + 1;
     aiAnalysisRequestIdRef.current = requestId;
     setIsAiAnalyzing(true);
@@ -37,24 +39,24 @@ export function useAiAnalysisAction({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          qaSummary: analysisSummary.qaTotal,
-          reportType: analysisSummary.reportType,
-          jiraFilteredSummary: analysisSummary.jiraFiltered,
-          jiraStatusSummary: analysisSummary.jiraStatus,
-          jiraPrioritySummary: analysisSummary.jiraPriority,
+          qaSummary: targetAnalysisSummary.qaTotal,
+          reportType: targetAnalysisSummary.reportType,
+          jiraFilteredSummary: targetAnalysisSummary.jiraFiltered,
+          jiraStatusSummary: targetAnalysisSummary.jiraStatus,
+          jiraPrioritySummary: targetAnalysisSummary.jiraPriority,
           reportTitle: createReportTitle(reportTitle),
-          testSheets: analysisSummary.testSheets,
-          overallQaSummary: analysisSummary.overallQaSummary,
-          overallTestSheets: analysisSummary.overallTestSheets,
-          versionSummary: analysisSummary.versionSummary,
-          versionIssueSummary: analysisSummary.versionIssueSummary,
-          rcProgress: analysisSummary.rcProgress,
-          qaIssueOverview: analysisSummary.qaIssueOverview,
-          issuePatternSources: analysisSummary.issuePatternSources,
-          issuePatternAnalysis: analysisSummary.issuePatternAnalysis,
-          remainingIssues: analysisSummary.remainingIssues,
-          qaFollowUps: analysisSummary.qaFollowUps,
-          qaAnalysisContext: analysisSummary.qaAnalysisContext,
+          testSheets: targetAnalysisSummary.testSheets,
+          overallQaSummary: targetAnalysisSummary.overallQaSummary,
+          overallTestSheets: targetAnalysisSummary.overallTestSheets,
+          versionSummary: targetAnalysisSummary.versionSummary,
+          versionIssueSummary: targetAnalysisSummary.versionIssueSummary,
+          rcProgress: targetAnalysisSummary.rcProgress,
+          qaIssueOverview: targetAnalysisSummary.qaIssueOverview,
+          issuePatternSources: targetAnalysisSummary.issuePatternSources,
+          issuePatternAnalysis: targetAnalysisSummary.issuePatternAnalysis,
+          remainingIssues: targetAnalysisSummary.remainingIssues,
+          qaFollowUps: targetAnalysisSummary.qaFollowUps,
+          qaAnalysisContext: targetAnalysisSummary.qaAnalysisContext,
         }),
       });
 
