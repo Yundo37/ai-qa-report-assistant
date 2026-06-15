@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import type {
+  AiExecutiveSummaryResult,
+  AiExecutiveSummaryTone,
+} from "@/types/report";
 
 type CountSummary = Record<string, number>;
 
@@ -266,6 +270,11 @@ type ResponsesApiResult = {
   output?: ResponseOutput[];
 };
 
+type AiAnalysisParsedResponse = {
+  analysis: string;
+  executiveSummary?: AiExecutiveSummaryResult;
+};
+
 function extractResponseText(data: ResponsesApiResult) {
   if (data.output_text) {
     return data.output_text;
@@ -278,6 +287,143 @@ function extractResponseText(data: ResponsesApiResult) {
       .filter(Boolean)
       .join("\n") ?? ""
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isValidExecutiveSummaryTone(
+  value: unknown
+): value is AiExecutiveSummaryTone {
+  return (
+    value === "stable" ||
+    value === "attention" ||
+    value === "risk" ||
+    value === "neutral"
+  );
+}
+
+function toOptionalStringOrNumber(value: unknown) {
+  return typeof value === "string" || typeof value === "number"
+    ? value
+    : undefined;
+}
+
+function validateAiExecutiveSummary(
+  value: unknown
+): AiExecutiveSummaryResult | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const releaseJudgment = value.releaseJudgment;
+  const riskSignals = value.riskSignals;
+  const patternInsight = value.patternInsight;
+  const qaCheckpoints = value.qaCheckpoints;
+
+  if (!isRecord(releaseJudgment) || !isRecord(patternInsight)) {
+    return undefined;
+  }
+
+  if (
+    typeof releaseJudgment.title !== "string" ||
+    typeof releaseJudgment.description !== "string" ||
+    typeof patternInsight.title !== "string" ||
+    typeof patternInsight.description !== "string" ||
+    !Array.isArray(riskSignals) ||
+    !Array.isArray(qaCheckpoints)
+  ) {
+    return undefined;
+  }
+
+  const normalizedRiskSignals = riskSignals.reduce<
+    AiExecutiveSummaryResult["riskSignals"]
+  >((signals, item) => {
+      if (!isRecord(item)) return signals;
+      const tone = isValidExecutiveSummaryTone(item.tone)
+        ? item.tone
+        : "neutral";
+
+      if (
+        typeof item.label !== "string" ||
+        typeof item.description !== "string"
+      ) {
+        return signals;
+      }
+
+      signals.push({
+        label: item.label,
+        value: toOptionalStringOrNumber(item.value),
+        description: item.description,
+        tone,
+      });
+
+      return signals;
+    }, [])
+    .slice(0, 4);
+
+  const rawPatternItems = Array.isArray(patternInsight.items)
+    ? patternInsight.items
+    : [];
+  const normalizedPatternItems = rawPatternItems.reduce<
+    NonNullable<AiExecutiveSummaryResult["patternInsight"]["items"]>
+  >((items, item) => {
+      if (!isRecord(item) || typeof item.label !== "string") return items;
+
+      items.push({
+        label: item.label,
+        value: toOptionalStringOrNumber(item.value),
+      });
+
+      return items;
+    }, [])
+    .slice(0, 3);
+  const normalizedCheckpoints = qaCheckpoints
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .slice(0, 4);
+
+  if (
+    normalizedRiskSignals.length === 0 ||
+    normalizedCheckpoints.length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    releaseJudgment: {
+      title: releaseJudgment.title,
+      description: releaseJudgment.description,
+    },
+    riskSignals: normalizedRiskSignals,
+    patternInsight: {
+      title: patternInsight.title,
+      description: patternInsight.description,
+      items: normalizedPatternItems,
+    },
+    qaCheckpoints: normalizedCheckpoints,
+  };
+}
+
+function parseAiAnalysisResponse(text: string): AiAnalysisParsedResponse {
+  const trimmedText = text.trim();
+
+  if (!trimmedText) {
+    return { analysis: "" };
+  }
+
+  try {
+    const parsed = JSON.parse(trimmedText) as unknown;
+
+    if (!isRecord(parsed) || typeof parsed.analysis !== "string") {
+      return { analysis: trimmedText };
+    }
+
+    return {
+      analysis: parsed.analysis.trim(),
+      executiveSummary: validateAiExecutiveSummary(parsed.executiveSummary),
+    };
+  } catch {
+    return { analysis: trimmedText };
+  }
 }
 
 function createFeatureSystemPrompt() {
@@ -296,10 +442,66 @@ function createFeatureSystemPrompt() {
 }
 
 function createOverallSystemPrompt() {
+  const roleSeparationRules = [
+    "[Shared factual rules]",
+    "Use only facts present in the JSON payload. Never invent feature names, issue types, keywords, versions, RC labels, categories, ratios, or counts.",
+    "Jira Key values must be copied exactly from evidence. Never rewrite, normalize, infer, or change a Jira Key prefix. DMS-004 must never become AQR-004.",
+    "When mentioning a blocked cause Jira issue, copy blockedImpact.topBlockedIssues[].displayLabel exactly and never mention a Jira Key alone.",
+    "Version Issue Trend is update-version comparison only. Never use RC1, RC2, RC3, final RC, or RC Progress wording when explaining Version Issue Trend.",
+    "RC Progress is current-version RC flow only. Never use it to describe update-version issue trend.",
+    "Distinguish RC-local new/resolved/remain counts from the overall 잔여 이슈 state.",
+    "Next Event is not a standalone risk trigger.",
+    "overallAnalysisEvidence.featureCount means selected QA sheet count or validation scope count, not feature count.",
+    "The first analysis sentence must say 선택된 QA 시트 N개 and 총 N개 TC. Do not write N개 기능, 메인피쳐, 서브피쳐, or 테스트 케이스.",
+    "High+ in Version Trend means all High / Highest issues for that update version, not High / Highest 잔여 이슈.",
+    "[analysis rules]",
+    "Rules in this section apply only to the analysis field.",
+    "analysis is the detailed senior QA Lead paragraph analysis, not card copy.",
+    "Rules for executiveSummary must not shorten, simplify, or override the analysis paragraph.",
+    "Do not let executiveSummary brevity rules shorten or simplify the analysis field.",
+    "The analysis field must remain a full 3 to 4 paragraph senior QA analysis.",
+    "The executiveSummary field must be compact, but the analysis field must not be compact.",
+    "Write analysis in Korean as 3 to 4 short paragraphs without bullets.",
+    "analysis must be at least 3 paragraphs and should be 6 to 8 sentences. Never end analysis as a one-paragraph summary.",
+    "analysis should synthesize TC, Jira, 잔여 이슈, Blocked Impact, RC Progress, Version Trend, and QA Comment flow.",
+    "analysis must not copy executiveSummary card sentences verbatim.",
+    "Do not apply executiveSummary length limits to analysis.",
+    "If the response needs to shorten something, shorten executiveSummary descriptions first, not analysis.",
+    "Stable analysis should be concise and monitoring-focused. Do not over-explain RC flow or repeat one blocked issue several times.",
+    "Attention-needed analysis should emphasize Medium 잔여 이슈 재검증, 정책 조건 확인, Next Event 분리, and conditional blocked checks without risk exaggeration.",
+    "Risk analysis should clearly explain High / Highest 잔여 이슈, Blocked Impact, and flow-level regression verification.",
+    "[executiveSummary rules]",
+    "Rules in this section apply only to executiveSummary.",
+    "executiveSummary is short structured copy for card UI, not paragraph analysis.",
+    "Rules for analysis must not force executiveSummary to become long.",
+    "analysis and executiveSummary are generated from the same evidence, but they have different writing styles.",
+    "executiveSummary must have releaseJudgment, riskSignals, patternInsight, and qaCheckpoints.",
+    "releaseJudgment.description must be at most 2 short sentences.",
+    "riskSignals must contain 3 to 4 interpreted signals. Each riskSignals[].description must be 1 short sentence.",
+    "patternInsight.description must be at most 2 short sentences.",
+    "qaCheckpoints must contain at most 4 short one-sentence items.",
+    "Attention-needed executiveSummary must distinguish High / Highest 잔여 이슈 없음 from Medium 잔여 이슈 when medium is greater than 0.",
+  ];
+  const stableAnalysisToneRules = [
+    "For stable releaseStatus, keep analysis concise and monitoring-focused. Prefer 3 short paragraphs: overall stable judgment, limited conditional check items, and monitoring/follow-up direction.",
+    "For stable releaseStatus, do not over-explain RC1/RC2 flow unless it changes the release judgment.",
+    "For stable releaseStatus, mention a blocked displayLabel such as DMS-004 at most once in analysis.",
+    "For stable releaseStatus, avoid repeating similar phrases such as 조건부 재확인, 정책 확정, and 일부 항목 across multiple sentences.",
+  ];
+
   return [
     "You are a senior Korean QA Lead preparing an Overall QA release analysis before a release review meeting.",
     "Write in Korean, in a natural QA result-report style.",
     "Do not summarize tables. Interpret release risk structure, blocked impact, repeated issue patterns, RC flow, version trend, and QA follow-up direction.",
+    "Return only a valid JSON object. Do not wrap the JSON in markdown fences. Do not add explanations outside JSON.",
+    "The JSON object must have an analysis string and an executiveSummary object.",
+    "The analysis string is the full senior QA Lead paragraph analysis. Keep all existing paragraph-quality rules inside this field.",
+    "The executiveSummary object is structured data for the four executive cards: releaseJudgment, riskSignals, patternInsight, and qaCheckpoints.",
+    "Role separation: analysis is detailed 3 to 4 paragraph reasoning; executiveSummary is short card UI copy. Do not copy long analysis sentences into executiveSummary.",
+    "All executiveSummary copy must be compact enough for cards: releaseJudgment.description up to 2 short sentences, riskSignals descriptions 1 short sentence, patternInsight.description up to 2 short sentences, qaCheckpoints short one-sentence items.",
+    ...roleSeparationRules,
+    ...stableAnalysisToneRules,
+    "Avoid broken mixed-language output. Never use Chinese/Japanese-style words such as 影響, 잔여 상태影響, or incomplete mixed Korean-Hanja fragments. Use natural Korean QA report wording instead.",
     "You are an analyst, not a judge. Explain why the release status is stable, attention-needed, or risk only when the evidence supports it.",
     "Interpret relationships between TC, Jira, 잔여 이슈, Blocked, RC, Version, and QA comments instead of repeating visible numbers.",
     "In Korean output, use '잔여 이슈' instead of 'Remaining' or 'Remaining Issue'. Use 'High / Highest 잔여 이슈', 'Medium 잔여 이슈', 'Low / Lowest 잔여 이슈', '전체 잔여 이슈', and '잔여 상태'.",
@@ -310,7 +512,7 @@ function createOverallSystemPrompt() {
     "RC Progress is current-version RC flow only. Never use it to describe update-version issue trend.",
     "Do not list Jira issue keys, individual 잔여 이슈 titles, affected TIDs, or QA Comment details one by one.",
     "Do not list Pass, Fail, Blocked, RC, version, or priority table values, except the opening QA scope count.",
-    "Keep the output within 3 to 4 short paragraphs and 6 to 8 sentences. Do not use bullets.",
+    "Keep the analysis field within 3 to 4 paragraphs and 6 to 8 sentences. Do not use bullets.",
     "Use issue-type patterns rather than feature/category names.",
     "For repeated pattern analysis, use issuePatternAnalysis first. It is precomputed from Jira summaries across all versions, 잔여 이슈, and QA comments.",
     "Do not infer repeated patterns freely from feature names when issuePatternAnalysis is present.",
@@ -393,8 +595,82 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "3. Repeated patterns interpreted as feature-flow risk.",
     "4. RC / Version interpretation and QA confirmation priority.",
     "",
+    "Role separation before writing JSON:",
+    "- analysis is the detailed senior QA Lead paragraph analysis. Do not compress it using card length rules.",
+    "- analysis must be a full 3 to 4 paragraph string with 6 to 8 sentences. It must not be a one-paragraph summary.",
+    "- executiveSummary is short structured card copy. Do not copy the analysis paragraphs into it.",
+    "- Rules for executiveSummary must not shorten, simplify, or override the analysis paragraph.",
+    "- Rules for analysis must not force executiveSummary to become long.",
+    "- analysis and executiveSummary must use the same evidence but different writing styles.",
+    "- Do not let executiveSummary brevity rules shorten or simplify the analysis field.",
+    "- If the response needs to shorten something, shorten executiveSummary descriptions first, not analysis.",
+    "",
+    "Analysis tone anchors:",
+    "- Stable analysis: High / Medium 잔여 이슈 없음, Low / Lowest 잔여 이슈 일부, 낮은 Blocked 영향, Next Event 후속 일정, 운영 모니터링 중심. Do not use 위험, 차단, 배포 전 우선 확인.",
+    "- Attention-needed analysis: High / Highest 잔여 이슈 없음, Medium 잔여 이슈 존재, Next Event 후속 일정 분리, Blocked는 제한된 조건부 확인 범위. It is 추가 확인 / 재검증, not 위험.",
+    "- Attention-needed analysis should prefer Medium 원인 이슈별 재검증과 정책 조건 확인 over broad flow-level regression.",
+    "- Risk analysis: High / Highest 잔여 이슈, Blocked Impact, AQR displayLabel, Version Trend / RC Progress separation, and 상태 변경 → CTA 노출 → 결과 상태 반영 → 알림 수신 흐름 단위 회귀 검증.",
+    "",
+    "Output JSON schema:",
+    JSON.stringify(
+      {
+        analysis:
+          "3~4 short Korean paragraphs. This is the existing full AI summary text.",
+        executiveSummary: {
+          releaseJudgment: {
+            title: "운영 모니터링 중심 | 추가 확인 필요 | 추가 검증 필요",
+            description:
+              "One concise Korean sentence explaining the release judgment evidence.",
+          },
+          riskSignals: [
+            {
+              label:
+                "High / Medium 잔여 이슈 없음 | Medium 잔여 이슈 | High / Highest 잔여 이슈 | Blocked Impact",
+              value: 0,
+              description:
+                "Explain why this signal matters, not just the number.",
+              tone: "stable | attention | risk | neutral",
+            },
+          ],
+          patternInsight: {
+            title: "Korean title for pattern meaning",
+            description:
+              "Interpret repeated patterns as QA meaning or flow-level regression scope.",
+            items: [{ label: "Existing pattern name only", value: 0 }],
+          },
+          qaCheckpoints: [
+            "Korean QA confirmation direction. Do not list Jira keys one by one.",
+          ],
+        },
+      },
+      null,
+      2
+    ),
+    "",
+    "Executive summary card rules:",
+    "- Use exactly these top-level fields: analysis, executiveSummary.",
+    "- executiveSummary.releaseJudgment.title must be one of these style labels when supported by evidence: 운영 모니터링 중심, 추가 확인 필요, 추가 검증 필요.",
+    "- executiveSummary.riskSignals must contain 3 to 4 interpreted signals. Do not merely list counts.",
+    "- Each riskSignals item must use label, value, description, and tone. tone must be stable, attention, risk, or neutral.",
+    "- executiveSummary is card UI copy, not paragraph copy. Keep it much shorter than analysis and do not repeat analysis sentences verbatim.",
+    "- releaseJudgment.description: maximum 2 short sentences, preferably around 80 Korean characters.",
+    "- riskSignals[].description: exactly 1 short sentence, preferably around 50 Korean characters.",
+    "- patternInsight.description: maximum 2 short sentences, preferably around 100 Korean characters.",
+    "- qaCheckpoints: maximum 4 items; each item must be one short sentence, preferably around 60 Korean characters.",
+    "- executiveSummary.patternInsight must explain what the repeated patterns mean for QA. Do not duplicate the lower Issue Pattern table.",
+    "- Attention-needed executiveSummary must avoid 위험 징후, 중대 리스크, 배포 전 차단, 심각한 위험. Use 재검증과 정책 확인 신호, 운영형 재검증 신호, 조건부 확인 신호, or Medium 재검증 신호.",
+    "- For attention-needed patternInsight.title, prefer 재검증과 정책 확인 신호 or 운영형 재검증 신호. Do not use 반복 패턴에 따른 흐름별 위험 징후.",
+    "- executiveSummary.patternInsight.items may include up to 3 items and must use only existing issuePatternAnalysis or seniorQaAnalysisEvidence.patternSignal names.",
+    "- executiveSummary.qaCheckpoints must contain 3 to 4 short QA confirmation directions.",
+    "- If mentioning Blocked Impact in executiveSummary, copy blockedImpact.topBlockedIssues[].displayLabel exactly. Never write a Jira key alone.",
+    "- Stable executiveSummary must avoid 위험 요인, 릴리즈 차단, 배포 전 우선 확인, 추가 검증 필요, 심각한 리스크.",
+    "- Attention-needed executiveSummary must distinguish High / Highest 잔여 이슈 없음 from Medium 잔여 이슈. Do not write Medium 이상 잔여 이슈.",
+    "- Risk executiveSummary should include High / Highest 잔여 이슈, Blocked Impact, Medium 잔여 이슈 when supported by evidence, and flow-level regression direction.",
+    "",
     "Strict rules:",
-    "- First sentence must use overallAnalysisEvidence.featureCount and overallAnalysisEvidence.totalTestCases.",
+    "- First sentence must use overallAnalysisEvidence.featureCount as selected QA sheet count and overallAnalysisEvidence.totalTestCases as TC count.",
+    "- First sentence preferred wording: 이번 QA는 선택된 QA 시트 {featureCount}개와 총 {totalTestCases}개 TC를 기준으로 진행되었습니다.",
+    "- Do not write 총 {featureCount}개 기능, 메인피쳐 4개와 서브피쳐 2개, 6개 기능, or 테스트 케이스 in the first sentence.",
     "- Korean terminology policy: write 잔여 이슈 instead of Remaining or Remaining Issue in the final output. Use High / Highest 잔여 이슈, Medium 잔여 이슈, Low / Lowest 잔여 이슈, 전체 잔여 이슈, and 잔여 상태.",
     "- You may keep these terms as-is: Blocked, Next Event, RC, High+, CTA, Jira, Low Known Issue. When using Low Known Issue, prefer 'Low Known Issue 중심' or 'Low Known Issue 성격의 잔여 이슈'.",
     "- Use seniorQaAnalysisEvidence.releaseStatus for tone, but do not simply repeat a dashboard status label.",
@@ -406,6 +682,10 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "- Stable Version Trend wording: 현재 버전 2.0.0의 이슈 규모는 이전 업데이트 버전 대비 급증하지 않았고, High+ 신호도 낮게 유지되고 있습니다. Do not emphasize issue increase in stable tone.",
     "- In stable tone, do not confuse High+ with High / Highest 잔여 이슈. High+ means all High / Highest issues in the version trend, not remaining-only issues.",
     "- Attention-needed tone: 추가 확인 필요, Medium 잔여 이슈 중심, Next Event 분리 관리, 정책 확인 / 재검증 중심. Do not exaggerate as risk.",
+    "- Attention-needed analysis must use natural Korean only. Do not write 影響, 잔여 상태影響, 깨진 한자 혼용 표현, 일본어/중국어식 한자 단어, or incomplete mixed sentences.",
+    "- Attention-needed analysis may use: 일부 검증 범위가 조건부 확인 상태로 남아 있습니다, 전체 잔여 이슈 상태에 영향을 주고 있습니다, 일부 검증 범위가 제한적으로 보류되어 있습니다, Medium 재검증과 정책 조건 확인 범위로 분리해 관리합니다.",
+    "- Attention-needed RC wording must separate RC-local state from overall 잔여 이슈. Prefer: RC2에서는 신규 잔여 이슈가 추가되지 않았지만, 전체 잔여 이슈는 이전 RC에서 발생한 Medium / Low 항목과 분리해 관리해야 합니다.",
+    "- Attention-needed analysis must not write: RC1에서 잔여 이슈가 모두 RC2로 해소, 전체 잔여 이슈가 해소됨, RC2에서 잔여 이슈 없음. Only say 전체 잔여 이슈 없음 when jiraFilteredSummary.Remaining and qaIssueOverview.remaining.total are both zero.",
     "- In attention-needed tone, if highHighest is 0 and medium is greater than 0, write 'Medium 잔여 이슈' or 'Medium 재검증 신호'. Do not write 'Medium 이상 잔여 이슈'.",
     "- In attention-needed tone, never write 'High / Medium 잔여 이슈로 이어지지 않아' or 'High 또는 Medium 잔여 이슈로 이어지지 않아' when Medium is greater than 0. Write 'High / Highest 잔여 이슈로 이어지지는 않았지만, Medium 재검증 신호로 남아 있습니다'.",
     "- In attention-needed tone, avoid '각 이슈별 개별 확인'. Prefer 'Medium 원인 이슈별 재검증과 정책 조건 확인', 'Medium 잔여 이슈의 수정 반영 확인과 운영 정책 조건 재확인', or '운영툴 반영 지연과 알림 상태 반영 조건을 중심으로 한 재검증'.",
@@ -438,6 +718,9 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "- If RC3-local new issues are resolved but 전체 잔여 이슈 is non-zero, say RC-local result and overall release state must be read separately.",
     "- If RC3-local new issues are all handled, say 'RC3에서 신규 발생한 이슈는 모두 처리되었습니다' only as an RC-local statement.",
     "- If seniorQaAnalysisEvidence.versionTrendSignal.trendDirection is increased, explain current-version issue volume increase without mixing it with High / Highest 잔여 이슈.",
+    "- If versionTrendSignal.trendDirection is increased, never write 비교 데이터 부족, 데이터 한계, 명확한 증감 판단은 어려움, 비교할 데이터가 부족, or 이전 버전 비교가 제한적입니다.",
+    "- In risk tone with versionTrendSignal.trendDirection increased, prefer: 현재 버전 2.0.0은 이전 업데이트 버전 대비 전체 이슈와 High+ 신호가 함께 증가했습니다.",
+    "- In risk tone with increased Version Trend, explain that 운영툴 반영, 상태 동기화, 알림 우선순위 정책이 연결된 검증 표면이 넓어진 상태로 볼 수 있습니다 when supported by pattern or blocked evidence.",
     "- In risk tone, if versionTrendSignal.currentBaseVersion is 2.0.0, previousVersionAverageIssues is greater than 0, currentTotalIssues is greater than previousVersionAverageIssues, and currentHighPlusIssues is greater than previousHighPlusAverageIssues, write that 현재 버전 2.0.0은 이전 업데이트 버전 대비 전체 이슈와 High+ 신호가 함께 증가했습니다.",
     "- Do not write '비교할 데이터가 부족', '이전 업데이트 버전과 비교할 데이터가 부족하지만', or '이전 버전 비교가 제한적입니다' when versionTrendSignal.trendDirection is not not_enough_data.",
     "- If overallAnalysisEvidence.highHighestRemainingCount is greater than 0, mention that High / Highest 잔여 이슈가 포함되어 있어 전체 릴리즈 기준 후속 확인이 필요합니다.",
@@ -455,11 +738,11 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "- Prefer issue-type patterns such as 상태 변경 지연, 상태 동기화, 데이터 반영 지연, 저장 후 리스트 갱신 지연, 노출 시점 불일치, 알림 중복 발송, 우선순위 정렬 불일치, but only when those patterns are present in issuePatternAnalysis.",
     "- Do not write feature-name-only patterns such as 이벤트 관련 이슈, 알림 관련 이슈, 운영툴 관련 이슈.",
     "- Do not list table values, Jira issue keys, individual issue titles, or QA Comment details.",
-    "- Keep the output within 3 to 4 short paragraphs and 6 to 8 sentences.",
+    "- Keep the analysis field within 3 to 4 paragraphs and 6 to 8 sentences.",
     "- Final sentence must be exactly: '자세한 내용은 하단 QA Result 및 QA Comment 내용을 참고해주세요.'",
     "",
     "Preferred wording examples:",
-    "- 이번 QA는 총 6개 기능, 148개의 테스트 케이스를 대상으로 진행되었습니다.",
+    "- 이번 QA는 선택된 QA 시트 6개와 총 148개 TC를 기준으로 진행되었습니다.",
     "- 안정 케이스: 남은 항목은 릴리즈 판단에 영향을 줄 수준이 낮고, 운영 모니터링 및 차기 확인 항목으로 분리해 관리하는 것이 적절합니다.",
     "- 안정 케이스 Blocked: DMS-004([알림] 운영툴 저장 이후 정책 refresh 지연)는 일부 검증을 조건부 재확인 대상으로 남기고 있습니다.",
     "- 주의 필요 케이스: High / Highest 잔여 이슈로 이어지지는 않았지만, Medium 재검증 신호로 남아 있습니다.",
@@ -882,7 +1165,7 @@ export async function POST(request: Request) {
               : createFeatureParagraphUserPrompt(analysisPayload),
           },
         ],
-        max_output_tokens: isOverallReport ? 900 : 450,
+        max_output_tokens: isOverallReport ? 1800 : 450,
       }),
     });
 
@@ -900,9 +1183,12 @@ export async function POST(request: Request) {
     }
 
     const data = (await response.json()) as ResponsesApiResult;
-    const analysis = extractResponseText(data).trim();
+    const responseText = extractResponseText(data).trim();
+    const parsedResponse = isOverallReport
+      ? parseAiAnalysisResponse(responseText)
+      : { analysis: responseText };
 
-    return NextResponse.json({ analysis });
+    return NextResponse.json(parsedResponse);
   } catch (error) {
     console.error("AI analysis route error:", error);
 

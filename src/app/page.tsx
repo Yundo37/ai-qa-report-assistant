@@ -49,6 +49,7 @@ import {
 } from "@/lib/jira";
 import type {
   AnalysisSummaryState,
+  AiExecutiveSummaryResult,
   CsvRecord,
   IssuePatternAnalysisItem,
   LabelMatchMode,
@@ -795,6 +796,8 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
   const [aiAnalysisText, setAiAnalysisText] = useState("");
+  const [aiExecutiveSummary, setAiExecutiveSummary] =
+    useState<AiExecutiveSummaryResult | null>(null);
   const [isCreatingResultSheet, setIsCreatingResultSheet] = useState(false);
   const [resultSheetUrl, setResultSheetUrl] = useState("");
   const [resultSheetMessage, setResultSheetMessage] =
@@ -814,6 +817,7 @@ export default function Home() {
   const clearAiAnalysisResult = useCallback(() => {
     aiAnalysisRequestIdRef.current += 1;
     setAiAnalysisText("");
+    setAiExecutiveSummary(null);
     setIsAiAnalyzing(false);
   }, []);
 
@@ -1597,6 +1601,7 @@ export default function Home() {
     aiAnalysisRequestIdRef,
     setIsAiAnalyzing,
     setAiAnalysisText,
+    setAiExecutiveSummary,
     reportTitle,
     createReportTitle,
   });
@@ -1712,6 +1717,7 @@ export default function Home() {
       analysisSummary={analysisSummary}
       analysisSummaryRef={analysisSummaryRef}
       aiAnalysisText={aiAnalysisText}
+      aiExecutiveSummary={aiExecutiveSummary}
       isAiAnalyzing={isAiAnalyzing}
       onAnalyze={handleAiAnalysisTest}
       onCreateResultSheet={handleCreateResultSheet}

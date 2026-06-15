@@ -11,12 +11,17 @@ import { OverallReportResultSection } from "@/components/report/OverallReportRes
 import { QaFollowUpList } from "@/components/report/QaFollowUpList";
 import { RemainingIssueList } from "@/components/report/RemainingIssueList";
 import { ResultSheetActionPanel } from "@/components/report/ResultSheetActionPanel";
-import type { AnalysisSummaryState, MessageState } from "@/types/report";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+  MessageState,
+} from "@/types/report";
 
 type AnalysisResultSectionProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   analysisSummaryRef: RefObject<HTMLElement | null>;
   aiAnalysisText: string;
+  aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
   onCreateResultSheet: () => void;
@@ -34,6 +39,7 @@ export function AnalysisResultSection({
   analysisSummary,
   analysisSummaryRef,
   aiAnalysisText,
+  aiExecutiveSummary,
   isAiAnalyzing,
   onAnalyze,
   onCreateResultSheet,
@@ -54,6 +60,7 @@ export function AnalysisResultSection({
             analysisSummary={analysisSummary}
             reportScopeText={reportScopeText}
             aiAnalysisText={aiAnalysisText}
+            aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
             onAnalyze={onAnalyze}
             onCreateResultSheet={onCreateResultSheet}

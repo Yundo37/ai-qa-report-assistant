@@ -3,23 +3,27 @@
 import { useState } from "react";
 import { createOverallDashboardMetrics } from "@/components/report/reportDashboardUtils";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
-import type { AnalysisSummaryState } from "@/types/report";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+} from "@/types/report";
 
 type AiExecutiveSummaryCardProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   analysisText: string;
+  aiExecutiveSummary?: AiExecutiveSummaryResult | null;
   isLoading: boolean;
   onAnalyze: () => void;
 };
 
 // TEMP_DESIGN_PREVIEW_ONLY: remove this mock when AI Summary UI review no longer needs a local preview.
 const TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT = [
-  "현재 Overall QA는 High / Highest Remaining과 Blocked 항목 확인이 필요한 상태입니다. 상단 Remaining 이슈와 RC별 잔여 흐름을 함께 검토하면 릴리즈 전 우선 확인 범위를 빠르게 좁힐 수 있습니다.",
-  "주요 리스크는 High Priority Remaining, Blocked 항목, 반복 이슈 패턴에서 확인됩니다. 특히 반복 패턴이 여러 데이터 소스에 걸쳐 나타나는 경우 기능 검증 범위와 후속 확인 항목을 분리해 관리하는 것이 좋습니다.",
-  "후속 액션은 Top Remaining Issue 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
+  "현재 Overall QA는 High / Highest 잔여 이슈와 Blocked 항목 확인이 필요한 상태입니다. 상단 잔여 이슈와 RC별 잔여 흐름을 함께 검토하면 릴리즈 전 우선 확인 범위를 빠르게 좁힐 수 있습니다.",
+  "주요 리스크는 High Priority 잔여 이슈, Blocked 항목, 반복 이슈 패턴에서 확인됩니다. 특히 반복 패턴이 여러 데이터 소스에 걸쳐 나타나는 경우 기능 검증 범위와 후속 확인 항목을 분리해 관리하는 것이 좋습니다.",
+  "후속 액션은 주요 잔여 이슈 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
 ].join("\n\n");
 
-type SignalTone = "stable" | "attention" | "risk";
+type SignalTone = "stable" | "attention" | "risk" | "neutral";
 
 type AiExecutiveSummaryViewModel = {
   releaseJudgment: {
@@ -28,7 +32,7 @@ type AiExecutiveSummaryViewModel = {
   };
   riskSignals: Array<{
     title: string;
-    value: number;
+    value?: string | number;
     description: string;
     tone: SignalTone;
   }>;
@@ -37,7 +41,7 @@ type AiExecutiveSummaryViewModel = {
     description: string;
     patterns: Array<{
       label: string;
-      value: number;
+      value?: string | number;
     }>;
   };
   qaCheckpoints: string[];
@@ -46,36 +50,64 @@ type AiExecutiveSummaryViewModel = {
 function signalBadgeClass(tone: SignalTone) {
   if (tone === "risk") return "bg-red-50 text-red-700";
   if (tone === "attention") return "bg-amber-50 text-amber-700";
+  if (tone === "neutral") return "bg-slate-100 text-slate-600";
   return "bg-emerald-50 text-emerald-700";
+}
+
+function formatSummaryValue(value: string | number | undefined) {
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "string" && value.trim()) return value;
+  return "-";
 }
 
 function formatRate(rate: number) {
   return `${Math.round(rate * 1000) / 10}%`;
 }
 
+function createAiExecutiveSummaryViewModelFromAiResult(
+  aiExecutiveSummary: AiExecutiveSummaryResult
+): AiExecutiveSummaryViewModel {
+  return {
+    releaseJudgment: aiExecutiveSummary.releaseJudgment,
+    riskSignals: aiExecutiveSummary.riskSignals.slice(0, 4).map((item) => ({
+      title: item.label,
+      value: item.value,
+      description: item.description,
+      tone: item.tone,
+    })),
+    patternInsight: {
+      title: aiExecutiveSummary.patternInsight.title,
+      description: aiExecutiveSummary.patternInsight.description,
+      patterns: (aiExecutiveSummary.patternInsight.items ?? [])
+        .slice(0, 3)
+        .map((item) => ({
+          label: item.label,
+          value: item.value,
+        })),
+    },
+    qaCheckpoints: aiExecutiveSummary.qaCheckpoints.slice(0, 4),
+  };
+}
+
 function createReleaseJudgment({
   tone,
   highRisk,
   mediumRisk,
-  lowRisk,
   blockedCount,
   blockedRate,
-  nextEventCount,
 }: {
   tone: "stable" | "caution" | "risk";
   highRisk: number;
   mediumRisk: number;
-  lowRisk: number;
   blockedCount: number;
   blockedRate: number;
-  nextEventCount: number;
 }) {
   if (tone === "risk") {
     const reason =
       highRisk > 0 && blockedCount > 0
-        ? "High / Highest Remaining과 Blocked 항목이 함께 남아 있어"
+        ? "High / Highest 잔여 이슈와 Blocked 항목이 함께 남아 있어"
         : highRisk > 0
-          ? "High / Highest Remaining이 남아 있어"
+          ? "High / Highest 잔여 이슈가 남아 있어"
           : `Blocked 비율이 ${formatRate(blockedRate)}로 높아`;
 
     return {
@@ -87,7 +119,7 @@ function createReleaseJudgment({
   if (tone === "caution") {
     const reason =
       mediumRisk > 0
-        ? "High / Highest Remaining은 없지만 Medium Remaining이 남아 있어"
+        ? "High / Highest 잔여 이슈는 없지만 Medium 잔여 이슈가 남아 있어"
         : `Blocked 비율이 ${formatRate(blockedRate)} 수준이라`;
 
     return {
@@ -100,8 +132,8 @@ function createReleaseJudgment({
     title: "운영 모니터링 중심",
     description:
       highRisk === 0 && mediumRisk === 0
-        ? `High / Medium Remaining 없이 Low Known Issue ${lowRisk.toLocaleString()}건과 Next Event ${nextEventCount.toLocaleString()}건을 후속 모니터링 항목으로 관리하면 됩니다.`
-        : "주요 우선순위 Remaining 신호가 낮아 운영 모니터링 중심으로 관리할 수 있습니다.",
+        ? "High / Medium 잔여 이슈는 없고, Low Known Issue와 Next Event는 운영 모니터링 항목으로 분리 관리하면 됩니다."
+        : "주요 우선순위 잔여 이슈 신호가 낮아 운영 모니터링 중심으로 관리할 수 있습니다.",
   };
 }
 
@@ -127,7 +159,7 @@ function createRiskSignals({
   if (tone === "risk") {
     return [
       {
-        title: "High / Highest Remaining",
+        title: "High / Highest 잔여 이슈",
         value: highRisk,
         description: "배포 전 우선 확인 대상으로 분리해야 합니다.",
         tone: "risk",
@@ -139,15 +171,15 @@ function createRiskSignals({
         tone: blockedRate >= 0.2 ? "risk" : "attention",
       },
       {
-        title: "Medium Remaining",
+        title: "Medium 잔여 이슈",
         value: mediumRisk,
         description: "High 이슈 확인 이후 후속 재검증 대상으로 관리합니다.",
         tone: mediumRisk > 0 ? "attention" : "stable",
       },
       {
-        title: "RC Remaining",
+        title: "RC 잔여 이슈",
         value: rcRemaining,
-        description: "RC별 잔여 흐름은 전체 Remaining과 분리해 해석합니다.",
+        description: "RC별 잔여 흐름은 전체 잔여 이슈와 분리해 해석합니다.",
         tone: rcRemaining > 0 ? "attention" : "stable",
       },
     ];
@@ -156,13 +188,13 @@ function createRiskSignals({
   if (tone === "caution") {
     return [
       {
-        title: "High / Highest Remaining 없음",
+        title: "High / Highest 잔여 이슈 없음",
         value: highRisk,
         description: "배포 전 우선 차단 신호는 낮은 상태입니다.",
         tone: "stable",
       },
       {
-        title: "Medium Remaining",
+        title: "Medium 잔여 이슈",
         value: mediumRisk,
         description: "운영 정책 확인 또는 수정 반영 후 재검증이 필요합니다.",
         tone: mediumRisk > 0 ? "attention" : "stable",
@@ -184,7 +216,7 @@ function createRiskSignals({
 
   return [
     {
-      title: "High / Medium Remaining 없음",
+      title: "High / Medium 잔여 이슈 없음",
       value: highRisk + mediumRisk,
       description: "주요 릴리즈 차단 신호는 없습니다.",
       tone: "stable",
@@ -229,7 +261,7 @@ function createPatternInsight({
     return {
       title: "반복 패턴 데이터 제한",
       description:
-        "반복 패턴을 해석할 만큼의 신호가 충분하지 않아 Remaining 우선순위와 QA 코멘트 중심으로 확인합니다.",
+        "반복 패턴을 해석할 만큼의 신호가 충분하지 않아 잔여 이슈 우선순위와 QA 코멘트 중심으로 확인합니다.",
       patterns: [],
     };
   }
@@ -266,7 +298,7 @@ function createQaCheckpoints({
 }) {
   if (tone === "risk") {
     return [
-      "High / Highest Remaining 이슈를 우선 확인합니다.",
+      "High / Highest 잔여 이슈를 우선 확인합니다.",
       "Blocked 항목은 원인 해소 후 회귀 검증으로 분리합니다.",
       hasPatterns
         ? "상위 반복 패턴은 묶음 단위로 재검증합니다."
@@ -276,7 +308,7 @@ function createQaCheckpoints({
 
   if (tone === "caution") {
     return [
-      "Medium Remaining은 수정 반영 후 재검증합니다.",
+      "Medium 잔여 이슈는 수정 반영 후 재검증합니다.",
       "Next Event는 후속 일정 항목으로 분리합니다.",
       "운영 정책 확인 항목은 QA 코멘트 기준으로 추적합니다.",
     ];
@@ -285,7 +317,7 @@ function createQaCheckpoints({
   return [
     "Low Known Issue는 배포 후 모니터링 항목으로 관리합니다.",
     "차기 이벤트 확인 항목은 현재 릴리즈 위험과 분리합니다.",
-    "High / Medium Remaining 신규 발생 여부만 확인합니다.",
+    "High / Medium 잔여 이슈 신규 발생 여부만 확인합니다.",
   ];
 }
 
@@ -317,10 +349,8 @@ function createAiExecutiveSummaryViewModel({
       tone,
       highRisk,
       mediumRisk,
-      lowRisk,
       blockedCount,
       blockedRate,
-      nextEventCount,
     }),
     riskSignals: createRiskSignals({
       tone,
@@ -343,6 +373,7 @@ function createAiExecutiveSummaryViewModel({
 export function AiExecutiveSummaryCard({
   analysisSummary,
   analysisText,
+  aiExecutiveSummary,
   isLoading,
   onAnalyze,
 }: AiExecutiveSummaryCardProps) {
@@ -374,7 +405,7 @@ export function AiExecutiveSummaryCard({
     analysisSummary.qaTotal.NextEvent ??
     0;
   const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 3);
-  const executiveSummaryViewModel = createAiExecutiveSummaryViewModel({
+  const ruleBasedExecutiveSummaryViewModel = createAiExecutiveSummaryViewModel({
     tone: metrics.status.tone,
     highRisk,
     mediumRisk,
@@ -385,6 +416,9 @@ export function AiExecutiveSummaryCard({
     rcRemaining: analysisSummary.rcProgress.remainingIssues,
     patternItems,
   });
+  const executiveSummaryViewModel = aiExecutiveSummary
+    ? createAiExecutiveSummaryViewModelFromAiResult(aiExecutiveSummary)
+    : ruleBasedExecutiveSummaryViewModel;
   const totalTestCases =
     analysisSummary.overallQaSummary?.Total ??
     analysisSummary.qaTotal.Total ??
@@ -401,12 +435,12 @@ export function AiExecutiveSummaryCard({
       slotType: "metric-jira-issues" as const,
     },
     {
-      label: "Remaining 이슈",
+      label: "잔여 이슈",
       value: metrics.remaining,
       slotType: "risk" as const,
     },
     {
-      label: "RC 버전",
+      label: "분석 RC",
       value: analysisSummary.rcProgress.items.length,
       slotType: "metric-rc-versions" as const,
     },
@@ -538,7 +572,7 @@ export function AiExecutiveSummaryCard({
                           item.tone
                         )}`}
                       >
-                        {item.value.toLocaleString()}
+                        {formatSummaryValue(item.value)}
                       </span>
                     </div>
                   </li>
@@ -566,7 +600,7 @@ export function AiExecutiveSummaryCard({
                             {item.label}
                           </span>
                           <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
-                            {item.value.toLocaleString()}
+                            {formatSummaryValue(item.value)}
                           </span>
                         </div>
                       </li>

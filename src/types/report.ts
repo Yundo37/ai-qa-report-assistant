@@ -26,6 +26,33 @@ export type CsvRecord = Record<string, string>;
 export type CountSummary = Record<string, number>;
 export type LabelMatchMode = "ANY" | "ALL";
 export type ReportType = "FEATURE" | "OVERALL";
+export type AiExecutiveSummaryTone =
+  | "stable"
+  | "attention"
+  | "risk"
+  | "neutral";
+
+export type AiExecutiveSummaryResult = {
+  releaseJudgment: {
+    title: string;
+    description: string;
+  };
+  riskSignals: Array<{
+    label: string;
+    value?: string | number;
+    description: string;
+    tone: AiExecutiveSummaryTone;
+  }>;
+  patternInsight: {
+    title: string;
+    description: string;
+    items?: Array<{
+      label: string;
+      value?: string | number;
+    }>;
+  };
+  qaCheckpoints: string[];
+};
 
 export type SpreadsheetSheetInfo = {
   title: string;

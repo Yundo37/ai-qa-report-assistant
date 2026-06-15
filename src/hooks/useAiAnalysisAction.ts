@@ -1,5 +1,9 @@
 import { useCallback } from "react";
-import type { AnalysisSummaryState } from "@/types/report";
+import { sanitizeAiExecutiveSummary } from "@/lib/report/aiExecutiveSummarySanitizer";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+} from "@/types/report";
 
 type UseAiAnalysisActionParams = {
   analysisSummary: AnalysisSummaryState;
@@ -7,14 +11,59 @@ type UseAiAnalysisActionParams = {
   aiAnalysisRequestIdRef: { current: number };
   setIsAiAnalyzing: (value: boolean) => void;
   setAiAnalysisText: (value: string) => void;
+  setAiExecutiveSummary: (value: AiExecutiveSummaryResult | null) => void;
   reportTitle: string;
   createReportTitle: (featureName: string) => string;
 };
 
 const EMPTY_AI_ANALYSIS_MESSAGE =
   "AI \uBD84\uC11D \uACB0\uACFC\uAC00 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.";
-const FAILED_AI_ANALYSIS_MESSAGE =
-  "AI \uBD84\uC11D \uACB0\uACFC\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isAiExecutiveSummaryResult(
+  value: unknown
+): value is AiExecutiveSummaryResult {
+  if (!isRecord(value)) return false;
+  const releaseJudgment = value.releaseJudgment;
+  const patternInsight = value.patternInsight;
+
+  return (
+    isRecord(releaseJudgment) &&
+    typeof releaseJudgment.title === "string" &&
+    typeof releaseJudgment.description === "string" &&
+    Array.isArray(value.riskSignals) &&
+    isRecord(patternInsight) &&
+    typeof patternInsight.title === "string" &&
+    typeof patternInsight.description === "string" &&
+    Array.isArray(value.qaCheckpoints)
+  );
+}
+
+function normalizeAiAnalysisResponse(data: unknown) {
+  if (typeof data === "string") {
+    return {
+      analysis: data,
+      executiveSummary: null,
+    };
+  }
+
+  if (!isRecord(data)) {
+    return {
+      analysis: "",
+      executiveSummary: null,
+    };
+  }
+
+  return {
+    analysis: typeof data.analysis === "string" ? data.analysis : "",
+    executiveSummary: isAiExecutiveSummaryResult(data.executiveSummary)
+      ? data.executiveSummary
+      : null,
+  };
+}
 
 export function useAiAnalysisAction({
   analysisSummary,
@@ -22,6 +71,7 @@ export function useAiAnalysisAction({
   aiAnalysisRequestIdRef,
   setIsAiAnalyzing,
   setAiAnalysisText,
+  setAiExecutiveSummary,
   reportTitle,
   createReportTitle,
 }: UseAiAnalysisActionParams) {
@@ -33,6 +83,7 @@ export function useAiAnalysisAction({
     aiAnalysisRequestIdRef.current = requestId;
     setIsAiAnalyzing(true);
     setAiAnalysisText("");
+    setAiExecutiveSummary(null);
 
     try {
       const response = await fetch("/api/ai-analysis", {
@@ -67,14 +118,26 @@ export function useAiAnalysisAction({
         throw new Error(`AI analysis failed: ${response.status}`);
       }
 
-      const data = (await response.json()) as { analysis?: string };
+      const data = await response.json();
+      const normalizedResponse = normalizeAiAnalysisResponse(data);
+      const sanitizedExecutiveSummary = normalizedResponse.executiveSummary
+        ? sanitizeAiExecutiveSummary({
+            executiveSummary: normalizedResponse.executiveSummary,
+            analysisSummary: targetAnalysisSummary,
+          })
+        : null;
+
       if (aiAnalysisRequestIdRef.current === requestId) {
-        setAiAnalysisText(data.analysis || EMPTY_AI_ANALYSIS_MESSAGE);
+        setAiAnalysisText(
+          normalizedResponse.analysis || EMPTY_AI_ANALYSIS_MESSAGE
+        );
+        setAiExecutiveSummary(sanitizedExecutiveSummary);
       }
     } catch (error) {
       console.error("AI Analysis Error:", error);
       if (aiAnalysisRequestIdRef.current === requestId) {
-        setAiAnalysisText(FAILED_AI_ANALYSIS_MESSAGE);
+        setAiAnalysisText("");
+        setAiExecutiveSummary(null);
       }
     } finally {
       if (aiAnalysisRequestIdRef.current === requestId) {
@@ -87,6 +150,7 @@ export function useAiAnalysisAction({
     createReportTitle,
     isAiAnalyzing,
     reportTitle,
+    setAiExecutiveSummary,
     setAiAnalysisText,
     setIsAiAnalyzing,
   ]);

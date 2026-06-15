@@ -8,7 +8,11 @@ import { RcProgressCard } from "@/components/report/RcProgressCard";
 import { ReleaseRiskSummaryCard } from "@/components/report/ReleaseRiskSummaryCard";
 import { RemainingIssuesDashboardCard } from "@/components/report/RemainingIssuesDashboardCard";
 import { ReportDashboardHeader } from "@/components/report/ReportDashboardHeader";
-import type { AnalysisSummaryState, MessageState } from "@/types/report";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+  MessageState,
+} from "@/types/report";
 
 type OverallReportDashboardProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
@@ -18,6 +22,7 @@ type OverallReportDashboardProps = {
   reportRcText: string;
   generatedAtText: string;
   aiAnalysisText: string;
+  aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
   onCreateResultSheet: () => void;
@@ -35,6 +40,7 @@ export function OverallReportDashboard({
   reportRcText,
   generatedAtText,
   aiAnalysisText,
+  aiExecutiveSummary,
   isAiAnalyzing,
   onAnalyze,
   onCreateResultSheet,
@@ -60,6 +66,7 @@ export function OverallReportDashboard({
       <AiExecutiveSummaryCard
         analysisSummary={analysisSummary}
         analysisText={aiAnalysisText}
+        aiExecutiveSummary={aiExecutiveSummary}
         isLoading={isAiAnalyzing}
         onAnalyze={onAnalyze}
       />

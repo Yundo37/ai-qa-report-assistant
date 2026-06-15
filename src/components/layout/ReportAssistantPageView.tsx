@@ -9,12 +9,17 @@ import {
   ReportInputPanel,
   type ReportInputPanelProps,
 } from "@/components/report/ReportInputPanel";
-import type { AnalysisSummaryState, MessageState } from "@/types/report";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+  MessageState,
+} from "@/types/report";
 
 type ReportAssistantPageViewProps = ReportInputPanelProps & {
   analysisSummary: AnalysisSummaryState;
   analysisSummaryRef: RefObject<HTMLElement | null>;
   aiAnalysisText: string;
+  aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
   onCreateResultSheet: () => void;
@@ -33,6 +38,7 @@ export function ReportAssistantPageView({
   analysisSummary,
   analysisSummaryRef,
   aiAnalysisText,
+  aiExecutiveSummary,
   isAiAnalyzing,
   onAnalyze,
   onCreateResultSheet,
@@ -84,6 +90,7 @@ export function ReportAssistantPageView({
             analysisSummary={analysisSummary}
             analysisSummaryRef={analysisSummaryRef}
             aiAnalysisText={aiAnalysisText}
+            aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
             onAnalyze={onAnalyze}
             onCreateResultSheet={onCreateResultSheet}
