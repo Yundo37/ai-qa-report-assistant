@@ -19,50 +19,325 @@ const TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT = [
   "후속 액션은 Top Remaining Issue 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
 ].join("\n\n");
 
-function priorityBadgeClass(tone: "High" | "Medium" | "Low") {
-  if (tone === "High") return "bg-red-50 text-red-700";
-  if (tone === "Medium") return "bg-amber-50 text-amber-700";
+type SignalTone = "stable" | "attention" | "risk";
+
+type AiExecutiveSummaryViewModel = {
+  releaseJudgment: {
+    title: string;
+    description: string;
+  };
+  riskSignals: Array<{
+    title: string;
+    value: number;
+    description: string;
+    tone: SignalTone;
+  }>;
+  patternInsight: {
+    title: string;
+    description: string;
+    patterns: Array<{
+      label: string;
+      value: number;
+    }>;
+  };
+  qaCheckpoints: string[];
+};
+
+function signalBadgeClass(tone: SignalTone) {
+  if (tone === "risk") return "bg-red-50 text-red-700";
+  if (tone === "attention") return "bg-amber-50 text-amber-700";
   return "bg-emerald-50 text-emerald-700";
 }
 
-function createConclusionText(
-  tone: "stable" | "caution" | "risk",
-  highRisk: number,
-  blocked: number,
-  remaining: number
-) {
+function formatRate(rate: number) {
+  return `${Math.round(rate * 1000) / 10}%`;
+}
+
+function createReleaseJudgment({
+  tone,
+  highRisk,
+  mediumRisk,
+  lowRisk,
+  blockedCount,
+  blockedRate,
+  nextEventCount,
+}: {
+  tone: "stable" | "caution" | "risk";
+  highRisk: number;
+  mediumRisk: number;
+  lowRisk: number;
+  blockedCount: number;
+  blockedRate: number;
+  nextEventCount: number;
+}) {
   if (tone === "risk") {
-    return `High / Highest Remaining ${highRisk.toLocaleString()}건과 Blocked ${blocked.toLocaleString()}건이 주요 확인 신호입니다.`;
+    const reason =
+      highRisk > 0 && blockedCount > 0
+        ? "High / Highest Remaining과 Blocked 항목이 함께 남아 있어"
+        : highRisk > 0
+          ? "High / Highest Remaining이 남아 있어"
+          : `Blocked 비율이 ${formatRate(blockedRate)}로 높아`;
+
+    return {
+      title: "추가 검증 필요",
+      description: `${reason}, 배포 전 우선 확인 범위를 분리해야 합니다.`,
+    };
   }
 
   if (tone === "caution") {
-    return `Remaining Issue ${remaining.toLocaleString()}건을 중심으로 후속 추이를 확인합니다.`;
+    const reason =
+      mediumRisk > 0
+        ? "High / Highest Remaining은 없지만 Medium Remaining이 남아 있어"
+        : `Blocked 비율이 ${formatRate(blockedRate)} 수준이라`;
+
+    return {
+      title: "추가 확인 필요",
+      description: `${reason}, 운영 정책 확인과 재검증 항목을 분리해 관리해야 합니다.`,
+    };
   }
 
-  return "주요 대시보드 지표에서 즉시 확인이 필요한 큰 리스크 신호는 보이지 않습니다.";
+  return {
+    title: "운영 모니터링 중심",
+    description:
+      highRisk === 0 && mediumRisk === 0
+        ? `High / Medium Remaining 없이 Low Known Issue ${lowRisk.toLocaleString()}건과 Next Event ${nextEventCount.toLocaleString()}건을 후속 모니터링 항목으로 관리하면 됩니다.`
+        : "주요 우선순위 Remaining 신호가 낮아 운영 모니터링 중심으로 관리할 수 있습니다.",
+  };
 }
 
-function createReleaseJudgmentLabel({
+function createRiskSignals({
+  tone,
   highRisk,
-  mediumRemaining,
-  blocked,
+  mediumRisk,
+  lowRisk,
+  blockedCount,
   blockedRate,
-  remaining,
-  nextEvent,
+  nextEventCount,
+  rcRemaining,
 }: {
+  tone: "stable" | "caution" | "risk";
   highRisk: number;
-  mediumRemaining: number;
-  blocked: number;
+  mediumRisk: number;
+  lowRisk: number;
+  blockedCount: number;
   blockedRate: number;
-  remaining: number;
-  nextEvent: number;
-}) {
-  if (highRisk > 0 || blockedRate >= 0.2) return "추가 검증 필요";
-  if (mediumRemaining > 0 || blockedRate >= 0.1) return "모니터링 필요";
-  if (remaining > 0 || nextEvent > 0 || blocked > 0) {
-    return "운영 모니터링 중심";
+  nextEventCount: number;
+  rcRemaining: number;
+}): AiExecutiveSummaryViewModel["riskSignals"] {
+  if (tone === "risk") {
+    return [
+      {
+        title: "High / Highest Remaining",
+        value: highRisk,
+        description: "배포 전 우선 확인 대상으로 분리해야 합니다.",
+        tone: "risk",
+      },
+      {
+        title: "Blocked",
+        value: blockedCount,
+        description: `Blocked 비율 ${formatRate(blockedRate)} 기준으로 원인 해소 후 회귀 검증이 필요합니다.`,
+        tone: blockedRate >= 0.2 ? "risk" : "attention",
+      },
+      {
+        title: "Medium Remaining",
+        value: mediumRisk,
+        description: "High 이슈 확인 이후 후속 재검증 대상으로 관리합니다.",
+        tone: mediumRisk > 0 ? "attention" : "stable",
+      },
+      {
+        title: "RC Remaining",
+        value: rcRemaining,
+        description: "RC별 잔여 흐름은 전체 Remaining과 분리해 해석합니다.",
+        tone: rcRemaining > 0 ? "attention" : "stable",
+      },
+    ];
   }
-  return "안정권";
+
+  if (tone === "caution") {
+    return [
+      {
+        title: "High / Highest Remaining 없음",
+        value: highRisk,
+        description: "배포 전 우선 차단 신호는 낮은 상태입니다.",
+        tone: "stable",
+      },
+      {
+        title: "Medium Remaining",
+        value: mediumRisk,
+        description: "운영 정책 확인 또는 수정 반영 후 재검증이 필요합니다.",
+        tone: mediumRisk > 0 ? "attention" : "stable",
+      },
+      {
+        title: "Next Event",
+        value: nextEventCount,
+        description: "현재 릴리즈 위험과 분리해 후속 일정으로 관리합니다.",
+        tone: "attention",
+      },
+      {
+        title: "Blocked 영향",
+        value: blockedCount,
+        description: `Blocked 비율은 ${formatRate(blockedRate)}이며 상태 판정과 함께 보조 확인합니다.`,
+        tone: blockedRate >= 0.1 ? "attention" : "stable",
+      },
+    ];
+  }
+
+  return [
+    {
+      title: "High / Medium Remaining 없음",
+      value: highRisk + mediumRisk,
+      description: "주요 릴리즈 차단 신호는 없습니다.",
+      tone: "stable",
+    },
+    {
+      title: "Low Known Issue",
+      value: lowRisk,
+      description: "운영 영향이 낮은 후속 관리 항목입니다.",
+      tone: "stable",
+    },
+    {
+      title: "Next Event",
+      value: nextEventCount,
+      description: "현재 릴리즈 위험이 아니라 차기 확인 항목입니다.",
+      tone: "stable",
+    },
+    {
+      title: "Blocked 낮은 영향",
+      value: blockedCount,
+      description: `Blocked 비율 ${formatRate(blockedRate)} 기준으로 안정 범위에서 모니터링합니다.`,
+      tone: "stable",
+    },
+  ];
+}
+
+function createPatternInsight({
+  tone,
+  patternItems,
+}: {
+  tone: "stable" | "caution" | "risk";
+  patternItems: NonNullable<AnalysisSummaryState>["issuePatternAnalysis"];
+}): AiExecutiveSummaryViewModel["patternInsight"] {
+  const patterns = (patternItems ?? []).slice(0, 3).map((item) => ({
+    label: item.name,
+    value: item.count,
+  }));
+  const patternSummary = patterns
+    .map((item) => `${item.label} ${item.value.toLocaleString()}건`)
+    .join(", ");
+
+  if (patterns.length === 0) {
+    return {
+      title: "반복 패턴 데이터 제한",
+      description:
+        "반복 패턴을 해석할 만큼의 신호가 충분하지 않아 Remaining 우선순위와 QA 코멘트 중심으로 확인합니다.",
+      patterns: [],
+    };
+  }
+
+  if (tone === "risk") {
+    return {
+      title: "흐름 단위 회귀 검증 신호",
+      description: `상위 반복 패턴(${patternSummary})이 함께 나타나므로 단일 이슈보다 기능 흐름 단위로 재검증해야 합니다.`,
+      patterns,
+    };
+  }
+
+  if (tone === "caution") {
+    return {
+      title: "재검증과 정책 확인 신호",
+      description: `상위 반복 패턴(${patternSummary})은 치명 신호보다 Medium 재검증과 운영 정책 확인 범위로 분리하는 것이 적절합니다.`,
+      patterns,
+    };
+  }
+
+  return {
+    title: "반복 패턴 신호 낮음",
+    description: `상위 반복 패턴(${patternSummary})은 Low Known Issue와 차기 확인 항목 중심으로 모니터링 가능합니다.`,
+    patterns,
+  };
+}
+
+function createQaCheckpoints({
+  tone,
+  hasPatterns,
+}: {
+  tone: "stable" | "caution" | "risk";
+  hasPatterns: boolean;
+}) {
+  if (tone === "risk") {
+    return [
+      "High / Highest Remaining 이슈를 우선 확인합니다.",
+      "Blocked 항목은 원인 해소 후 회귀 검증으로 분리합니다.",
+      hasPatterns
+        ? "상위 반복 패턴은 묶음 단위로 재검증합니다."
+        : "반복 패턴 데이터는 보조 근거로만 확인합니다.",
+    ];
+  }
+
+  if (tone === "caution") {
+    return [
+      "Medium Remaining은 수정 반영 후 재검증합니다.",
+      "Next Event는 후속 일정 항목으로 분리합니다.",
+      "운영 정책 확인 항목은 QA 코멘트 기준으로 추적합니다.",
+    ];
+  }
+
+  return [
+    "Low Known Issue는 배포 후 모니터링 항목으로 관리합니다.",
+    "차기 이벤트 확인 항목은 현재 릴리즈 위험과 분리합니다.",
+    "High / Medium Remaining 신규 발생 여부만 확인합니다.",
+  ];
+}
+
+function createAiExecutiveSummaryViewModel({
+  tone,
+  highRisk,
+  mediumRisk,
+  lowRisk,
+  blockedCount,
+  blockedRate,
+  nextEventCount,
+  rcRemaining,
+  patternItems,
+}: {
+  tone: "stable" | "caution" | "risk";
+  highRisk: number;
+  mediumRisk: number;
+  lowRisk: number;
+  blockedCount: number;
+  blockedRate: number;
+  nextEventCount: number;
+  rcRemaining: number;
+  patternItems: NonNullable<AnalysisSummaryState>["issuePatternAnalysis"];
+}): AiExecutiveSummaryViewModel {
+  const patternInsight = createPatternInsight({ tone, patternItems });
+
+  return {
+    releaseJudgment: createReleaseJudgment({
+      tone,
+      highRisk,
+      mediumRisk,
+      lowRisk,
+      blockedCount,
+      blockedRate,
+      nextEventCount,
+    }),
+    riskSignals: createRiskSignals({
+      tone,
+      highRisk,
+      mediumRisk,
+      lowRisk,
+      blockedCount,
+      blockedRate,
+      nextEventCount,
+      rcRemaining,
+    }),
+    patternInsight,
+    qaCheckpoints: createQaCheckpoints({
+      tone,
+      hasPatterns: patternInsight.patterns.length > 0,
+    }),
+  };
 }
 
 export function AiExecutiveSummaryCard({
@@ -99,88 +374,44 @@ export function AiExecutiveSummaryCard({
     analysisSummary.qaTotal.NextEvent ??
     0;
   const patternItems = (analysisSummary.issuePatternAnalysis ?? []).slice(0, 3);
-  const conclusionText = createConclusionText(
-    metrics.status.tone,
+  const executiveSummaryViewModel = createAiExecutiveSummaryViewModel({
+    tone: metrics.status.tone,
     highRisk,
+    mediumRisk,
+    lowRisk,
     blockedCount,
-    metrics.remaining
-  );
-  const riskItems = [
-    {
-      label:
-        highRisk > 0
-          ? "High / Highest Remaining is the primary release risk."
-          : "High / Highest Remaining is not a top risk signal.",
-      value: highRisk,
-      tone: highRisk > 0 ? ("High" as const) : ("Low" as const),
-    },
-    {
-      label:
-        blockedCount > 0
-          ? "Blocked items may affect feature validation scope."
-          : "Blocked items are currently low.",
-      value: blockedCount,
-      tone: blockedCount > 0 ? ("Medium" as const) : ("Low" as const),
-    },
-    {
-      label: patternItems[0]
-        ? `${patternItems[0].name} appears as a repeated pattern.`
-        : "Repeated patterns need more issue data.",
-      value: patternItems[0]?.count ?? 0,
-      tone: patternItems[0] ? ("Medium" as const) : ("Low" as const),
-    },
-    {
-      label: "RC remaining flow is tracked in RC Progress.",
-      value: analysisSummary.rcProgress.remainingIssues,
-      tone:
-        analysisSummary.rcProgress.remainingIssues > 0
-          ? ("Medium" as const)
-          : ("Low" as const),
-    },
-  ];
-  const recommendationItems = [
-    highRisk > 0
-      ? "Re-check top Remaining issues before release closure."
-      : "Keep monitoring top Remaining issues on a regular cadence.",
-    blockedCount > 0
-      ? "Re-test Blocked items after upstream issues are resolved."
-      : "Keep Blocked items as a monitoring bucket.",
-    nextEventCount > 0
-      ? "Track Next Event items separately as follow-up work."
-      : "Separate any new Next Event items as follow-up work.",
-  ].slice(0, 3);
-  const patternInsightItems = patternItems.map((item) => ({
-    label: item.name,
-    value: item.count,
-    trendLabel: item.trend[0]?.label,
-  }));
+    blockedRate: metrics.blockedRate,
+    nextEventCount,
+    rcRemaining: analysisSummary.rcProgress.remainingIssues,
+    patternItems,
+  });
   const totalTestCases =
     analysisSummary.overallQaSummary?.Total ??
     analysisSummary.qaTotal.Total ??
     0;
   const metricStripItems = [
     {
-      label: "Total Test Cases",
+      label: "전체 TC",
       value: totalTestCases,
       slotType: "metric-test-cases" as const,
     },
     {
-      label: "Jira Issues",
+      label: "Jira 이슈",
       value: analysisSummary.jiraMatchedRows,
       slotType: "metric-jira-issues" as const,
     },
     {
-      label: "Remaining Issues",
+      label: "Remaining 이슈",
       value: metrics.remaining,
       slotType: "risk" as const,
     },
     {
-      label: "RC Versions",
+      label: "RC 버전",
       value: analysisSummary.rcProgress.items.length,
       slotType: "metric-rc-versions" as const,
     },
     {
-      label: "QA Comments",
+      label: "QA 코멘트",
       value: analysisSummary.qaFollowUps.length,
       slotType: "follow-up" as const,
     },
@@ -189,14 +420,6 @@ export function AiExecutiveSummaryCard({
   const passRateDonutStyle = {
     background: `conic-gradient(#6d5dfc ${passRatePercent}%, #ece9ff ${passRatePercent}% 100%)`,
   };
-  const releaseJudgmentLabel = createReleaseJudgmentLabel({
-    highRisk,
-    mediumRemaining: mediumRisk,
-    blocked: blockedCount,
-    blockedRate: metrics.blockedRate,
-    remaining: metrics.remaining,
-    nextEvent: nextEventCount,
-  });
 
   if (!hasAnalysis && !isLoading) {
     return (
@@ -204,13 +427,13 @@ export function AiExecutiveSummaryCard({
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-              AI Executive Summary
+              AI 릴리즈 분석 요약
             </p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-              AI QA Summary
+              AI 릴리즈 분석 요약
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Generate AI Analysis to view a QA data based release summary.
+              현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단과 확인 방향을 정리합니다.
             </p>
           </div>
           <button
@@ -218,7 +441,7 @@ export function AiExecutiveSummaryCard({
             onClick={onAnalyze}
             className="w-fit rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
           >
-            Generate AI Analysis
+            AI 분석 생성
           </button>
         </div>
       </section>
@@ -234,11 +457,11 @@ export function AiExecutiveSummaryCard({
               ai
             </span>
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-              AI Executive Summary
+              AI 릴리즈 분석 요약
             </p>
           </div>
           <h2 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
-            AI Generated Release Analysis
+            AI 릴리즈 분석 요약
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
             현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단, 리스크 신호,
@@ -252,42 +475,42 @@ export function AiExecutiveSummaryCard({
           className="w-fit rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading
-            ? "Analyzing..."
+            ? "AI 분석 중..."
             : hasRealAnalysisText
-              ? "Regenerate AI Analysis"
-              : "Generate AI Analysis"}
+              ? "AI 분석 다시 생성"
+              : "AI 분석 생성"}
         </button>
       </div>
 
       {isLoading ? (
         <p className="mt-5 rounded-2xl border border-indigo-100 bg-white/85 p-4 text-sm leading-6 text-slate-500">
-          Generating AI Analysis...
+          AI 분석을 생성하고 있습니다...
         </p>
       ) : (
         <>
           <div className="mt-5 grid overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                Release Judgment
+                릴리즈 판단
               </p>
               <p className="mt-4 text-center text-xl font-black tracking-tight text-indigo-700">
-                {releaseJudgmentLabel}
+                {executiveSummaryViewModel.releaseJudgment.title}
               </p>
               <p className="mt-3 text-center text-sm font-semibold leading-6 text-slate-800">
-                {conclusionText}
+                {executiveSummaryViewModel.releaseJudgment.description}
               </p>
               <div className="mt-5 flex justify-center">
                 <div
                   className="grid size-36 place-items-center rounded-full shadow-inner shadow-indigo-100"
                   style={passRateDonutStyle}
-                  aria-label={`Pass Rate ${passRatePercent}%`}
+                  aria-label={`통과율 ${passRatePercent}%`}
                 >
                   <div className="flex size-28 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
                     <span className="block text-3xl font-black leading-none text-indigo-700">
                       {passRatePercent}%
                     </span>
                     <span className="mt-1 block text-[11px] font-semibold leading-none text-slate-500">
-                      Pass Rate
+                      통과율
                     </span>
                   </div>
                 </div>
@@ -296,17 +519,22 @@ export function AiExecutiveSummaryCard({
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                Risk Signals
+                주요 리스크 신호
               </p>
               <ul className="mt-4 space-y-3">
-                {riskItems.map((item) => (
-                  <li key={item.label} className="text-sm">
+                {executiveSummaryViewModel.riskSignals.map((item) => (
+                  <li key={item.title} className="text-sm">
                     <div className="flex items-start justify-between gap-3">
-                      <span className="min-w-0 leading-5 text-slate-700">
-                        {item.label}
+                      <span className="min-w-0">
+                        <span className="block font-semibold leading-5 text-slate-800">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-slate-500">
+                          {item.description}
+                        </span>
                       </span>
                       <span
-                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${priorityBadgeClass(
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${signalBadgeClass(
                           item.tone
                         )}`}
                       >
@@ -320,24 +548,22 @@ export function AiExecutiveSummaryCard({
 
             <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                Pattern Insight
+                반복 패턴 해석
               </p>
-              {patternInsightItems.length > 0 ? (
+              {executiveSummaryViewModel.patternInsight.patterns.length > 0 ? (
                 <>
+                  <p className="mt-3 text-sm font-semibold leading-5 text-slate-800">
+                    {executiveSummaryViewModel.patternInsight.title}
+                  </p>
                   <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Repeated issue patterns detected from existing issue data.
+                    {executiveSummaryViewModel.patternInsight.description}
                   </p>
                   <ul className="mt-4 space-y-3">
-                    {patternInsightItems.map((item) => (
+                    {executiveSummaryViewModel.patternInsight.patterns.map((item) => (
                       <li key={item.label} className="text-sm">
                         <div className="flex items-start justify-between gap-3">
                           <span className="min-w-0 leading-5 text-slate-700">
                             {item.label}
-                            {item.trendLabel ? (
-                              <span className="mt-1 block text-xs text-slate-400">
-                                Trend basis: {item.trendLabel}
-                              </span>
-                            ) : null}
                           </span>
                           <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
                             {item.value.toLocaleString()}
@@ -349,17 +575,17 @@ export function AiExecutiveSummaryCard({
                 </>
               ) : (
                 <p className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-500">
-                  Pattern data is limited.
+                  {executiveSummaryViewModel.patternInsight.description}
                 </p>
               )}
             </div>
 
             <div className="p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                QA Checkpoints
+                QA 확인 방향
               </p>
               <ul className="mt-4 space-y-3">
-                {recommendationItems.map((item) => (
+                {executiveSummaryViewModel.qaCheckpoints.map((item) => (
                   <li key={item} className="flex gap-2 text-sm leading-5">
                     <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-indigo-500" />
                     <span className="text-slate-700">{item}</span>
@@ -404,7 +630,7 @@ export function AiExecutiveSummaryCard({
                 onClick={() => setIsDetailOpen((value) => !value)}
                 className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300"
               >
-                {isDetailOpen ? "Hide full AI summary" : "View full AI summary"}
+                {isDetailOpen ? "전체 AI 요약 접기" : "전체 AI 요약 보기"}
               </button>
               {isDetailOpen && (
                 <div className="mt-4 space-y-4 rounded-2xl border border-indigo-100 bg-white p-4 text-[15px] leading-8 text-slate-700">
