@@ -79,7 +79,7 @@ export function RemainingIssuesDashboardCard({
     <section className="min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-xl font-bold tracking-tight text-slate-950">
-          Top Remaining Issues
+          주요 잔여 이슈
         </h2>
         <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
           Total {issues.length}
@@ -88,7 +88,7 @@ export function RemainingIssuesDashboardCard({
 
       {issues.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          No Remaining Issue is currently open.
+          현재 열려 있는 잔여 이슈가 없습니다.
         </p>
       ) : (
         <>
@@ -110,7 +110,7 @@ export function RemainingIssuesDashboardCard({
               ))
             ) : (
               <p className="border-t border-slate-100 px-3 py-4 text-sm text-slate-500">
-                High / Highest Remaining Issue is not currently visible.
+                High / Highest 잔여 이슈는 현재 없습니다.
               </p>
             )}
           </div>
@@ -122,8 +122,8 @@ export function RemainingIssuesDashboardCard({
               className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition hover:border-indigo-200 hover:text-indigo-700"
             >
               {showLowerPriority
-                ? "Collapse Medium / Low issues"
-                : `View more Medium / Low issues (${lowerIssues.length})`}
+                ? "Medium / Low 잔여 이슈 접기"
+                : `Medium / Low 잔여 이슈 더 보기 (${lowerIssues.length})`}
             </button>
           )}
         </>

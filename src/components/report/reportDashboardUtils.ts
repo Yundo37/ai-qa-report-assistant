@@ -62,19 +62,19 @@ export function createOverallDashboardMetrics(
   });
   const statusByTone: Record<DashboardStatus["tone"], DashboardStatus> = {
     risk: {
-      label: "Risk",
+      label: "위험",
       tone: "risk",
-      description: "High / Highest Remaining issues or high Blocked ratio require follow-up.",
+      description: "High / Highest 잔여 이슈 또는 높은 Blocked 비율 확인이 필요합니다.",
     },
     caution: {
-      label: "Attention Needed",
+      label: "주의 필요",
       tone: "caution",
-      description: "Medium Remaining issues or Blocked ratio need review.",
+      description: "Medium 잔여 이슈 또는 Blocked 비율을 검토해야 합니다.",
     },
     stable: {
-      label: "Stable",
+      label: "안정",
       tone: "stable",
-      description: "No major priority or blocked ratio signal in the top dashboard metrics.",
+      description: "주요 우선순위 잔여 이슈 또는 Blocked 비율 신호가 낮습니다.",
     },
   };
   const status = statusByTone[statusTone];

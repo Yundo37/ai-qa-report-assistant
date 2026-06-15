@@ -21,9 +21,9 @@ export function EvidenceSnapshotCard({
     },
     { label: "Features", value: features },
     { label: "Jira Issues", value: analysisSummary.jiraMatchedRows },
-    { label: "Remaining", value: analysisSummary.remainingIssues.length },
+    { label: "잔여 이슈", value: analysisSummary.remainingIssues.length },
     { label: "High Risk", value: highRisk },
-    { label: "RC Count", value: rcCount },
+    { label: "Jira RC", value: rcCount },
   ];
 
   return (

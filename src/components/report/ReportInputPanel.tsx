@@ -274,7 +274,7 @@ export function ReportInputPanel({
       <InputStepCard
         step="Step 5"
         title="Generate QA Report"
-        description="입력값을 기반으로 QA Summary, Jira Summary, Remaining Issue, AI Analysis 준비 데이터를 생성합니다."
+        description="입력값을 기반으로 QA Summary, Jira Summary, 잔여 이슈, AI Analysis 준비 데이터를 생성합니다."
       >
         <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <div className="space-y-4">

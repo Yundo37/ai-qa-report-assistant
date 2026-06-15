@@ -16,8 +16,7 @@ export function DetailedSummarySection({ children }: { children: ReactNode }) {
             Detailed QA Data
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Jira Summary, Version Summary, Remaining Issues, QA Comment 등 상세
-            검증 데이터를 보관합니다.
+            Jira Summary, Version Summary, 잔여 이슈, QA Comment 등 상세 검증 데이터를 보관합니다.
           </p>
         </div>
         <button

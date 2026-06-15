@@ -10,13 +10,13 @@ const REPORT_TYPE_OPTIONS: Array<{
     type: "OVERALL",
     title: "Overall Report",
     summary:
-      "릴리즈 / 버전 단위의 QA 상태, RC 흐름, Remaining Issue, Feature별 QA 결과를 종합합니다.",
+      "릴리즈 / 버전 단위의 QA 상태, RC 흐름, 잔여 이슈, Feature별 QA 결과를 종합합니다.",
   },
   {
     type: "FEATURE",
     title: "Feature Report",
     summary:
-      "단일 기능의 Test Case, Jira Issue, Remaining Issue, QA Comment를 기준으로 기능 QA 결과를 요약합니다.",
+      "단일 기능의 Test Case, Jira Issue, 잔여 이슈, QA Comment를 기준으로 기능 QA 결과를 요약합니다.",
   },
 ];
 
@@ -34,8 +34,7 @@ export function ReportTypeSelector({
           보고서 유형 선택
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          생성할 QA Report 유형을 선택하세요. Overall Report가 기본 데모
-          흐름입니다.
+          생성할 QA Report 유형을 선택하세요. Overall Report가 기본 흐름입니다.
         </p>
       </div>
 

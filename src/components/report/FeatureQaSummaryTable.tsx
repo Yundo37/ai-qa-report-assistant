@@ -75,7 +75,7 @@ export function FeatureQaSummaryTable({
             <span className="text-left">Feature</span>
             <span className="text-center">Total</span>
             <span className="text-center">Pass</span>
-            <span className="text-center">Remaining</span>
+            <span className="text-center">잔여</span>
           </div>
           {rows.map((row) => {
             const passRate = calculatePassRate(row.summary);

@@ -4,7 +4,7 @@ export function SummaryCard({
   title,
   summary,
   rows,
-  emptyMessage = "집계할 데이터가 없습니다.",
+  emptyMessage = "집계된 데이터가 없습니다.",
 }: {
   title: string;
   summary: CountSummary;
@@ -13,8 +13,8 @@ export function SummaryCard({
 }) {
   const entries = Object.entries(summary);
   const displayLabel = (label: string) => {
-    if (label === "Remaining") return "Remaining (잔여 이슈)";
-    if (label === "Resolved") return "Resolved (해결 완료)";
+    if (label === "Remaining") return "잔여 이슈";
+    if (label === "Resolved") return "해결 완료";
     if (label === "Excluded / Non-Bug") {
       return "Excluded / Non-Bug (제외 이슈)";
     }

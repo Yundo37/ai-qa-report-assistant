@@ -4,10 +4,10 @@ export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-6">
       <h2 className="text-base font-semibold text-slate-950">
-        Full Remaining Issue List
+        전체 잔여 이슈 목록
       </h2>
       <p className="mt-2 text-sm leading-6 text-slate-500">
-        상단 Dashboard에서 요약한 Remaining Issue의 전체 상세 목록입니다.
+        상단 Dashboard에서 요약한 잔여 이슈의 전체 상세 목록입니다.
       </p>
 
       {issues.length > 0 ? (
@@ -62,7 +62,7 @@ export function RemainingIssueList({ issues }: { issues: RemainingIssue[] }) {
         </div>
       ) : (
         <p className="mt-4 text-sm text-slate-500">
-          현재 남아있는 Remaining Issue가 없습니다.
+          현재 남아 있는 잔여 이슈가 없습니다.
         </p>
       )}
     </section>

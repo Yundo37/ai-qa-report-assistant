@@ -45,7 +45,7 @@ function createStatusLines(
   if (tone === "caution") {
     return [
       `${targetText} \uC6B4\uC601 \uBAA8\uB2C8\uD130\uB9C1\uC774 \uD544\uC694\uD55C \uC0C1\uD0DC\uC785\uB2C8\uB2E4.`,
-      "\uC77C\uBD80 Remaining \uBC0F \uD6C4\uC18D \uD655\uC778 \uD56D\uBAA9\uC744 \uC911\uC2EC\uC73C\uB85C \uD655\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.",
+      "일부 잔여 이슈 및 후속 확인 항목을 중심으로 확인이 필요합니다.",
     ];
   }
 

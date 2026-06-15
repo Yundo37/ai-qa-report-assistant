@@ -15,7 +15,7 @@ export function ReportStatusKpiStrip({
     { label: "Pass Rate", value: `${metrics.passRate}%` },
     { label: "Jira Issues", value: analysisSummary.jiraMatchedRows.toLocaleString() },
     { label: "Features", value: featureCount.toLocaleString() },
-    { label: "RC Versions", value: rcCount.toLocaleString() },
+    { label: "Jira RC", value: rcCount.toLocaleString() },
     { label: "Next Event", value: metrics.nextEvent.toLocaleString() },
   ];
 

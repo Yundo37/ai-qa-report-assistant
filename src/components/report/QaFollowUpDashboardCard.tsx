@@ -22,8 +22,7 @@ export function QaFollowUpDashboardCard({
             QA Review Items
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            QA Comment와 Remaining Issue를 기준으로 추가 확인이 필요한
-            항목을 정리합니다.
+            QA 코멘트와 잔여 이슈를 기준으로 추가 확인이 필요한 항목을 정리합니다.
           </p>
         </div>
         {followUps.length > 5 && (
@@ -32,7 +31,7 @@ export function QaFollowUpDashboardCard({
             onClick={() => setShowAll((value) => !value)}
             className="w-fit rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
           >
-            {showAll ? "Collapse" : `View more (${hiddenCount})`}
+            {showAll ? "접기" : `더 보기 (${hiddenCount})`}
           </button>
         )}
       </div>
@@ -55,7 +54,7 @@ export function QaFollowUpDashboardCard({
                     {followUp}
                   </p>
                   <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                    QA Comment / Follow-up text 기반
+                    QA 코멘트 / Follow-up text 기반
                   </p>
                 </div>
               </div>
@@ -67,7 +66,7 @@ export function QaFollowUpDashboardCard({
         </ul>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          No QA Review Item to display.
+          표시할 QA Review Item이 없습니다.
         </p>
       )}
     </section>

@@ -5,6 +5,23 @@ function calculateProgress(resolved: number, remaining: number) {
   return denominator > 0 ? Math.round((resolved / denominator) * 100) : 0;
 }
 
+function createRcFlowLabel(rcProgress: RcProgressSummary) {
+  const rcLabels = rcProgress.items
+    .map((item) => item.rc)
+    .filter((rc): rc is string => Boolean(rc && rc.trim()))
+    .filter((rc) => rc !== "-");
+
+  if (rcLabels.length >= 2) {
+    return `Jira RC Flow: ${rcLabels[0]}~${rcLabels[rcLabels.length - 1]}`;
+  }
+
+  if (rcLabels.length === 1) {
+    return `분석 ${rcLabels[0]}까지`;
+  }
+
+  return rcProgress.rcLabel ? `분석 ${rcProgress.rcLabel}까지` : "분석 RC";
+}
+
 export function RcProgressCard({
   rcProgress,
 }: {
@@ -27,7 +44,8 @@ export function RcProgressCard({
     totalRemainingIssues
   );
   const rcProgressNote =
-    "RC\uBCC4 Remaining\uC740 \uAC01 RC \uD750\uB984 \uAE30\uC900\uC774\uBA70, \uC804\uCCB4 Remaining \uC0C1\uD0DC\uB294 Release Risk Summary\uC5D0\uC11C \uD655\uC778\uD569\uB2C8\uB2E4.";
+    "New는 해당 RC에 생성된 Jira 이슈 수이며, 잔여는 현재 잔여 이슈 기준입니다. 전체 잔여 이슈는 Release Risk Summary에서 확인합니다.";
+  const rcFlowLabel = createRcFlowLabel(rcProgress);
 
   return (
     <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
@@ -36,7 +54,7 @@ export function RcProgressCard({
           RC Progress
         </h2>
         <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold leading-5 text-indigo-700">
-          {rcProgress.rcLabel || "-"}
+          {rcFlowLabel}
         </span>
       </div>
 
@@ -44,10 +62,10 @@ export function RcProgressCard({
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
           <div className="grid grid-cols-[42px_44px_64px_76px_minmax(92px,0.9fr)] bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold text-slate-500">
             <span>RC</span>
-            <span>New</span>
-            <span>Resolved</span>
-            <span>Remaining</span>
-            <span>Progress</span>
+            <span>신규</span>
+            <span>해결</span>
+            <span>잔여</span>
+            <span>진행률</span>
           </div>
           {rcProgress.items.map((item) => {
             const progress = calculateProgress(
