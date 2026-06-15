@@ -1499,6 +1499,7 @@ export default function Home() {
         const { rcProgress } = createRcProgressBundle({
           filteredJiraIssues,
           reportTitle: reportInput.reportTitle,
+          targetRcVersion: reportRcVersion,
           startDateTime: jiraAnalysisStartDateTime ?? "",
           endDateTime: jiraAnalysisEndDateTime,
         });

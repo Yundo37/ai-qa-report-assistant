@@ -1,8 +1,22 @@
-import type { RcProgressSummary } from "@/types/report";
+import type { RcProgressItem, RcProgressSummary } from "@/types/report";
 
-function calculateProgress(resolved: number, remaining: number) {
-  const denominator = resolved + remaining;
-  return denominator > 0 ? Math.round((resolved / denominator) * 100) : 0;
+function calculateProcessedIssues(item: RcProgressItem) {
+  return Math.max(item.newIssues - item.remainingIssues, 0);
+}
+
+function calculateCumulativeProgress(
+  cumulativeNewIssues: number,
+  cumulativeProcessedIssues: number
+) {
+  if (cumulativeNewIssues <= 0) {
+    return null;
+  }
+
+  return Math.round((cumulativeProcessedIssues / cumulativeNewIssues) * 100);
+}
+
+function formatProgress(progress: number | null) {
+  return progress === null ? "-" : `${progress}%`;
 }
 
 function createRcFlowLabel(rcProgress: RcProgressSummary) {
@@ -22,29 +36,38 @@ function createRcFlowLabel(rcProgress: RcProgressSummary) {
   return rcProgress.rcLabel ? `분석 ${rcProgress.rcLabel}까지` : "분석 RC";
 }
 
+function createCumulativeRows(items: RcProgressItem[]) {
+  let cumulativeNewIssues = 0;
+  let cumulativeProcessedIssues = 0;
+  let cumulativeRemainingIssues = 0;
+
+  return items.map((item) => {
+    const processedIssues = calculateProcessedIssues(item);
+
+    cumulativeNewIssues += item.newIssues;
+    cumulativeProcessedIssues += processedIssues;
+    cumulativeRemainingIssues += item.remainingIssues;
+
+    return {
+      item,
+      processedIssues,
+      cumulativeRemainingIssues,
+      progress: calculateCumulativeProgress(
+        cumulativeNewIssues,
+        cumulativeProcessedIssues
+      ),
+    };
+  });
+}
+
 export function RcProgressCard({
   rcProgress,
 }: {
   rcProgress: RcProgressSummary;
 }) {
-  const totalNewIssues = rcProgress.items.reduce(
-    (sum, item) => sum + item.newIssues,
-    0
-  );
-  const totalResolvedIssues = rcProgress.items.reduce(
-    (sum, item) => sum + item.resolvedIssues,
-    0
-  );
-  const totalRemainingIssues = rcProgress.items.reduce(
-    (sum, item) => sum + item.remainingIssues,
-    0
-  );
-  const totalProgress = calculateProgress(
-    totalResolvedIssues,
-    totalRemainingIssues
-  );
+  const cumulativeRows = createCumulativeRows(rcProgress.items);
   const rcProgressNote =
-    "New는 해당 RC에 생성된 Jira 이슈 수이며, 잔여는 현재 잔여 이슈 기준입니다. 전체 잔여 이슈는 Release Risk Summary에서 확인합니다.";
+    "RC별 신규 이슈와 누적 잔여 흐름을 기준으로 릴리즈 진행 상태를 확인합니다.";
   const rcFlowLabel = createRcFlowLabel(rcProgress);
 
   return (
@@ -58,22 +81,22 @@ export function RcProgressCard({
         </span>
       </div>
 
-      {rcProgress.items.length > 0 ? (
+      {cumulativeRows.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
           <div className="grid grid-cols-[42px_44px_64px_76px_minmax(92px,0.9fr)] bg-slate-50 px-2 py-2 text-center text-[10px] font-semibold text-slate-500">
             <span>RC</span>
             <span>신규</span>
-            <span>해결</span>
-            <span>잔여</span>
+            <span>처리</span>
+            <span>누적 잔여</span>
             <span>진행률</span>
           </div>
-          {rcProgress.items.map((item) => {
-            const progress = calculateProgress(
-              item.resolvedIssues,
-              item.remainingIssues
-            );
-
-            return (
+          {cumulativeRows.map(
+            ({
+              item,
+              processedIssues,
+              cumulativeRemainingIssues,
+              progress,
+            }) => (
               <div
                 key={item.rc}
                 className="grid grid-cols-[42px_44px_64px_76px_minmax(92px,0.9fr)] items-center border-t border-slate-100 px-2 py-2.5 text-center text-xs"
@@ -83,52 +106,29 @@ export function RcProgressCard({
                   {item.newIssues}
                 </span>
                 <span className="font-semibold text-emerald-700">
-                  {item.resolvedIssues}
+                  {processedIssues}
                 </span>
                 <span className="font-semibold text-amber-700">
-                  {item.remainingIssues}
+                  {cumulativeRemainingIssues}
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span className="block h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
                     <span
                       className="block h-full rounded-full bg-indigo-500"
-                      style={{ width: `${progress}%` }}
+                      style={{ width: `${progress ?? 0}%` }}
                     />
                   </span>
                   <span className="w-8 shrink-0 text-right text-[10px] font-semibold text-slate-400">
-                    {progress}%
+                    {formatProgress(progress)}
                   </span>
                 </span>
               </div>
-            );
-          })}
-          <div className="grid grid-cols-[42px_44px_64px_76px_minmax(92px,0.9fr)] items-center border-t border-slate-200 bg-white px-2 py-2.5 text-center text-xs">
-            <span className="font-bold text-slate-950">Total</span>
-            <span className="font-semibold text-slate-700">
-              {totalNewIssues}
-            </span>
-            <span className="font-semibold text-emerald-700">
-              {totalResolvedIssues}
-            </span>
-            <span className="font-semibold text-amber-700">
-              {totalRemainingIssues}
-            </span>
-            <span className="flex min-w-0 items-center gap-1.5">
-              <span className="block h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
-                <span
-                  className="block h-full rounded-full bg-indigo-500"
-                  style={{ width: `${totalProgress}%` }}
-                />
-              </span>
-              <span className="w-8 shrink-0 text-right text-[10px] font-semibold text-slate-400">
-                {totalProgress}%
-              </span>
-            </span>
-          </div>
+            )
+          )}
         </div>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          No RC Progress data to display.
+          표시할 RC Progress 데이터가 없습니다.
         </p>
       )}
 
