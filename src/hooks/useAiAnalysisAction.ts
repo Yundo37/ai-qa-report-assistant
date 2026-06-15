@@ -54,6 +54,7 @@ export function useAiAnalysisAction({
           qaIssueOverview: targetAnalysisSummary.qaIssueOverview,
           issuePatternSources: targetAnalysisSummary.issuePatternSources,
           issuePatternAnalysis: targetAnalysisSummary.issuePatternAnalysis,
+          blockedImpact: targetAnalysisSummary.blockedImpact,
           remainingIssues: targetAnalysisSummary.remainingIssues,
           qaFollowUps: targetAnalysisSummary.qaFollowUps,
           qaAnalysisContext: targetAnalysisSummary.qaAnalysisContext,

@@ -135,6 +135,45 @@ export type IssuePatternAnalysisItem = {
   }>;
 };
 
+export type BlockedImpactTestCase = {
+  tid: string;
+  sheetTitle: string;
+  category1: string;
+  category2: string;
+  category3: string;
+  item: string;
+  comment: string;
+};
+
+export type BlockedImpactItem = {
+  jiraKey: string;
+  jiraSummary: string;
+  displayLabel: string;
+  priority: string;
+  status: string;
+  version?: string;
+  blockedCaseCount: number;
+  affectedSheets: string[];
+  affectedCategories: string[];
+  affectedTestCases: BlockedImpactTestCase[];
+};
+
+export type BlockedImpactWarning = {
+  jiraKey: string;
+  jiraSummary: string;
+  displayLabel: string;
+  status: string;
+  reason: string;
+  blockedCaseCount: number;
+};
+
+export type BlockedImpactSummary = {
+  totalBlockedCases: number;
+  blockedCauseIssueCount: number;
+  topBlockedIssues: BlockedImpactItem[];
+  warnings: BlockedImpactWarning[];
+};
+
 export type QaAnalysisContext = {
   testSheetTitles: string[];
   scopeKeywords: string[];
@@ -163,4 +202,5 @@ export type AnalysisSummaryState = {
   versionIssueSummary?: VersionIssueSummaryItem[];
   issuePatternSources?: IssuePatternSource[];
   issuePatternAnalysis?: IssuePatternAnalysisItem[];
+  blockedImpact?: BlockedImpactSummary;
 } | null;

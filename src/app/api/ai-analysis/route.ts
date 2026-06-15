@@ -94,6 +94,45 @@ type IssuePatternAnalysisItem = {
   sourceTypes: string[];
 };
 
+type BlockedImpactTestCase = {
+  tid: string;
+  sheetTitle: string;
+  category1: string;
+  category2: string;
+  category3: string;
+  item: string;
+  comment: string;
+};
+
+type BlockedImpactItem = {
+  jiraKey: string;
+  jiraSummary: string;
+  displayLabel: string;
+  priority: string;
+  status: string;
+  version?: string;
+  blockedCaseCount: number;
+  affectedSheets: string[];
+  affectedCategories: string[];
+  affectedTestCases: BlockedImpactTestCase[];
+};
+
+type BlockedImpactWarning = {
+  jiraKey: string;
+  jiraSummary: string;
+  displayLabel: string;
+  status: string;
+  reason: string;
+  blockedCaseCount: number;
+};
+
+type BlockedImpactSummary = {
+  totalBlockedCases: number;
+  blockedCauseIssueCount: number;
+  topBlockedIssues: BlockedImpactItem[];
+  warnings: BlockedImpactWarning[];
+};
+
 type QaAnalysisContext = {
   testSheetTitles?: string[];
   scopeKeywords?: string[];
@@ -115,6 +154,7 @@ type AiAnalysisRequest = {
   versionIssueSummary?: VersionIssueSummaryItem[];
   issuePatternSources?: IssuePatternSource[];
   issuePatternAnalysis?: IssuePatternAnalysisItem[];
+  blockedImpact?: BlockedImpactSummary;
   rcProgress?: RcProgressSummary;
   qaIssueOverview?: QaIssueOverviewSummary;
   remainingIssues?: RemainingIssue[];
@@ -136,6 +176,7 @@ type AnalysisPayload = {
   versionIssueSummary: VersionIssueSummaryItem[];
   issuePatternSources: IssuePatternSource[];
   issuePatternAnalysis: IssuePatternAnalysisItem[];
+  blockedImpact: BlockedImpactSummary | null;
   rcProgress: RcProgressSummary | null;
   qaIssueOverview: QaIssueOverviewSummary | null;
   remainingIssues: RemainingIssue[];
@@ -159,6 +200,57 @@ type OverallAnalysisEvidence = {
   mediumLowRemainingCount: number;
   issuePatternAnalysis: IssuePatternAnalysisItem[];
   qaFollowUpCount: number;
+};
+
+type SeniorQaAnalysisEvidence = {
+  releaseStatus: "안정" | "주의 필요" | "위험";
+  totalTestCases: number;
+  passRate: number;
+  blockedRate: number;
+  remainingSignal: {
+    total: number;
+    highHighest: number;
+    medium: number;
+    lowLowest: number;
+  };
+  blockedImpact: {
+    totalBlockedCases: number;
+    blockedCauseIssueCount: number;
+    topBlockedIssues: BlockedImpactItem[];
+    warnings: BlockedImpactWarning[];
+  };
+  rcSignal: {
+    currentRc: string;
+    items: Array<{
+      rc: string;
+      newIssues: number;
+      resolvedIssues: number;
+      remainingIssues: number;
+      reopenedIssues: number;
+    }>;
+  };
+  versionTrendSignal: {
+    currentBaseVersion: string;
+    currentTotalIssues: number;
+    currentHighPlusIssues: number;
+    previousVersionAverageIssues: number;
+    previousHighPlusAverageIssues: number;
+    trendDirection: "stable" | "increased" | "decreased" | "not_enough_data";
+    sourceType: "base_version_trend";
+  };
+  patternSignal: Array<{
+    name: string;
+    count: number;
+    sourceTypes: string[];
+  }>;
+  qaCommentSignal: {
+    total: number;
+    monitorCount: number;
+    retestCount: number;
+    policyCount: number;
+    nextEventCount: number;
+    blockedCount: number;
+  };
 };
 
 type ResponseContent = {
@@ -205,19 +297,26 @@ function createFeatureSystemPrompt() {
 
 function createOverallSystemPrompt() {
   return [
-    "You are a Korean QA lead writing an Overall QA Result Report executive summary.",
+    "You are a senior Korean QA Lead preparing an Overall QA release analysis before a release review meeting.",
     "Write in Korean, in a natural QA result-report style.",
-    "You are an analyst, not a judge. Write observations first and only add restrained interpretation when the data supports it.",
-    "Summarize implications, not raw data. Do not restate table values already shown in the report.",
-    "Do not list Jira issue keys, individual remaining issue titles, or QA Comment details one by one.",
+    "Do not summarize tables. Interpret release risk structure, blocked impact, repeated issue patterns, RC flow, version trend, and QA follow-up direction.",
+    "You are an analyst, not a judge. Explain why the release status is stable, attention-needed, or risk only when the evidence supports it.",
+    "Interpret relationships between TC, Jira, 잔여 이슈, Blocked, RC, Version, and QA comments instead of repeating visible numbers.",
+    "In Korean output, use '잔여 이슈' instead of 'Remaining' or 'Remaining Issue'. Use 'High / Highest 잔여 이슈', 'Medium 잔여 이슈', 'Low / Lowest 잔여 이슈', '전체 잔여 이슈', and '잔여 상태'.",
+    "When mentioning a blocked cause Jira issue, copy blockedImpact.topBlockedIssues[].displayLabel exactly. Never create, rewrite, normalize, or infer a Jira Key.",
+    "Do not change a Jira Key prefix. For example, DMS-004 must never be rewritten as AQR-004.",
+    "Never mention a Jira Key alone. Use the exact displayLabel value, such as DMS-004([알림] 운영툴 저장 이후 정책 refresh 지연).",
+    "Version Issue Trend is update-version comparison only. Never use RC1, RC2, RC3, final RC, or RC Progress wording when explaining Version Issue Trend.",
+    "RC Progress is current-version RC flow only. Never use it to describe update-version issue trend.",
+    "Do not list Jira issue keys, individual 잔여 이슈 titles, affected TIDs, or QA Comment details one by one.",
     "Do not list Pass, Fail, Blocked, RC, version, or priority table values, except the opening QA scope count.",
     "Keep the output within 3 to 4 short paragraphs and 6 to 8 sentences. Do not use bullets.",
     "Use issue-type patterns rather than feature/category names.",
-    "For repeated pattern analysis, use issuePatternAnalysis first. It is precomputed from Jira summaries across all versions, remaining issues, and QA comments.",
+    "For repeated pattern analysis, use issuePatternAnalysis first. It is precomputed from Jira summaries across all versions, 잔여 이슈, and QA comments.",
     "Do not infer repeated patterns freely from feature names when issuePatternAnalysis is present.",
-    "Never interpret an RC item's remainingIssues value as the total remaining issues for the whole release.",
-    "Distinguish RC-local new/resolved/remain counts from the overall Remaining Issue state.",
-    "Do not say there are no overall remaining issues unless jiraFilteredSummary.Remaining and qaIssueOverview.remaining.total are both zero.",
+    "Never interpret an RC item's remainingIssues value as the total 잔여 이슈 for the whole release.",
+    "Distinguish RC-local new/resolved/remain counts from the overall 잔여 이슈 state.",
+    "Do not say there are no 전체 잔여 이슈 unless jiraFilteredSummary.Remaining and qaIssueOverview.remaining.total are both zero.",
     "Do not use these QA Comment expressions in the body: QA Comment 기준, QA Comment를 통해, QA Comment 상, QA Comment 기반으로, 관련 QA Comment 기준.",
     "Mention QA Comment only in the final reference sentence.",
     "Do not use vague follow-up sentences such as 후속 검증이 예정되어 있습니다, 지속적인 모니터링과 검토가 요구됩니다, 품질 안정화를 위한 기반을 마련할 것으로 기대됩니다, 추가 점검이 필요함을 시사합니다.",
@@ -227,8 +326,10 @@ function createOverallSystemPrompt() {
     "Use increase/decrease only when comparable RC or version values are present and the numbers support it.",
     "Do not predict development plans or PM decisions. Mention future action only when qaFollowUps explicitly supports it.",
     "Use only facts present in the JSON payload. Never invent feature names, issue types, keywords, versions, RC labels, categories, ratios, or counts.",
+    "Repeated patterns must come from seniorQaAnalysisEvidence.patternSignal or issuePatternAnalysis. Do not invent new pattern names.",
+    "Use blockedImpact.topBlockedIssues only when it has displayLabel and jiraSummary. Mention at most 2 or 3 blocked cause issues.",
     "Do not explain internal aggregation rules. Never say that a Jira sheet was excluded or that the feature count was calculated by excluding a sheet.",
-    "Use overallAnalysisEvidence.featureCount and overallAnalysisEvidence.totalTestCases for the first QA scope sentence.",
+    "Use seniorQaAnalysisEvidence and overallAnalysisEvidence as the main evidence. Use raw tables only as supporting data.",
     "Do not make release sign-off, service-open, or deployment approval claims.",
   ].join(" ");
 }
@@ -280,25 +381,66 @@ function createFeatureParagraphUserPrompt(analysisPayload: AnalysisPayload) {
 
 function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
   const overallAnalysisEvidence = createOverallAnalysisEvidence(analysisPayload);
+  const seniorQaAnalysisEvidence =
+    createSeniorQaAnalysisEvidence(analysisPayload);
 
   return [
-    "Write an Overall QA Analysis in Korean based only on the JSON data below.",
+    "Write a senior QA Lead Overall QA Analysis in Korean based only on the JSON data below.",
     "",
     "Required order:",
-    "1. QA scope",
-    "2. RC flow, while separating RC-local counts from total Remaining Issue state",
-    "3. Repeated issue-type patterns",
-    "4. Feature result comparison without using risk-level judgment",
-    "5. Overall remaining tendency and concrete follow-up only when supported",
-    "6. Closing sentence",
+    "1. Release judgment and overall state.",
+    "2. Main risk structure and Blocked Impact.",
+    "3. Repeated patterns interpreted as feature-flow risk.",
+    "4. RC / Version interpretation and QA confirmation priority.",
     "",
     "Strict rules:",
     "- First sentence must use overallAnalysisEvidence.featureCount and overallAnalysisEvidence.totalTestCases.",
+    "- Korean terminology policy: write 잔여 이슈 instead of Remaining or Remaining Issue in the final output. Use High / Highest 잔여 이슈, Medium 잔여 이슈, Low / Lowest 잔여 이슈, 전체 잔여 이슈, and 잔여 상태.",
+    "- You may keep these terms as-is: Blocked, Next Event, RC, High+, CTA, Jira, Low Known Issue. When using Low Known Issue, prefer 'Low Known Issue 중심' or 'Low Known Issue 성격의 잔여 이슈'.",
+    "- Use seniorQaAnalysisEvidence.releaseStatus for tone, but do not simply repeat a dashboard status label.",
+    "- Stable tone: 운영 모니터링 중심, High / Medium 잔여 이슈 없음, Low Known Issue 중심, 차기 이벤트 확인, 릴리즈 판단에 영향을 줄 수준은 낮음.",
+    "- In stable tone, avoid these expressions: 위험 요인, 주요 위험, 차단하고 있습니다, 차단 신호, 릴리즈 차단 요소, 릴리즈 차단, 배포 전 우선 확인, 추가 검증 필요, 위험 신호, 차단 요소, Blocked 해소 전 판단 보류, 심각한 리스크.",
+    "- In stable tone, use these expressions instead: 운영 모니터링 신호, 후속 확인 항목, 제한적 확인 항목, 조건부 재확인 항목, Low Known Issue, 차기 이벤트 확인 항목, 릴리즈 판단에 영향을 줄 수준은 낮음, 운영 모니터링 범위에 가까움.",
+    "- In stable tone, when describing a Blocked displayLabel, say '일부 검증을 조건부 재확인 대상으로 남기고 있습니다' or '제한적으로 확인이 보류된 항목입니다'. Do not say it blocks QA 진행.",
+    "- In stable tone, do not write '잔여 이슈 발생 및 일부 검증이 제한'. Use '해당 이슈와 연결된 일부 검증이 제한', '일부 조건 검증이 보류', or '일부 검증 범위를 조건부 재확인 대상으로 남김'.",
+    "- Stable Version Trend wording: 현재 버전 2.0.0의 이슈 규모는 이전 업데이트 버전 대비 급증하지 않았고, High+ 신호도 낮게 유지되고 있습니다. Do not emphasize issue increase in stable tone.",
+    "- In stable tone, do not confuse High+ with High / Highest 잔여 이슈. High+ means all High / Highest issues in the version trend, not remaining-only issues.",
+    "- Attention-needed tone: 추가 확인 필요, Medium 잔여 이슈 중심, Next Event 분리 관리, 정책 확인 / 재검증 중심. Do not exaggerate as risk.",
+    "- In attention-needed tone, if highHighest is 0 and medium is greater than 0, write 'Medium 잔여 이슈' or 'Medium 재검증 신호'. Do not write 'Medium 이상 잔여 이슈'.",
+    "- In attention-needed tone, never write 'High / Medium 잔여 이슈로 이어지지 않아' or 'High 또는 Medium 잔여 이슈로 이어지지 않아' when Medium is greater than 0. Write 'High / Highest 잔여 이슈로 이어지지는 않았지만, Medium 재검증 신호로 남아 있습니다'.",
+    "- In attention-needed tone, avoid '각 이슈별 개별 확인'. Prefer 'Medium 원인 이슈별 재검증과 정책 조건 확인', 'Medium 잔여 이슈의 수정 반영 확인과 운영 정책 조건 재확인', or '운영툴 반영 지연과 알림 상태 반영 조건을 중심으로 한 재검증'.",
+    "- Attention-needed Version Trend wording: 현재 버전 2.0.0에서는 전체 이슈 수가 이전 대비 증가했지만, High+ 신호는 낮게 유지되고 있습니다. 따라서 핵심은 치명 이슈 대응이 아니라 Medium 잔여 이슈 재검증과 후속 일정 분리 관리입니다.",
+    "- In attention-needed tone, do not write High+ 이슈가 증가한 상태, High+ 증가로 위험 신호, or High+ 증가가 주요 리스크 unless the evidence clearly shows a large High+ increase.",
+    "- Risk tone: 추가 검증 필요, High / Highest 잔여 이슈 우선 확인, Blocked 해소 후 회귀 검증, 배포 전 우선 확인이 필요한 회귀 범위 분리.",
+    "- In risk tone, make regression direction specific. Prefer flow wording such as '상태 전환 → CTA 노출 → 결과 상태 반영 → 알림 수신' or '알림 생성 → 우선순위 정렬 → 읽음 상태 → 컴팩션 → 알림 설정 반영' only when supported by Blocked Impact or repeated patterns.",
+    "- In risk tone, prefer Korean QA report terms such as 운영형 회귀 리스크, 배포 전 우선 확인이 필요한 회귀 범위, 흐름 단위 회귀 검증 범위. Avoid repeating 운영형 중대 리스크 too often.",
+    "- Explain 잔여 이슈 priority meaning. Do not treat Low / Lowest 잔여 이슈 or Next Event alone as a current release risk.",
+    "- Analyze Blocked Impact from seniorQaAnalysisEvidence.blockedImpact. Explain what validation scope is blocked and what flow should be retested.",
+    "- When mentioning blocked cause Jira, copy blockedImpact.topBlockedIssues[].displayLabel exactly. Do not compose the label yourself.",
+    "- Jira Key values in evidence are exact. Do not change prefixes or project keys. DMS-004 must remain DMS-004 and must not become AQR-004.",
+    "- Never write only a Jira Key. Use displayLabel exactly, for example DMS-004([알림] 운영툴 저장 이후 정책 refresh 지연).",
+    "- Mention at most 2 or 3 blocked cause Jira issues. Do not list affected TIDs.",
+    "- QA대기 / QA확인 / 진행 / 열림 / 다시열림 / 수정보류 / 미해결 / Open / In Progress / QA Pending / QA Check / Reopened / Deferred are allowed 잔여 상태 for Blocked causes. Do not describe them as data consistency problems.",
+    "- Mention Blocked status consistency only when blockedImpact.warnings is non-empty, and only for 완료 / 배포완료 / QA승인 / 버그아님 / 중복이슈 / 기획의도 / 기획변경 / Excluded / Done / Resolved / Closed / Duplicate / Won't Fix / Not a Bug states.",
+    "- Blocked warning may be mentioned only with a specific warning displayLabel. If you cannot name the warning displayLabel, omit the warning from the body.",
+    "- Do not write vague warning sentences such as '완료나 배포완료 상태인 관련 이슈가 일부 있습니다' or '상태 일관성은 점검할 필요가 있습니다' without naming the warning displayLabel.",
+    "- Interpret repeated patterns as connected functional flow, for example 상태값 변경 → CTA 노출 → 결과 상태 → 알림 발송, only when supported by existing pattern names.",
+    "- Stable tone repeated patterns: say patterns are 일부 확인되지만 High / Medium 잔여 이슈로 이어지지는 않았고 운영 모니터링과 차기 확인 범위로 분리한다고 write softly.",
+    "- Attention-needed tone repeated patterns: say patterns are 운영형 이슈로 일부 확인되며 Medium 재검증과 정책 확인 범위로 관리한다고 write moderately.",
+    "- Risk tone repeated patterns: only then say patterns connect to major risk structure and require flow-level regression.",
+    "- Separate Version Issue Trend from RC Progress: Version Issue Trend compares update versions such as 1.0.0 / 1.1.0 / 1.1.1 / 2.0.0, while RC Progress tracks the current version's RC flow such as 2.0.0 rc1 / rc2 / rc3.",
+    "- For Version Issue Trend, use seniorQaAnalysisEvidence.versionTrendSignal.currentBaseVersion only. Do not use currentRc or RC labels.",
+    "- When explaining Version Issue Trend, never use RC1 / RC2 / RC3 / RC Progress / 최종 RC wording. Never write phrases like '2.0.0 RC3의 버전 이슈 추세', '2.0.0 RC3에서 버전 이슈 추세', 'RC3에서 총 이슈수가 감소', '최종 RC 기준 버전 추세', 'RC별 버전 이슈 추세', or 'RC3의 버전별 이슈'.",
+    "- When explaining RC Progress, do not describe update-version trend. RC item remainingIssues is local to that RC item.",
     "- Never say 'RC3 기준으로 남은 이슈는 없습니다', 'RC3에서는 RC 관련 잔여 이슈는 없습니다', or '최종 RC 기준 잔여 이슈가 모두 해소되었습니다'.",
     "- Never say 'RC3 has no remaining issues' or 'all remaining issues are resolved in the final RC' unless jiraFilteredSummary.Remaining and qaIssueOverview.remaining.total are both zero.",
     "- If an RC item has remainingIssues = 0, interpret it only as the state of issues associated with that RC item, not the whole release.",
+    "- If RC3-local new issues are resolved but 전체 잔여 이슈 is non-zero, say RC-local result and overall release state must be read separately.",
     "- If RC3-local new issues are all handled, say 'RC3에서 신규 발생한 이슈는 모두 처리되었습니다' only as an RC-local statement.",
-    "- If overallAnalysisEvidence.highHighestRemainingCount is greater than 0, mention that High 이상 잔여 이슈가 포함되어 있어 전체 릴리즈 기준 후속 확인이 필요합니다.",
+    "- If seniorQaAnalysisEvidence.versionTrendSignal.trendDirection is increased, explain current-version issue volume increase without mixing it with High / Highest 잔여 이슈.",
+    "- In risk tone, if versionTrendSignal.currentBaseVersion is 2.0.0, previousVersionAverageIssues is greater than 0, currentTotalIssues is greater than previousVersionAverageIssues, and currentHighPlusIssues is greater than previousHighPlusAverageIssues, write that 현재 버전 2.0.0은 이전 업데이트 버전 대비 전체 이슈와 High+ 신호가 함께 증가했습니다.",
+    "- Do not write '비교할 데이터가 부족', '이전 업데이트 버전과 비교할 데이터가 부족하지만', or '이전 버전 비교가 제한적입니다' when versionTrendSignal.trendDirection is not not_enough_data.",
+    "- If overallAnalysisEvidence.highHighestRemainingCount is greater than 0, mention that High / Highest 잔여 이슈가 포함되어 있어 전체 릴리즈 기준 후속 확인이 필요합니다.",
     "- Do not use QA Comment as analysis evidence wording. Forbidden expressions: QA Comment 기준, QA Comment를 통해, QA Comment 상, QA Comment 기반으로, 관련 QA Comment 기준.",
     "- Mention QA Comment only in the final sentence.",
     "- Avoid vague follow-up wording: 후속 검증이 예정되어 있습니다, 지속적인 모니터링과 검토가 요구됩니다, 품질 안정화를 위한 기반을 마련할 것으로 기대됩니다, 추가 점검이 필요함을 시사합니다.",
@@ -309,7 +451,7 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "- Do not say previous-version increase/decrease unless versionSummary or versionIssueSummary contains comparable previous/current values.",
     "- Do not predict or expect development outcomes.",
     "- Repeated patterns must come from overallAnalysisEvidence.issuePatternAnalysis first. Do not create new pattern names if this list has usable items.",
-    "- issuePatternAnalysis was computed in code from Jira summaries across all versions first, then remaining issues and QA comments.",
+    "- issuePatternAnalysis was computed in code from Jira summaries across all versions first, then 잔여 이슈 and QA comments.",
     "- Prefer issue-type patterns such as 상태 변경 지연, 상태 동기화, 데이터 반영 지연, 저장 후 리스트 갱신 지연, 노출 시점 불일치, 알림 중복 발송, 우선순위 정렬 불일치, but only when those patterns are present in issuePatternAnalysis.",
     "- Do not write feature-name-only patterns such as 이벤트 관련 이슈, 알림 관련 이슈, 운영툴 관련 이슈.",
     "- Do not list table values, Jira issue keys, individual issue titles, or QA Comment details.",
@@ -318,12 +460,17 @@ function createOverallUserPrompt(analysisPayload: AnalysisPayload) {
     "",
     "Preferred wording examples:",
     "- 이번 QA는 총 6개 기능, 148개의 테스트 케이스를 대상으로 진행되었습니다.",
-    "- RC3에서 신규 발생한 이슈는 모두 처리되었으나, 이전 RC에서 발생한 잔여 이슈가 남아 있어 전체 릴리즈 기준 후속 확인이 필요합니다.",
-    "- 반복 이슈는 기능명보다 상태 변경 지연, 데이터 반영 지연, 리스트 갱신, 알림 처리와 같은 공통 처리 흐름에 집중되어 있습니다.",
-    "- 일부 항목은 차기 업데이트 또는 정책 확정 이후 재확인이 필요합니다.",
+    "- 안정 케이스: 남은 항목은 릴리즈 판단에 영향을 줄 수준이 낮고, 운영 모니터링 및 차기 확인 항목으로 분리해 관리하는 것이 적절합니다.",
+    "- 안정 케이스 Blocked: DMS-004([알림] 운영툴 저장 이후 정책 refresh 지연)는 일부 검증을 조건부 재확인 대상으로 남기고 있습니다.",
+    "- 주의 필요 케이스: High / Highest 잔여 이슈로 이어지지는 않았지만, Medium 재검증 신호로 남아 있습니다.",
+    "- 주의 필요 케이스 확인 방향: 단기적으로는 전체 흐름 단위의 광범위한 회귀보다 Medium 원인 이슈별 재검증과 정책 조건 확인을 우선하는 것이 적절합니다.",
+    "- 위험 케이스: 수정 후에는 개별 TC 재수행보다 상태 전환 → CTA 노출 → 결과 상태 반영 → 알림 수신 흐름을 묶어서 회귀 검증해야 합니다.",
+    "- 위험 케이스 Version Trend: 현재 버전 2.0.0은 이전 업데이트 버전 대비 전체 이슈와 High+ 신호가 함께 증가했습니다.",
+    "- RC Progress: RC3에 연결된 신규 이슈는 처리되었지만, 전체 잔여 이슈는 이전 RC에서 발생한 이슈의 영향을 받고 있습니다.",
     "",
     JSON.stringify(
       {
+        seniorQaAnalysisEvidence,
         overallAnalysisEvidence,
         ...analysisPayload,
       },
@@ -337,6 +484,224 @@ function isJiraSheetTitle(title: string) {
   const normalizedTitle = title.trim().toLowerCase();
 
   return normalizedTitle.includes("jira") || normalizedTitle.includes("지라");
+}
+
+function getReleaseStatusLabel({
+  totalTestCases,
+  blockedCount,
+  highHighest,
+  medium,
+}: {
+  totalTestCases: number;
+  blockedCount: number;
+  highHighest: number;
+  medium: number;
+}): SeniorQaAnalysisEvidence["releaseStatus"] {
+  const blockedRate = totalTestCases > 0 ? blockedCount / totalTestCases : 0;
+
+  if (highHighest > 0 || blockedRate >= 0.2) return "위험";
+  if (medium > 0 || blockedRate >= 0.1) return "주의 필요";
+  return "안정";
+}
+
+function average(values: number[]) {
+  if (values.length === 0) return 0;
+  return Math.round(
+    values.reduce((sum, value) => sum + value, 0) / values.length
+  );
+}
+
+function extractBaseVersion(value: string) {
+  return value.match(/\d+(?:\.\d+)+/)?.[0] ?? "";
+}
+
+function createVersionTrendSignal(
+  analysisPayload: AnalysisPayload
+): SeniorQaAnalysisEvidence["versionTrendSignal"] {
+  const sourceItems =
+    analysisPayload.versionIssueSummary.length > 0
+      ? analysisPayload.versionIssueSummary
+      : analysisPayload.versionSummary;
+  const groupedItems = new Map<string, VersionIssueSummaryItem>();
+
+  sourceItems.forEach((item) => {
+    const baseVersion = extractBaseVersion(item.version);
+
+    if (!baseVersion) return;
+
+    const current =
+      groupedItems.get(baseVersion) ?? {
+        version: baseVersion,
+        highHighest: 0,
+        medium: 0,
+        low: 0,
+        total: 0,
+      };
+
+    current.highHighest += item.highHighest;
+    current.medium += item.medium;
+    current.low += item.low;
+    current.total += item.total;
+    groupedItems.set(baseVersion, current);
+  });
+
+  const versionItems = Array.from(groupedItems.values());
+  const currentItem = versionItems.at(-1);
+  const previousItems = currentItem ? versionItems.slice(0, -1) : [];
+  const previousVersionAverageIssues = average(
+    previousItems.map((item) => item.total)
+  );
+  const previousHighPlusAverageIssues = average(
+    previousItems.map((item) => item.highHighest)
+  );
+  let trendDirection: SeniorQaAnalysisEvidence["versionTrendSignal"]["trendDirection"] =
+    "not_enough_data";
+
+  if (currentItem && previousItems.length > 0) {
+    if (
+      currentItem.total > previousVersionAverageIssues ||
+      currentItem.highHighest > previousHighPlusAverageIssues
+    ) {
+      trendDirection = "increased";
+    } else if (
+      currentItem.total < previousVersionAverageIssues &&
+      currentItem.highHighest <= previousHighPlusAverageIssues
+    ) {
+      trendDirection = "decreased";
+    } else {
+      trendDirection = "stable";
+    }
+  }
+
+  return {
+    currentBaseVersion: currentItem?.version ?? "",
+    currentTotalIssues: currentItem?.total ?? 0,
+    currentHighPlusIssues: currentItem?.highHighest ?? 0,
+    previousVersionAverageIssues,
+    previousHighPlusAverageIssues,
+    trendDirection,
+    sourceType: "base_version_trend",
+  };
+}
+
+function countTextMatches(values: string[], patterns: RegExp[]) {
+  return values.filter((value) =>
+    patterns.some((pattern) => pattern.test(value))
+  ).length;
+}
+
+function createQaCommentSignal(
+  analysisPayload: AnalysisPayload
+): SeniorQaAnalysisEvidence["qaCommentSignal"] {
+  const followUps = analysisPayload.qaFollowUps;
+
+  return {
+    total: followUps.length,
+    monitorCount: countTextMatches(followUps, [/모니터링|monitor/i]),
+    retestCount: countTextMatches(followUps, [/재검증|회귀|retest|확인/i]),
+    policyCount: countTextMatches(followUps, [/정책|기획|policy/i]),
+    nextEventCount: countTextMatches(followUps, [/next event|차기|후속/i]),
+    blockedCount: countTextMatches(followUps, [/blocked|진행 불가|QA 불가/i]),
+  };
+}
+
+function createSeniorQaAnalysisEvidence(
+  analysisPayload: AnalysisPayload
+): SeniorQaAnalysisEvidence {
+  const overallSheets =
+    analysisPayload.overallTestSheets.length > 0
+      ? analysisPayload.overallTestSheets
+      : analysisPayload.testSheets.map((sheet) => ({
+          title: sheet.title,
+          rows: sheet.rows,
+          summary: {
+            Total: sheet.summary.Total ?? sheet.rows,
+            Pass: sheet.summary.Pass ?? 0,
+            Fail: sheet.summary.Fail ?? 0,
+            Blocked: sheet.summary.Blocked ?? 0,
+            NextEvent: sheet.summary.NextEvent ?? 0,
+            "N/A": sheet.summary["N/A"] ?? 0,
+          },
+        }));
+  const featureSheets = overallSheets.filter(
+    (sheet) => !isJiraSheetTitle(sheet.title)
+  );
+  const totalTestCases = featureSheets.reduce(
+    (sum, sheet) => sum + (sheet.summary.Total ?? sheet.rows),
+    0
+  );
+  const totalPass = featureSheets.reduce(
+    (sum, sheet) => sum + (sheet.summary.Pass ?? 0),
+    0
+  );
+  const totalBlockedCases = featureSheets.reduce(
+    (sum, sheet) => sum + (sheet.summary.Blocked ?? 0),
+    0
+  );
+  const passRate =
+    totalTestCases > 0 ? Math.round((totalPass / totalTestCases) * 100) : 0;
+  const blockedRate =
+    totalTestCases > 0
+      ? Math.round((totalBlockedCases / totalTestCases) * 1000) / 10
+      : 0;
+  const remainingPrioritySummary =
+    analysisPayload.qaIssueOverview?.remaining.prioritySummary;
+  const highHighest =
+    (remainingPrioritySummary?.Highest ?? 0) + (remainingPrioritySummary?.High ?? 0);
+  const medium = remainingPrioritySummary?.Medium ?? 0;
+  const lowLowest =
+    (remainingPrioritySummary?.Low ?? 0) + (remainingPrioritySummary?.Lowest ?? 0);
+  const blockedImpact = analysisPayload.blockedImpact ?? {
+    totalBlockedCases,
+    blockedCauseIssueCount: 0,
+    topBlockedIssues: [],
+    warnings: [],
+  };
+
+  return {
+    releaseStatus: getReleaseStatusLabel({
+      totalTestCases,
+      blockedCount: totalBlockedCases,
+      highHighest,
+      medium,
+    }),
+    totalTestCases,
+    passRate,
+    blockedRate,
+    remainingSignal: {
+      total: analysisPayload.qaIssueOverview?.remaining.total ?? 0,
+      highHighest,
+      medium,
+      lowLowest,
+    },
+    blockedImpact: {
+      totalBlockedCases: blockedImpact.totalBlockedCases,
+      blockedCauseIssueCount: blockedImpact.blockedCauseIssueCount,
+      topBlockedIssues: blockedImpact.topBlockedIssues.slice(0, 5).map((item) => ({
+        ...item,
+        affectedTestCases: item.affectedTestCases.slice(0, 6),
+      })),
+      warnings: blockedImpact.warnings.slice(0, 5),
+    },
+    rcSignal: {
+      currentRc: analysisPayload.rcProgress?.rcLabel ?? "",
+      items:
+        analysisPayload.rcProgress?.items.slice(0, 8).map((item) => ({
+          rc: item.rc,
+          newIssues: item.newIssues,
+          resolvedIssues: item.resolvedIssues,
+          remainingIssues: item.remainingIssues,
+          reopenedIssues: item.reopenedIssues,
+        })) ?? [],
+    },
+    versionTrendSignal: createVersionTrendSignal(analysisPayload),
+    patternSignal: analysisPayload.issuePatternAnalysis.slice(0, 5).map((item) => ({
+      name: item.name,
+      count: item.count,
+      sourceTypes: item.sourceTypes,
+    })),
+    qaCommentSignal: createQaCommentSignal(analysisPayload),
+  };
 }
 
 function createOverallAnalysisEvidence(
@@ -453,6 +818,28 @@ export async function POST(request: Request) {
           versions: pattern.versions.slice(0, 6),
           sourceTypes: pattern.sourceTypes.slice(0, 4),
         })),
+      blockedImpact: body.blockedImpact
+        ? {
+            totalBlockedCases: body.blockedImpact.totalBlockedCases,
+            blockedCauseIssueCount: body.blockedImpact.blockedCauseIssueCount,
+            topBlockedIssues: body.blockedImpact.topBlockedIssues
+              .slice(0, 8)
+              .map((item) => ({
+                ...item,
+                displayLabel:
+                  item.displayLabel || `${item.jiraKey}(${item.jiraSummary})`,
+                affectedSheets: item.affectedSheets.slice(0, 6),
+                affectedCategories: item.affectedCategories.slice(0, 8),
+                affectedTestCases: item.affectedTestCases.slice(0, 8),
+              })),
+            warnings: body.blockedImpact.warnings.slice(0, 8).map((warning) => ({
+              ...warning,
+              displayLabel:
+                warning.displayLabel ||
+                `${warning.jiraKey}(${warning.jiraSummary})`,
+            })),
+          }
+        : null,
       rcProgress: normalizeRcProgress(body.rcProgress),
       qaIssueOverview: body.qaIssueOverview ?? null,
       remainingIssues: (body.remainingIssues ?? [])
@@ -495,7 +882,7 @@ export async function POST(request: Request) {
               : createFeatureParagraphUserPrompt(analysisPayload),
           },
         ],
-        max_output_tokens: isOverallReport ? 520 : 450,
+        max_output_tokens: isOverallReport ? 900 : 450,
       }),
     });
 

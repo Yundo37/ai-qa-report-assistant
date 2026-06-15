@@ -14,6 +14,7 @@ import { useAiAnalysisAction } from "@/hooks/useAiAnalysisAction";
 import { useResultSheetAction } from "@/hooks/useResultSheetAction";
 import { createGenerateInputValidation } from "@/lib/report/generateValidation";
 import { createSheetUrlValidation } from "@/lib/report/sheetUrlValidation";
+import { createBlockedImpactSummary } from "@/lib/report/blockedImpactBuilder";
 import { createQaSummaryBundle } from "@/lib/report/qaSummaryBuilder";
 import { createJiraSummaryBundle } from "@/lib/report/jiraSummaryBuilder";
 import { createRcProgressBundle } from "@/lib/report/rcProgressBuilder";
@@ -1478,14 +1479,19 @@ export default function Home() {
                 jiraAnalysisStartDateTime: jiraAnalysisStartDateTime ?? "",
                 jiraAnalysisEndDateTime,
               })
-            : {
-                overallQaSummary: undefined,
-                overallTestSheets: undefined,
-                versionIssueSummary: undefined,
-                versionSummary: undefined,
-                issuePatternSources: undefined,
-                issuePatternAnalysis: undefined,
-              };
+              : {
+                  overallQaSummary: undefined,
+                  overallTestSheets: undefined,
+                  versionIssueSummary: undefined,
+                  versionSummary: undefined,
+                  issuePatternSources: undefined,
+                  issuePatternAnalysis: undefined,
+                };
+        const blockedImpact = createBlockedImpactSummary({
+          parsedTestSheetDataList,
+          selectedTestSheets,
+          jiraRecords: parsedJiraIssueData,
+        });
         const { rcProgress } = createRcProgressBundle({
           filteredJiraIssues,
           reportTitle: reportInput.reportTitle,
@@ -1513,6 +1519,7 @@ export default function Home() {
           versionIssueSummary,
           issuePatternSources,
           issuePatternAnalysis,
+          blockedImpact,
         };
         console.log("Remaining Count Summary:", jiraFilteredSummary.Remaining ?? 0);
         console.log("Remaining Issue List Length:", remainingIssues.length);
