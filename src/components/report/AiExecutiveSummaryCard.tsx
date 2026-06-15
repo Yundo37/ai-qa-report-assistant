@@ -16,12 +16,11 @@ type AiExecutiveSummaryCardProps = {
   onAnalyze: () => void;
 };
 
-// TEMP_DESIGN_PREVIEW_ONLY: remove this mock when AI Summary UI review no longer needs a local preview.
-const TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT = [
+/*
   "현재 Overall QA는 High / Highest 잔여 이슈와 Blocked 항목 확인이 필요한 상태입니다. 상단 잔여 이슈와 RC별 잔여 흐름을 함께 검토하면 릴리즈 전 우선 확인 범위를 빠르게 좁힐 수 있습니다.",
   "주요 리스크는 High Priority 잔여 이슈, Blocked 항목, 반복 이슈 패턴에서 확인됩니다. 특히 반복 패턴이 여러 데이터 소스에 걸쳐 나타나는 경우 기능 검증 범위와 후속 확인 항목을 분리해 관리하는 것이 좋습니다.",
   "후속 액션은 주요 잔여 이슈 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
-].join("\n\n");
+*/
 
 type SignalTone = "stable" | "attention" | "risk" | "neutral";
 
@@ -379,16 +378,11 @@ export function AiExecutiveSummaryCard({
 }: AiExecutiveSummaryCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const hasRealAnalysisText = Boolean(analysisText.trim());
-  const effectiveAnalysisText =
-    (hasRealAnalysisText ? analysisText.trim() : "") ||
-    (analysisSummary.reportType === "OVERALL"
-      ? TEMP_DESIGN_PREVIEW_ONLY_AI_ANALYSIS_TEXT
-      : "");
-  const paragraphs = effectiveAnalysisText
+  const paragraphs = analysisText
     .split(/\n+/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
-  const hasAnalysis = paragraphs.length > 0;
+  const hasAnalysis = hasRealAnalysisText && paragraphs.length > 0;
   const metrics = createOverallDashboardMetrics(analysisSummary);
   const remainingPriority =
     analysisSummary.qaIssueOverview?.remaining?.prioritySummary;
