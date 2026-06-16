@@ -3,7 +3,11 @@
 import { MessagePanel } from "@/components/report/MessagePanel";
 import { QaReleaseStatusCard } from "@/components/report/QaReleaseStatusCard";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
-import type { AnalysisSummaryState, MessageState } from "@/types/report";
+import type {
+  AiExecutiveSummaryResult,
+  AnalysisSummaryState,
+  MessageState,
+} from "@/types/report";
 
 type ReportDashboardHeaderProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
@@ -16,6 +20,8 @@ type ReportDashboardHeaderProps = {
   isCreatingResultSheet: boolean;
   resultSheetMessage: MessageState;
   resultSheetUrl: string;
+  aiExecutiveSummary: AiExecutiveSummaryResult | null;
+  isAiAnalyzing: boolean;
 };
 
 function stripRcFromVersion(value: string) {
@@ -75,6 +81,8 @@ export function ReportDashboardHeader({
   isCreatingResultSheet,
   resultSheetMessage,
   resultSheetUrl,
+  aiExecutiveSummary,
+  isAiAnalyzing,
 }: ReportDashboardHeaderProps) {
   const fallbackScope =
     analysisSummary.inferredTargetVersion || reportScopeText || "";
@@ -103,10 +111,11 @@ export function ReportDashboardHeader({
       icon: "generated" as const,
     },
   ];
+  const showAiHeroVisual = isAiAnalyzing || Boolean(aiExecutiveSummary);
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/80 p-5 shadow-lg shadow-indigo-100/50 sm:p-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-5">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
             QA Release Dashboard
@@ -147,12 +156,12 @@ export function ReportDashboardHeader({
         </div>
 
         <div className="flex h-full flex-col">
-          <div className="space-y-2 lg:self-end">
+          <div className="space-y-2 self-end">
             <button
               type="button"
               onClick={onCreateResultSheet}
               disabled={isCreatingResultSheet}
-              className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+              className="w-auto rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCreatingResultSheet
                 ? "내보내는 중..."
@@ -162,7 +171,7 @@ export function ReportDashboardHeader({
               <button
                 type="button"
                 onClick={() => window.open(resultSheetUrl, "_blank")}
-                className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 lg:w-auto"
+                className="w-auto rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
               >
                 결과 리포트 열기
               </button>
@@ -175,11 +184,18 @@ export function ReportDashboardHeader({
           </div>
 
           <div className="relative mt-4 min-h-[190px] flex-1 overflow-hidden rounded-[1.75rem]">
-            <ReportAssetSlot
-              type="ai-hero"
-              className="h-full min-h-[190px] border-0 bg-transparent bg-none shadow-none ring-0"
-              imageClassName="scale-125 p-0"
-            />
+            {showAiHeroVisual ? (
+              <ReportAssetSlot
+                type="ai-hero"
+                className="h-full min-h-[190px] border-0 bg-transparent bg-none shadow-none ring-0"
+                imageClassName="scale-125 p-0"
+              />
+            ) : (
+              <div
+                className="h-full min-h-[190px] rounded-[1.75rem] bg-white/20"
+                aria-hidden="true"
+              />
+            )}
           </div>
         </div>
       </div>

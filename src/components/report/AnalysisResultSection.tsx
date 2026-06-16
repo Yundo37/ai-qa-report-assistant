@@ -55,14 +55,13 @@ export function AnalysisResultSection({
   if (analysisSummary.reportType === "OVERALL") {
     return (
       <section ref={analysisSummaryRef} className="mt-8 w-full overflow-x-auto">
-        <div className="mx-auto w-full max-w-[1280px]">
+        <div className="mx-auto w-full min-w-[1200px] max-w-[1440px]">
           <OverallReportDashboard
             analysisSummary={analysisSummary}
             reportScopeText={reportScopeText}
             aiAnalysisText={aiAnalysisText}
             aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
-            onAnalyze={onAnalyze}
             onCreateResultSheet={onCreateResultSheet}
             isCreatingResultSheet={isCreatingResultSheet}
             resultSheetMessage={resultSheetMessage}

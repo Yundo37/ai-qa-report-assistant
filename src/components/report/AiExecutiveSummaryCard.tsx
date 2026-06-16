@@ -13,7 +13,6 @@ type AiExecutiveSummaryCardProps = {
   analysisText: string;
   aiExecutiveSummary?: AiExecutiveSummaryResult | null;
   isLoading: boolean;
-  onAnalyze: () => void;
 };
 
 /*
@@ -374,7 +373,6 @@ export function AiExecutiveSummaryCard({
   analysisText,
   aiExecutiveSummary,
   isLoading,
-  onAnalyze,
 }: AiExecutiveSummaryCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const hasRealAnalysisText = Boolean(analysisText.trim());
@@ -413,6 +411,14 @@ export function AiExecutiveSummaryCard({
   const executiveSummaryViewModel = aiExecutiveSummary
     ? createAiExecutiveSummaryViewModelFromAiResult(aiExecutiveSummary)
     : ruleBasedExecutiveSummaryViewModel;
+  const hasAiExecutiveSummary = Boolean(aiExecutiveSummary);
+  const hasAiBranding = isLoading || hasAiExecutiveSummary;
+  const cardTitle = hasAiBranding
+    ? "AI 릴리즈 분석 요약"
+    : "릴리즈 분석 요약";
+  const cardDescription = hasAiBranding
+    ? "현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단, 리스크 신호, 반복 패턴, QA 확인 항목을 정리합니다."
+    : "현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단과 리스크 신호를 정리합니다.";
   const totalTestCases =
     analysisSummary.overallQaSummary?.Total ??
     analysisSummary.qaTotal.Total ??
@@ -424,7 +430,7 @@ export function AiExecutiveSummaryCard({
       slotType: "metric-test-cases" as const,
     },
     {
-      label: "Jira 이슈",
+      label: "발견 이슈",
       value: analysisSummary.jiraMatchedRows,
       slotType: "metric-jira-issues" as const,
     },
@@ -449,75 +455,46 @@ export function AiExecutiveSummaryCard({
     background: `conic-gradient(#6d5dfc ${passRatePercent}%, #ece9ff ${passRatePercent}% 100%)`,
   };
 
-  if (!hasAnalysis && !isLoading) {
-    return (
-      <section className="min-w-0 rounded-[2rem] border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/60 p-5 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-              AI 릴리즈 분석 요약
-            </p>
-            <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-              AI 릴리즈 분석 요약
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단과 확인 방향을 정리합니다.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onAnalyze}
-            className="w-fit rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-          >
-            AI 분석 생성
-          </button>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="min-w-0 rounded-[2rem] border border-indigo-200 bg-gradient-to-br from-indigo-100/90 via-violet-50 to-white p-5 shadow-xl shadow-indigo-100/80 sm:p-6">
+    <section
+      className={`min-w-0 rounded-[2rem] p-5 sm:p-6 ${
+        hasAiBranding
+          ? "border border-indigo-200 bg-gradient-to-br from-indigo-100/90 via-violet-50 to-white shadow-xl shadow-indigo-100/80"
+          : "border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/60 shadow-sm"
+      }`}
+    >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-full bg-indigo-600 text-sm font-black text-white">
-              ai
-            </span>
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-              AI 릴리즈 분석 요약
-            </p>
+            {hasAiBranding && (
+              <span className="grid size-8 place-items-center rounded-full bg-indigo-600 text-sm font-black text-white">
+                ai
+              </span>
+            )}
+            <h2 className="text-xl font-bold tracking-tight text-slate-950">
+              {cardTitle}
+            </h2>
           </div>
-          <h2 className="mt-3 text-xl font-bold tracking-tight text-slate-950">
-            AI 릴리즈 분석 요약
-          </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단, 리스크 신호,
-            반복 패턴, QA 확인 항목을 정리합니다.
+            {cardDescription}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onAnalyze}
-          disabled={isLoading}
-          className="w-fit rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:border-indigo-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading
-            ? "AI 분석 중..."
-            : hasRealAnalysisText
-              ? "AI 분석 다시 생성"
-              : "AI 분석 생성"}
-        </button>
       </div>
 
       {isLoading ? (
-        <p className="mt-5 rounded-2xl border border-indigo-100 bg-white/85 p-4 text-sm leading-6 text-slate-500">
-          AI 분석을 생성하고 있습니다...
-        </p>
+        <div className="mt-5 rounded-2xl border border-indigo-100 bg-white/85 p-4 shadow-sm">
+          <p className="text-sm font-semibold text-indigo-700">
+            AI 분석 생성 중입니다.
+          </p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            현재 QA 및 Jira 데이터를 기반으로 릴리즈 판단과 리스크 신호를
+            정리하고 있습니다.
+          </p>
+        </div>
       ) : (
         <>
-          <div className="mt-5 grid overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm lg:grid-cols-[1.15fr_1fr_1fr_0.9fr]">
-            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
+          <div className="mt-5 grid grid-cols-[1.15fr_1fr_1fr_0.9fr] overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm">
+            <div className="border-r border-indigo-100/80 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
                 릴리즈 판단
               </p>
@@ -545,7 +522,7 @@ export function AiExecutiveSummaryCard({
               </div>
             </div>
 
-            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
+            <div className="border-r border-indigo-100/80 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 주요 리스크 신호
               </p>
@@ -574,7 +551,7 @@ export function AiExecutiveSummaryCard({
               </ul>
             </div>
 
-            <div className="border-b border-indigo-100/80 p-5 lg:border-b-0 lg:border-r">
+            <div className="border-r border-indigo-100/80 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
                 반복 패턴 해석
               </p>
@@ -590,8 +567,9 @@ export function AiExecutiveSummaryCard({
                     {executiveSummaryViewModel.patternInsight.patterns.map((item) => (
                       <li key={item.label} className="text-sm">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="min-w-0 leading-5 text-slate-700">
-                            {item.label}
+                          <span className="flex min-w-0 items-start gap-2 leading-5 text-slate-700">
+                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-violet-500" />
+                            <span className="min-w-0">{item.label}</span>
                           </span>
                           <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
                             {formatSummaryValue(item.value)}
@@ -628,7 +606,7 @@ export function AiExecutiveSummaryCard({
             </div>
           </div>
 
-          <div className="grid gap-2 rounded-b-3xl border-x border-b border-indigo-100 bg-white/85 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-5 gap-2 rounded-b-3xl border-x border-b border-indigo-100 bg-white/85 p-3 shadow-sm">
             {metricStripItems.map((item) => (
               <div
                 key={item.label}

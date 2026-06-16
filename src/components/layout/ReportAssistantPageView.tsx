@@ -53,6 +53,8 @@ export function ReportAssistantPageView({
   onHideInputDashboard,
   ...reportInputPanelProps
 }: ReportAssistantPageViewProps) {
+  const isOverallReportCanvas = analysisSummary?.reportType === "OVERALL";
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <section className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
@@ -73,16 +75,26 @@ export function ReportAssistantPageView({
             <ReportInputPanel {...reportInputPanelProps} />
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-[1280px]">
-            <CollapsedInputSummaryBar
-              reportType={reportInputPanelProps.reportType}
-              reportTitle={reportInputPanelProps.reportTitle}
-              reportVersion={reportInputPanelProps.reportVersion}
-              reportRcVersion={reportInputPanelProps.reportRcVersion}
-              testSheets={reportInputPanelProps.testSheets}
-              jiraIssueSheet={reportInputPanelProps.jiraIssueSheet}
-              onEditInput={onShowInputDashboard}
-            />
+          <div
+            className={`w-full ${isOverallReportCanvas ? "overflow-x-auto" : ""}`}
+          >
+            <div
+              className={`mx-auto w-full ${
+                isOverallReportCanvas
+                  ? "min-w-[1200px] max-w-[1440px]"
+                  : "max-w-[1280px]"
+              }`}
+            >
+              <CollapsedInputSummaryBar
+                reportType={reportInputPanelProps.reportType}
+                reportTitle={reportInputPanelProps.reportTitle}
+                reportVersion={reportInputPanelProps.reportVersion}
+                reportRcVersion={reportInputPanelProps.reportRcVersion}
+                testSheets={reportInputPanelProps.testSheets}
+                jiraIssueSheet={reportInputPanelProps.jiraIssueSheet}
+                onEditInput={onShowInputDashboard}
+              />
+            </div>
           </div>
         )}
         {analysisSummary && (

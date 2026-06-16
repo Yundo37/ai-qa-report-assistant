@@ -124,12 +124,18 @@ export function useAiAnalysisAction({
 
       const data = await response.json();
       const normalizedResponse = normalizeAiAnalysisResponse(data);
+      if (normalizedResponse.analysis && !normalizedResponse.executiveSummary) {
+        console.warn("AI analysis response did not include executiveSummary.");
+      }
       const sanitizedExecutiveSummary = normalizedResponse.executiveSummary
         ? sanitizeAiExecutiveSummary({
             executiveSummary: normalizedResponse.executiveSummary,
             analysisSummary: targetAnalysisSummary,
           })
         : null;
+      if (normalizedResponse.executiveSummary && !sanitizedExecutiveSummary) {
+        console.warn("AI executiveSummary was rejected by sanitizer.");
+      }
       const sanitizedAnalysisText = sanitizeReportTone(
         normalizedResponse.analysis || EMPTY_AI_ANALYSIS_MESSAGE
       );

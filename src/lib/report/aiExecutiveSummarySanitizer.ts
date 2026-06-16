@@ -273,11 +273,100 @@ function createRiskSignals({
   ];
 }
 
+function normalizeRiskSignalFact({
+  signal,
+  statusTone,
+  highHighest,
+  medium,
+  lowLowest,
+  blockedCount,
+  nextEventCount,
+}: {
+  signal: RiskSignal;
+  statusTone: StatusTone;
+  highHighest: number;
+  medium: number;
+  lowLowest: number;
+  blockedCount: number;
+  nextEventCount: number;
+}): RiskSignal {
+  const label = signal.label.toLowerCase();
+
+  if (label.includes("blocked")) {
+    return {
+      ...signal,
+      value: blockedCount,
+      tone:
+        statusTone === "risk"
+          ? "risk"
+          : blockedCount > 0
+            ? "attention"
+            : "stable",
+    };
+  }
+
+  if (label.includes("medium")) {
+    return {
+      ...signal,
+      value: medium,
+      tone: medium > 0 ? "attention" : "stable",
+    };
+  }
+
+  if (label.includes("low") || label.includes("lowest")) {
+    return {
+      ...signal,
+      value: lowLowest,
+      tone: statusTone === "risk" ? "neutral" : "stable",
+    };
+  }
+
+  if (label.includes("highest") || label.includes("high")) {
+    return {
+      ...signal,
+      value: highHighest,
+      tone: highHighest > 0 ? "risk" : "stable",
+    };
+  }
+
+  if (label.includes("next event")) {
+    return {
+      ...signal,
+      value: nextEventCount,
+      tone: statusTone === "stable" ? "stable" : "attention",
+    };
+  }
+
+  return signal;
+}
+
+function normalizeRiskSignals({
+  executiveSummary,
+  metrics,
+}: {
+  executiveSummary: AiExecutiveSummaryResult;
+  metrics: ReturnType<typeof getActualMetrics>;
+}): RiskSignal[] {
+  const normalizedSignals = executiveSummary.riskSignals
+    .slice(0, 4)
+    .map((signal) => normalizeRiskSignalFact({ signal, ...metrics }));
+
+  return normalizedSignals.length > 0
+    ? normalizedSignals
+    : createRiskSignals(metrics);
+}
+
 function createReleaseJudgment({
   statusTone,
+  executiveSummary,
 }: {
   statusTone: StatusTone;
+  executiveSummary?: AiExecutiveSummaryResult;
 }): AiExecutiveSummaryResult["releaseJudgment"] {
+  if (executiveSummary) {
+    return executiveSummary.releaseJudgment;
+  }
+
   if (statusTone === "stable") {
     return {
       title: "운영 모니터링 중심",
@@ -304,11 +393,32 @@ function createReleaseJudgment({
 function createPatternInsight({
   executiveSummary,
   statusTone,
+  analysisSummary,
 }: {
   executiveSummary: AiExecutiveSummaryResult;
   statusTone: StatusTone;
+  analysisSummary?: NonNullable<AnalysisSummaryState>;
 }): AiExecutiveSummaryResult["patternInsight"] {
-  const items = (executiveSummary.patternInsight.items ?? []).slice(0, 3);
+  const actualPatternCounts = new Map(
+    (analysisSummary?.issuePatternAnalysis ?? []).map((item) => [
+      item.name,
+      item.count,
+    ])
+  );
+  const items = (executiveSummary.patternInsight.items ?? [])
+    .slice(0, 3)
+    .map((item) => ({
+      ...item,
+      value: actualPatternCounts.get(item.label) ?? item.value,
+    }));
+
+  if (analysisSummary) {
+    return {
+      title: executiveSummary.patternInsight.title,
+      description: executiveSummary.patternInsight.description,
+      items,
+    };
+  }
 
   if (statusTone === "stable") {
     return {
@@ -339,10 +449,16 @@ function createPatternInsight({
 function createQaCheckpoints({
   statusTone,
   primaryBlockedLabel,
+  executiveSummary,
 }: {
   statusTone: StatusTone;
   primaryBlockedLabel?: string;
+  executiveSummary?: AiExecutiveSummaryResult;
 }) {
+  if (executiveSummary) {
+    return executiveSummary.qaCheckpoints.slice(0, 4);
+  }
+
   if (statusTone === "stable") {
     return [
       "Low Known Issue는 운영 모니터링 항목으로 관리합니다.",
@@ -384,15 +500,21 @@ export function sanitizeAiExecutiveSummary({
   return {
     releaseJudgment: createReleaseJudgment({
       statusTone: metrics.statusTone,
+      executiveSummary,
     }),
-    riskSignals: createRiskSignals(metrics),
+    riskSignals: normalizeRiskSignals({
+      executiveSummary,
+      metrics,
+    }),
     patternInsight: createPatternInsight({
       executiveSummary,
       statusTone: metrics.statusTone,
+      analysisSummary,
     }),
     qaCheckpoints: createQaCheckpoints({
       statusTone: metrics.statusTone,
       primaryBlockedLabel: metrics.primaryBlockedLabel,
+      executiveSummary,
     }),
   };
 }

@@ -9,9 +9,9 @@ const STATUS_PANEL_CLASS = {
 };
 
 const STATUS_LABEL = {
-  stable: "\uC548\uC815",
-  caution: "\uC8FC\uC758 \uD544\uC694",
-  risk: "\uC704\uD5D8",
+  stable: "안정",
+  caution: "주의 필요",
+  risk: "위험",
 };
 
 const STATUS_TEXT_CLASS = {
@@ -26,33 +26,50 @@ const STATUS_ICON_CLASS = {
   risk: "bg-transparent ring-rose-100/40",
 };
 
-function createStatusLines(
-  tone: "stable" | "caution" | "risk",
-  rcLabel?: string
-) {
+type QaReleaseStatusMessageParams = {
+  state: "stable" | "caution" | "risk";
+  rcLabel?: string;
+  highHighestRemainingCount: number;
+  mediumRemainingCount: number;
+  lowRemainingCount: number;
+  blockedCount: number;
+  nextEventCount: number;
+};
+
+function createQaReleaseStatusMessage({
+  state,
+  rcLabel,
+}: QaReleaseStatusMessageParams) {
   const targetText =
-    rcLabel && rcLabel !== "-"
-      ? `\uD604\uC7AC ${rcLabel}\uB294`
-      : "\uD604\uC7AC \uB9AC\uD3EC\uD2B8\uB294";
+    rcLabel && rcLabel !== "-" ? `현재 ${rcLabel}는` : "현재 릴리즈는";
 
-  if (tone === "risk") {
-    return [
-      `${targetText} \uBC30\uD3EC \uC804 \uCD94\uAC00 \uD655\uC778\uC774 \uD544\uC694\uD55C \uC0C1\uD0DC\uC785\uB2C8\uB2E4.`,
-      "High / Highest \uC794\uC5EC \uC774\uC288\uC640 Blocked \uD56D\uBAA9 \uD655\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4.",
-    ];
+  if (state === "risk") {
+    return {
+      title: STATUS_LABEL.risk,
+      lines: [
+        `${targetText} 배포 전 우선 확인이 필요한 잔여 리스크가 남아 있습니다.`,
+        "High / Highest 잔여 이슈와 Blocked 영향 항목은 원인 확인 및 회귀 검증이 필요합니다.",
+      ],
+    };
   }
 
-  if (tone === "caution") {
-    return [
-      `${targetText} \uC6B4\uC601 \uBAA8\uB2C8\uD130\uB9C1\uC774 \uD544\uC694\uD55C \uC0C1\uD0DC\uC785\uB2C8\uB2E4.`,
-      "일부 잔여 이슈 및 후속 확인 항목을 중심으로 확인이 필요합니다.",
-    ];
+  if (state === "caution") {
+    return {
+      title: STATUS_LABEL.caution,
+      lines: [
+        `${targetText} 치명도 높은 차단 신호는 확인되지 않았습니다.`,
+        "Medium 잔여 이슈와 후속 확인 항목은 재검증 범위로 분리 관리해야 합니다.",
+      ],
+    };
   }
 
-  return [
-    `${targetText} \uC8FC\uC694 \uCC28\uB2E8 \uD56D\uBAA9\uC774 \uB0AE\uC740 \uC0C1\uD0DC\uC785\uB2C8\uB2E4.`,
-    "\uB0A8\uC740 \uC774\uC288\uB294 \uC6B4\uC601 \uBAA8\uB2C8\uD130\uB9C1 \uC911\uC2EC\uC73C\uB85C \uD655\uC778 \uAC00\uB2A5\uD569\uB2C8\uB2E4.",
-  ];
+  return {
+    title: STATUS_LABEL.stable,
+    lines: [
+      `${targetText} 배포 차단 수준의 High / Medium 잔여 이슈가 없습니다.`,
+      "남은 Low 이슈와 후속 확인 항목은 운영 모니터링 범위에서 관리 가능합니다.",
+    ],
+  };
 }
 
 export function QaReleaseStatusCard({
@@ -63,8 +80,20 @@ export function QaReleaseStatusCard({
   rcLabel?: string;
 }) {
   const metrics = createOverallDashboardMetrics(analysisSummary);
-  const messageLines = createStatusLines(metrics.status.tone, rcLabel);
-  const statusLabel = STATUS_LABEL[metrics.status.tone];
+  const remainingPrioritySummary =
+    analysisSummary.qaIssueOverview?.remaining?.prioritySummary;
+  const lowRemainingCount =
+    (remainingPrioritySummary?.Low ?? 0) +
+    (remainingPrioritySummary?.Lowest ?? 0);
+  const statusMessage = createQaReleaseStatusMessage({
+    state: metrics.status.tone,
+    rcLabel,
+    highHighestRemainingCount: metrics.highRisk,
+    mediumRemainingCount: metrics.mediumRemaining,
+    lowRemainingCount,
+    blockedCount: metrics.blocked,
+    nextEventCount: metrics.nextEvent,
+  });
 
   return (
     <section
@@ -82,7 +111,7 @@ export function QaReleaseStatusCard({
               STATUS_TEXT_CLASS[metrics.status.tone]
             }`}
           >
-            {statusLabel}
+            {statusMessage.title}
           </h3>
         </div>
 
@@ -97,7 +126,7 @@ export function QaReleaseStatusCard({
         </div>
 
         <div className="min-w-0 space-y-1 text-sm font-medium leading-6 text-slate-600">
-          {messageLines.map((line) => (
+          {statusMessage.lines.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>

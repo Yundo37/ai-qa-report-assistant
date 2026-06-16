@@ -403,6 +403,24 @@ function validateAiExecutiveSummary(
   };
 }
 
+function extractJsonObjectText(text: string) {
+  const fencedJson = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1]?.trim();
+
+  if (fencedJson) return fencedJson;
+
+  const firstBraceIndex = text.indexOf("{");
+  const lastBraceIndex = text.lastIndexOf("}");
+
+  if (
+    firstBraceIndex >= 0 &&
+    lastBraceIndex > firstBraceIndex
+  ) {
+    return text.slice(firstBraceIndex, lastBraceIndex + 1);
+  }
+
+  return text;
+}
+
 function parseAiAnalysisResponse(text: string): AiAnalysisParsedResponse {
   const trimmedText = text.trim();
 
@@ -411,7 +429,7 @@ function parseAiAnalysisResponse(text: string): AiAnalysisParsedResponse {
   }
 
   try {
-    const parsed = JSON.parse(trimmedText) as unknown;
+    const parsed = JSON.parse(extractJsonObjectText(trimmedText)) as unknown;
 
     if (!isRecord(parsed) || typeof parsed.analysis !== "string") {
       return { analysis: trimmedText };

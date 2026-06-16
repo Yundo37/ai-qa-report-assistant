@@ -24,7 +24,6 @@ type OverallReportDashboardProps = {
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
-  onAnalyze: () => void;
   onCreateResultSheet: () => void;
   isCreatingResultSheet: boolean;
   resultSheetMessage: MessageState;
@@ -42,7 +41,6 @@ export function OverallReportDashboard({
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
-  onAnalyze,
   onCreateResultSheet,
   isCreatingResultSheet,
   resultSheetMessage,
@@ -62,15 +60,16 @@ export function OverallReportDashboard({
         isCreatingResultSheet={isCreatingResultSheet}
         resultSheetMessage={resultSheetMessage}
         resultSheetUrl={resultSheetUrl}
+        aiExecutiveSummary={aiExecutiveSummary}
+        isAiAnalyzing={isAiAnalyzing}
       />
       <AiExecutiveSummaryCard
         analysisSummary={analysisSummary}
         analysisText={aiAnalysisText}
         aiExecutiveSummary={aiExecutiveSummary}
         isLoading={isAiAnalyzing}
-        onAnalyze={onAnalyze}
       />
-      <div className="grid items-stretch gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-3 items-stretch gap-5">
         <div className="min-w-0">
           <ReleaseRiskSummaryCard analysisSummary={analysisSummary} />
         </div>
@@ -82,7 +81,7 @@ export function OverallReportDashboard({
         </div>
       </div>
       <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
-      <div className="grid items-stretch gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-2 items-stretch gap-5">
         <div className="min-w-0">
           <RemainingIssuesDashboardCard analysisSummary={analysisSummary} />
         </div>

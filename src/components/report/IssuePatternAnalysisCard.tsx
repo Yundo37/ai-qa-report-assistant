@@ -361,7 +361,7 @@ export function IssuePatternAnalysisCard({
   });
 
   return (
-    <div className="grid items-stretch gap-5 lg:grid-cols-2">
+    <div className="grid grid-cols-2 items-stretch gap-5">
       <section className="flex h-full min-h-[420px] min-w-0 flex-col rounded-[2rem] border border-indigo-100 bg-white p-5 shadow-sm">
         <div className="flex min-h-[82px] flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
