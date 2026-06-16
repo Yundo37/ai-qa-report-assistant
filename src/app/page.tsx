@@ -67,6 +67,12 @@ import type {
 
 const MAX_TEST_SHEETS = 50;
 const MAX_JIRA_LABELS = 8;
+type ResultSheetToastState = {
+  type: "success" | "error";
+  title: string;
+  description: string;
+  resultSheetUrl?: string;
+};
 const JIRA_ISSUE_PATTERN_SUMMARY_FIELDS = [
   "Summary",
   "Issue Summary",
@@ -802,9 +808,14 @@ export default function Home() {
   const [resultSheetUrl, setResultSheetUrl] = useState("");
   const [resultSheetMessage, setResultSheetMessage] =
     useState<MessageState>(null);
+  const [resultSheetToast, setResultSheetToast] =
+    useState<ResultSheetToastState | null>(null);
   const analysisSummaryRef = useRef<HTMLElement | null>(null);
+  const overallReportCanvasRef = useRef<HTMLDivElement | null>(null);
   const aiAnalysisRequestIdRef = useRef(0);
   const didMountInputResetRef = useRef(false);
+  const openedResultSheetUrlRef = useRef("");
+  const resultSheetToastTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!analysisSummary) return;
@@ -820,6 +831,78 @@ export default function Home() {
     setAiExecutiveSummary(null);
     setIsAiAnalyzing(false);
   }, []);
+
+  const showResultSheetToast = useCallback((toast: ResultSheetToastState) => {
+    if (resultSheetToastTimeoutRef.current) {
+      window.clearTimeout(resultSheetToastTimeoutRef.current);
+    }
+
+    setResultSheetToast(toast);
+    resultSheetToastTimeoutRef.current = window.setTimeout(() => {
+      setResultSheetToast(null);
+      resultSheetToastTimeoutRef.current = null;
+    }, 5000);
+  }, []);
+
+  const dismissResultSheetToast = useCallback(() => {
+    if (resultSheetToastTimeoutRef.current) {
+      window.clearTimeout(resultSheetToastTimeoutRef.current);
+      resultSheetToastTimeoutRef.current = null;
+    }
+
+    setResultSheetToast(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (resultSheetToastTimeoutRef.current) {
+        window.clearTimeout(resultSheetToastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!analysisSummary || analysisSummary.reportType !== "OVERALL") return;
+    if (!resultSheetMessage) return;
+
+    if (resultSheetMessage.type === "success") {
+      const sheetUrl = resultSheetUrl.trim();
+      let didOpenNewTab = false;
+
+      if (sheetUrl && openedResultSheetUrlRef.current !== sheetUrl) {
+        const openedWindow = window.open(
+          sheetUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
+        didOpenNewTab = Boolean(openedWindow);
+        openedResultSheetUrlRef.current = sheetUrl;
+      }
+
+      showResultSheetToast({
+        type: "success",
+        title: "Google Sheet 생성이 완료되었습니다.",
+        description:
+          sheetUrl && didOpenNewTab
+            ? "새 탭에서 결과 리포트를 열었습니다."
+            : "결과 리포트 열기 버튼을 눌러 확인해주세요.",
+        resultSheetUrl: sheetUrl || undefined,
+      });
+      return;
+    }
+
+    showResultSheetToast({
+      type: "error",
+      title: "Google Sheet 생성에 실패했습니다.",
+      description:
+        resultSheetMessage.items[0] || "설정 또는 권한을 확인해주세요.",
+    });
+  }, [
+    analysisSummary,
+    resultSheetMessage,
+    resultSheetUrl,
+    showResultSheetToast,
+  ]);
 
   useEffect(() => {
     if (!didMountInputResetRef.current) {
@@ -865,6 +948,22 @@ export default function Home() {
     clearAiAnalysisResult();
     setResultSheetMessage(null);
     setResultSheetUrl("");
+    dismissResultSheetToast();
+  };
+
+  const handleStartNewReport = () => {
+    const shouldStartNewReport = window.confirm(
+      "새 리포트를 시작할까요?\n입력값과 생성된 리포트 결과가 모두 초기화됩니다."
+    );
+
+    if (!shouldStartNewReport) return;
+
+    resetReportInputs();
+    resetReportState();
+    setApplyingQuickScenario("");
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   };
 
   const resetReportInputs = () => {
@@ -1717,19 +1816,22 @@ export default function Home() {
       message={message}
       analysisSummary={analysisSummary}
       analysisSummaryRef={analysisSummaryRef}
+      overallReportCanvasRef={overallReportCanvasRef}
       aiAnalysisText={aiAnalysisText}
       aiExecutiveSummary={aiExecutiveSummary}
       isAiAnalyzing={isAiAnalyzing}
       onAnalyze={handleAiAnalysisTest}
       onCreateResultSheet={handleCreateResultSheet}
+      onStartNewReport={handleStartNewReport}
       isCreatingResultSheet={isCreatingResultSheet}
       resultSheetMessage={resultSheetMessage}
       resultSheetUrl={resultSheetUrl}
+      resultSheetToast={resultSheetToast}
+      onDismissResultSheetToast={dismissResultSheetToast}
       reportScopeText={reportScopeText}
       reportPeriodText={reportPeriodText}
       generatedAtText={reportGeneratedAt}
       isInputDashboardVisible={isInputDashboardVisible}
-      onShowInputDashboard={() => setIsInputDashboardVisible(true)}
       onHideInputDashboard={() => setIsInputDashboardVisible(false)}
     />
   );

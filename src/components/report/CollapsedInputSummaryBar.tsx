@@ -8,9 +8,7 @@ type CollapsedInputSummaryBarProps = Pick<
   | "reportRcVersion"
   | "testSheets"
   | "jiraIssueSheet"
-> & {
-  onEditInput: () => void;
-};
+>;
 
 export function CollapsedInputSummaryBar({
   reportType,
@@ -19,7 +17,6 @@ export function CollapsedInputSummaryBar({
   reportRcVersion,
   testSheets,
   jiraIssueSheet,
-  onEditInput,
 }: CollapsedInputSummaryBarProps) {
   const connectedTestSheetCount = testSheets.filter((sheet) =>
     sheet.url.trim()
@@ -59,13 +56,6 @@ export function CollapsedInputSummaryBar({
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onEditInput}
-          className="w-fit rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
-        >
-          입력값 수정
-        </button>
       </div>
     </section>
   );

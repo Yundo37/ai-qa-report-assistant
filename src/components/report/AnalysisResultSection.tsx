@@ -20,6 +20,7 @@ import type {
 type AnalysisResultSectionProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   analysisSummaryRef: RefObject<HTMLElement | null>;
+  overallReportCanvasRef: RefObject<HTMLDivElement | null>;
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
@@ -38,6 +39,7 @@ type AnalysisResultSectionProps = {
 export function AnalysisResultSection({
   analysisSummary,
   analysisSummaryRef,
+  overallReportCanvasRef,
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
@@ -55,17 +57,16 @@ export function AnalysisResultSection({
   if (analysisSummary.reportType === "OVERALL") {
     return (
       <section ref={analysisSummaryRef} className="mt-8 w-full overflow-x-auto">
-        <div className="mx-auto w-full min-w-[1200px] max-w-[1440px]">
+        <div
+          ref={overallReportCanvasRef}
+          className="mx-auto w-full min-w-[1200px] max-w-[1440px]"
+        >
           <OverallReportDashboard
             analysisSummary={analysisSummary}
             reportScopeText={reportScopeText}
             aiAnalysisText={aiAnalysisText}
             aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
-            onCreateResultSheet={onCreateResultSheet}
-            isCreatingResultSheet={isCreatingResultSheet}
-            resultSheetMessage={resultSheetMessage}
-            resultSheetUrl={resultSheetUrl}
             reportPeriodText={reportPeriodText}
             reportVersionText={reportVersionText}
             reportRcText={reportRcText}

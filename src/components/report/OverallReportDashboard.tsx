@@ -11,7 +11,6 @@ import { ReportDashboardHeader } from "@/components/report/ReportDashboardHeader
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
-  MessageState,
 } from "@/types/report";
 
 type OverallReportDashboardProps = {
@@ -24,10 +23,6 @@ type OverallReportDashboardProps = {
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
-  onCreateResultSheet: () => void;
-  isCreatingResultSheet: boolean;
-  resultSheetMessage: MessageState;
-  resultSheetUrl: string;
   children: ReactNode;
 };
 
@@ -41,10 +36,6 @@ export function OverallReportDashboard({
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
-  onCreateResultSheet,
-  isCreatingResultSheet,
-  resultSheetMessage,
-  resultSheetUrl,
   children,
 }: OverallReportDashboardProps) {
   return (
@@ -56,10 +47,6 @@ export function OverallReportDashboard({
         reportVersionText={reportVersionText}
         reportRcText={reportRcText}
         generatedAtText={generatedAtText}
-        onCreateResultSheet={onCreateResultSheet}
-        isCreatingResultSheet={isCreatingResultSheet}
-        resultSheetMessage={resultSheetMessage}
-        resultSheetUrl={resultSheetUrl}
         aiExecutiveSummary={aiExecutiveSummary}
         isAiAnalyzing={isAiAnalyzing}
       />

@@ -1,12 +1,10 @@
 "use client";
 
-import { MessagePanel } from "@/components/report/MessagePanel";
 import { QaReleaseStatusCard } from "@/components/report/QaReleaseStatusCard";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
-  MessageState,
 } from "@/types/report";
 
 type ReportDashboardHeaderProps = {
@@ -16,10 +14,6 @@ type ReportDashboardHeaderProps = {
   reportVersionText: string;
   reportRcText: string;
   generatedAtText: string;
-  onCreateResultSheet: () => void;
-  isCreatingResultSheet: boolean;
-  resultSheetMessage: MessageState;
-  resultSheetUrl: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
 };
@@ -77,10 +71,6 @@ export function ReportDashboardHeader({
   reportVersionText,
   reportRcText,
   generatedAtText,
-  onCreateResultSheet,
-  isCreatingResultSheet,
-  resultSheetMessage,
-  resultSheetUrl,
   aiExecutiveSummary,
   isAiAnalyzing,
 }: ReportDashboardHeaderProps) {
@@ -156,34 +146,7 @@ export function ReportDashboardHeader({
         </div>
 
         <div className="flex h-full flex-col">
-          <div className="space-y-2 self-end">
-            <button
-              type="button"
-              onClick={onCreateResultSheet}
-              disabled={isCreatingResultSheet}
-              className="w-auto rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isCreatingResultSheet
-                ? "내보내는 중..."
-                : "Google Sheet로 내보내기"}
-            </button>
-            {resultSheetUrl && (
-              <button
-                type="button"
-                onClick={() => window.open(resultSheetUrl, "_blank")}
-                className="w-auto rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
-              >
-                결과 리포트 열기
-              </button>
-            )}
-            {resultSheetMessage && (
-              <div className="max-w-[300px] rounded-xl bg-white/80 p-2 shadow-sm ring-1 ring-indigo-100">
-                <MessagePanel message={resultSheetMessage} />
-              </div>
-            )}
-          </div>
-
-          <div className="relative mt-4 min-h-[190px] flex-1 overflow-hidden rounded-[1.75rem]">
+          <div className="relative mt-0 min-h-[190px] flex-1 overflow-hidden rounded-[1.75rem]">
             {showAiHeroVisual ? (
               <ReportAssetSlot
                 type="ai-hero"
