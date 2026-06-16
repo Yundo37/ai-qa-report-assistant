@@ -84,10 +84,10 @@ export function OverallReportDashboard({
       <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
       <div className="grid items-stretch gap-5 md:grid-cols-2">
         <div className="min-w-0">
-          <RemainingIssuesDashboardCard issues={analysisSummary.remainingIssues} />
+          <RemainingIssuesDashboardCard analysisSummary={analysisSummary} />
         </div>
         <div className="min-w-0">
-          <QaFollowUpDashboardCard followUps={analysisSummary.qaFollowUps} />
+          <QaFollowUpDashboardCard analysisSummary={analysisSummary} />
         </div>
       </div>
       <DetailedSummarySection>{children}</DetailedSummarySection>

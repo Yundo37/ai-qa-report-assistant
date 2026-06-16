@@ -62,17 +62,17 @@ export function FeatureQaSummaryTable({
     <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-base font-bold leading-5 tracking-tight text-slate-950">
-          Feature QA Summary
+          기능별 QA 요약
         </h2>
         <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium leading-5 text-slate-500">
-          {rows.length} features
+          {rows.length}개 기능
         </span>
       </div>
 
       {rows.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-          <div className="grid grid-cols-[minmax(0,1fr)_44px_48px_74px] bg-slate-50 px-3 py-2 text-center text-[10px] font-semibold text-slate-500">
-            <span className="text-left">Feature</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_60px_60px_60px] bg-slate-50 px-4 py-2 text-center text-[10px] font-semibold text-slate-500">
+            <span className="text-left">기능</span>
             <span className="text-center">Total</span>
             <span className="text-center">Pass</span>
             <span className="text-center">잔여</span>
@@ -89,7 +89,7 @@ export function FeatureQaSummaryTable({
             return (
               <div
                 key={row.title}
-                className="grid grid-cols-[minmax(0,1fr)_44px_48px_74px] items-center border-t border-slate-100 px-3 py-2 text-xs"
+                className="grid grid-cols-[minmax(0,1fr)_60px_60px_60px] items-center border-t border-slate-100 px-4 py-2 text-xs"
               >
                 <span className="min-w-0 truncate font-semibold text-slate-950">
                   {row.title}
@@ -113,7 +113,7 @@ export function FeatureQaSummaryTable({
         </div>
       ) : (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
-          No Feature QA Summary to display.
+          표시할 기능별 QA 요약 데이터가 없습니다.
         </p>
       )}
     </section>

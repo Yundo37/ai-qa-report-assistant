@@ -6,11 +6,11 @@ import type {
 const TOTAL_ISSUE_COLOR = "#6d5ef6";
 const HIGH_ISSUE_COLOR = "#e11d48";
 const CHART_WIDTH = 720;
-const CHART_HEIGHT = 360;
+const CHART_HEIGHT = 320;
 const CHART_PADDING = {
-  top: 62,
+  top: 54,
   right: 62,
-  bottom: 58,
+  bottom: 54,
   left: 66,
 };
 
@@ -92,8 +92,10 @@ function createVersionTrendItems({
 
 function VersionIssueTrendChart({
   items,
+  currentVersion,
 }: {
   items: VersionIssueSummaryItem[];
+  currentVersion: string;
 }) {
   const plotWidth =
     CHART_WIDTH - CHART_PADDING.left - CHART_PADDING.right;
@@ -114,12 +116,12 @@ function VersionIssueTrendChart({
 
   if (!hasTrendData) {
     return (
-      <div className="relative mt-3 aspect-[2/1] w-full overflow-hidden rounded-3xl bg-white/65">
+      <div className="relative mt-3 h-56 w-full overflow-hidden rounded-3xl bg-white/65">
         <div className="absolute inset-0 bg-[url('/assets/report/pattern-chart-bg-v2.svg')] bg-cover bg-center bg-no-repeat" />
         <div className="relative z-10 grid h-full place-items-center px-6 text-center">
           <div>
             <p className="text-sm font-semibold text-slate-800">
-              Version Trend 데이터가 부족합니다.
+              버전별 이슈 추세 데이터가 부족합니다.
             </p>
             <p className="mt-2 text-xs leading-5 text-slate-500">
               버전별 이슈 추이를 표시할 데이터가 충분하지 않습니다.
@@ -138,18 +140,18 @@ function VersionIssueTrendChart({
             className="size-2 shrink-0 rounded-full"
             style={{ backgroundColor: TOTAL_ISSUE_COLOR }}
           />
-          <span>Total Issues</span>
+          <span>전체 이슈</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span
             className="size-2 shrink-0 rounded-full"
             style={{ backgroundColor: HIGH_ISSUE_COLOR }}
           />
-          <span>High+ Issues</span>
+          <span>High / Highest 이슈</span>
         </span>
       </div>
 
-      <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-2xl bg-white/55">
+      <div className="relative mt-2 h-64 w-full overflow-hidden rounded-2xl bg-white/55">
         <div className="absolute inset-0 bg-[url('/assets/report/pattern-chart-bg-v2.svg')] bg-cover bg-center bg-no-repeat" />
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
@@ -209,7 +211,11 @@ function VersionIssueTrendChart({
                   x={x}
                   y={CHART_HEIGHT - 18}
                   textAnchor="middle"
-                  className="fill-slate-500 text-[10px] font-bold"
+                  className={
+                    item.version === currentVersion
+                      ? "fill-indigo-700 text-[11px] font-black"
+                      : "fill-slate-500 text-[10px] font-bold"
+                  }
                 >
                   {item.version}
                 </text>
@@ -267,21 +273,34 @@ function VersionIssueTrendChart({
                 />
                 {totalPoints.map((point) => (
                   <g key={`total-${point.version}`}>
+                    {point.version === currentVersion && (
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r="10"
+                        fill={TOTAL_ISSUE_COLOR}
+                        opacity="0.14"
+                      />
+                    )}
                     <text
                       x={point.x}
                       y={clampChartLabelY(point.y - 12)}
                       textAnchor="middle"
-                      className="fill-indigo-700 text-[10px] font-black"
+                      className={
+                        point.version === currentVersion
+                          ? "fill-indigo-800 text-[11px] font-black"
+                          : "fill-indigo-700 text-[10px] font-black"
+                      }
                     >
                       {point.total.toLocaleString()}
                     </text>
                     <circle
                       cx={point.x}
                       cy={point.y}
-                      r="4"
+                      r={point.version === currentVersion ? "5" : "4"}
                       fill="white"
                       stroke={TOTAL_ISSUE_COLOR}
-                      strokeWidth="2"
+                      strokeWidth={point.version === currentVersion ? "2.6" : "2"}
                     >
                       <title>
                         {point.version}: {point.total.toLocaleString()} total issues
@@ -342,31 +361,28 @@ export function IssuePatternAnalysisCard({
   });
 
   return (
-    <section className="rounded-[2rem] border border-indigo-100 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-            Issue Pattern
-          </p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-950">
-            Issue Pattern & Version Risk
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            반복 이슈 패턴과 릴리즈 버전별 이슈 규모를 함께 확인합니다.
-          </p>
+    <div className="grid items-stretch gap-5 lg:grid-cols-2">
+      <section className="flex h-full min-h-[420px] min-w-0 flex-col rounded-[2rem] border border-indigo-100 bg-white p-5 shadow-sm">
+        <div className="flex min-h-[82px] flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold tracking-tight text-slate-950">
+              이슈 패턴 분석
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              반복적으로 확인된 이슈 유형을 기준으로 주요 리스크 패턴을 확인합니다.
+            </p>
+          </div>
+          <span className="h-7 w-fit shrink-0 whitespace-nowrap rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold leading-5 text-indigo-700">
+            총 {totalPatterns.toLocaleString()}건
+          </span>
         </div>
-        <span className="w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          Total {totalPatterns.toLocaleString()} Patterns
-        </span>
-      </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
-        <div className="h-fit rounded-3xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+        <div className="mt-2 flex flex-1 flex-col rounded-3xl border border-slate-200 bg-slate-50/70 px-4 py-4">
           <p className="text-sm font-semibold text-slate-950">
-            Top 5 Pattern Signals
+            주요 이슈 패턴 TOP 5
           </p>
           {patterns.length > 0 ? (
-            <div className="mt-4 divide-y divide-slate-200/80">
+            <div className="mt-4 flex-1 divide-y divide-slate-200/80">
               {patterns.map((pattern, index) => {
                 const ratio = maxCount > 0 ? (pattern.count / maxCount) * 100 : 0;
                 const percent =
@@ -391,11 +407,11 @@ export function IssuePatternAnalysisCard({
                         />
                       </div>
                     </div>
-                    <span className="text-right text-xs font-semibold text-slate-500">
-                      <span className="block text-sm font-bold text-slate-900">
+                    <span className="flex translate-y-2 items-baseline justify-end gap-1.5 text-right text-xs font-semibold text-slate-500">
+                      <span className="text-sm font-bold text-slate-900">
                         {pattern.count.toLocaleString()}
                       </span>
-                      {percent.toFixed(1)}%
+                      <span>{percent.toFixed(1)}%</span>
                     </span>
                   </div>
                 );
@@ -403,29 +419,36 @@ export function IssuePatternAnalysisCard({
             </div>
           ) : (
             <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
-              No repeated issue pattern data to display.
+              반복 이슈 패턴 데이터가 없습니다.
             </p>
           )}
         </div>
+      </section>
 
-        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/50 p-5 shadow-sm shadow-indigo-50">
+      <section className="flex h-full min-h-[420px] min-w-0 flex-col rounded-[2rem] border border-indigo-100 bg-white p-5 shadow-sm">
+        <div className="flex min-h-[82px] flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">
-              Version Issue Trend
-            </p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              이전 릴리즈와 현재 버전의 전체 Jira 이슈 수 추이를 비교합니다.
+            <h2 className="text-xl font-bold tracking-tight text-slate-950">
+              버전별 이슈 추세
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              릴리즈 버전별 Jira 이슈 규모와 High / Highest 이슈 추이를 확인합니다.
             </p>
           </div>
-
-          <VersionIssueTrendChart items={versionTrendItems} />
-
-          <div className="mt-3 rounded-2xl border border-indigo-100 bg-white/70 px-3 py-2 text-[11px] leading-5 text-slate-500">
-            Version Trend는 업데이트 버전 비교이며, RC Progress는 현재{" "}
-            {currentBaseVersion || "릴리즈"} RC 흐름 기준입니다.
-          </div>
+          {currentBaseVersion && (
+            <span className="h-7 w-fit shrink-0 whitespace-nowrap rounded-full border border-indigo-200 bg-indigo-100 px-3 py-1 text-xs font-bold leading-5 text-indigo-800 shadow-sm shadow-indigo-100">
+              현재 버전 {currentBaseVersion}
+            </span>
+          )}
         </div>
-      </div>
-    </section>
+
+        <div className="mt-2 flex flex-1 flex-col rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/50 px-4 py-3 shadow-sm shadow-indigo-50">
+          <VersionIssueTrendChart
+            items={versionTrendItems}
+            currentVersion={currentBaseVersion}
+          />
+        </div>
+      </section>
+    </div>
   );
 }

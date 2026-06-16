@@ -92,10 +92,10 @@ export function ReleaseRiskSummaryCard({
     <section className="flex h-full min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-base font-bold leading-5 tracking-tight text-slate-950">
-          Release Risk Summary
+          릴리즈 리스크 요약
         </h2>
         <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold leading-5 text-slate-500">
-          Total {remainingTotal}
+          전체 {remainingTotal}
         </span>
       </div>
 
@@ -120,23 +120,25 @@ export function ReleaseRiskSummaryCard({
         {supportItems.map((item) => (
           <div
             key={item.label}
-            className="flex min-w-0 items-start gap-2 text-indigo-600"
+            className="flex min-w-0 items-center gap-2.5 text-indigo-600"
           >
             <ReportAssetSlot
               type={item.slotType}
-              className="mt-0.5 size-5 shrink-0 rounded-md bg-transparent bg-none shadow-none"
-              imageClassName="size-4 opacity-80"
+              className="size-7 shrink-0 rounded-md bg-transparent bg-none shadow-none"
+              imageClassName="size-6 opacity-80"
             />
             <div className="min-w-0 leading-none">
               <p className="text-[11px] font-semibold text-slate-500">
                 {item.label}
               </p>
-              <p className={`mt-1 text-sm font-bold ${item.className}`}>
-                {item.value}
-              </p>
-              <p className={`mt-0.5 text-[10px] font-semibold ${item.className}`}>
-                {item.percentage}
-              </p>
+              <div className={`mt-1 flex items-baseline gap-1.5 ${item.className}`}>
+                <span className="text-base font-bold leading-none">
+                  {item.value}
+                </span>
+                <span className="text-[10px] font-semibold leading-none opacity-75">
+                  {item.percentage}
+                </span>
+              </div>
             </div>
           </div>
         ))}

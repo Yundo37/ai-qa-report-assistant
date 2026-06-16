@@ -1,5 +1,9 @@
 import { useCallback } from "react";
 import { sanitizeAiExecutiveSummary } from "@/lib/report/aiExecutiveSummarySanitizer";
+import {
+  sanitizeExecutiveSummaryTone,
+  sanitizeReportTone,
+} from "@/lib/report/reportToneSanitizer";
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
@@ -126,12 +130,16 @@ export function useAiAnalysisAction({
             analysisSummary: targetAnalysisSummary,
           })
         : null;
+      const sanitizedAnalysisText = sanitizeReportTone(
+        normalizedResponse.analysis || EMPTY_AI_ANALYSIS_MESSAGE
+      );
+      const toneSanitizedExecutiveSummary = sanitizedExecutiveSummary
+        ? sanitizeExecutiveSummaryTone(sanitizedExecutiveSummary)
+        : null;
 
       if (aiAnalysisRequestIdRef.current === requestId) {
-        setAiAnalysisText(
-          normalizedResponse.analysis || EMPTY_AI_ANALYSIS_MESSAGE
-        );
-        setAiExecutiveSummary(sanitizedExecutiveSummary);
+        setAiAnalysisText(sanitizedAnalysisText);
+        setAiExecutiveSummary(toneSanitizedExecutiveSummary);
       }
     } catch (error) {
       console.error("AI Analysis Error:", error);

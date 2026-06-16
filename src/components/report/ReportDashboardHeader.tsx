@@ -155,8 +155,8 @@ export function ReportDashboardHeader({
               className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
             >
               {isCreatingResultSheet
-                ? "Exporting..."
-                : "Export to Google Sheet"}
+                ? "내보내는 중..."
+                : "Google Sheet로 내보내기"}
             </button>
             {resultSheetUrl && (
               <button
@@ -164,7 +164,7 @@ export function ReportDashboardHeader({
                 onClick={() => window.open(resultSheetUrl, "_blank")}
                 className="w-full rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700 lg:w-auto"
               >
-                Open Result Report
+                결과 리포트 열기
               </button>
             )}
             {resultSheetMessage && (
