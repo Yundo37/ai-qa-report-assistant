@@ -162,6 +162,7 @@ export function ReportAssistantPageView({
             aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
             onAnalyze={onAnalyze}
+            onStartNewReport={onStartNewReport}
             reportScopeText={reportScopeText}
             reportPeriodText={reportPeriodText}
             reportTitleText={reportInputPanelProps.reportTitle}

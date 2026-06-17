@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ClipboardCheck,
+  Plus,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -25,6 +26,7 @@ type FeatureReportDashboardProps = {
   aiAnalysisText: string;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
+  onStartNewReport: () => void;
   reportTitleText: string;
   reportPeriodText: string;
   reportVersionText: string;
@@ -315,6 +317,7 @@ export function FeatureReportDashboard({
   analysisSummary,
   aiAnalysisText,
   isAiAnalyzing,
+  onStartNewReport,
   reportTitleText,
   reportPeriodText,
   reportVersionText,
@@ -323,6 +326,9 @@ export function FeatureReportDashboard({
 }: FeatureReportDashboardProps) {
   const metrics = createFeatureMetrics(analysisSummary);
   const featureName = reportTitleText.trim() || "기능명 미입력";
+  const featureResultTitle = /QA\s*결과/i.test(featureName)
+    ? featureName
+    : `${featureName} QA 결과`;
   const versionLabel = reportVersionText.trim() || "버전 미입력";
   const rcLabel = reportRcText.trim() || "RC 미입력";
   const periodLabel = reportPeriodText || "기간 미설정";
@@ -365,10 +371,9 @@ export function FeatureReportDashboard({
         generatedAtText={generatedLabel}
         aiExecutiveSummary={null}
         isAiAnalyzing={isAiAnalyzing}
-        eyebrow="기능 QA 리포트"
+        eyebrow={null}
         title="기능 QA 결과 리포트"
-        primaryText={featureName}
-        description="Google Spreadsheet와 Jira 이슈를 기반으로 단일 기능의 QA 상태와 확인 항목을 요약합니다."
+        primaryText={featureResultTitle}
         badges={<></>}
         metaItems={[
           {
@@ -502,6 +507,17 @@ export function FeatureReportDashboard({
           )}
         </div>
       </DetailedSummarySection>
+
+      <div className="flex justify-end" data-export-ignore="true">
+        <button
+          type="button"
+          onClick={onStartNewReport}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-indigo-200 hover:bg-slate-50 hover:text-indigo-700"
+        >
+          <Plus className="size-4 text-indigo-500" aria-hidden="true" />
+          <span>새 리포트 작성하기</span>
+        </button>
+      </div>
 
       <footer className="border-t border-slate-200 pt-4 text-xs text-slate-400">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">

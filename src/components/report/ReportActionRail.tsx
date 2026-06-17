@@ -59,17 +59,34 @@ function downloadDataUrl(dataUrl: string, fileName: string) {
 }
 
 async function captureReportCanvas(reportCanvas: HTMLElement) {
-  return toPng(reportCanvas, {
-    backgroundColor: REPORT_CAPTURE_BACKGROUND,
-    cacheBust: true,
-    pixelRatio: 2,
-    width: reportCanvas.scrollWidth,
-    height: reportCanvas.scrollHeight,
-    style: {
-      width: `${reportCanvas.scrollWidth}px`,
-      height: `${reportCanvas.scrollHeight}px`,
-    },
+  const ignoredElements = Array.from(
+    reportCanvas.querySelectorAll<HTMLElement>('[data-export-ignore="true"]')
+  );
+  const previousDisplayValues = ignoredElements.map(
+    (element) => element.style.display
+  );
+
+  ignoredElements.forEach((element) => {
+    element.style.display = "none";
   });
+
+  try {
+    return await toPng(reportCanvas, {
+      backgroundColor: REPORT_CAPTURE_BACKGROUND,
+      cacheBust: true,
+      pixelRatio: 2,
+      width: reportCanvas.scrollWidth,
+      height: reportCanvas.scrollHeight,
+      style: {
+        width: `${reportCanvas.scrollWidth}px`,
+        height: `${reportCanvas.scrollHeight}px`,
+      },
+    });
+  } finally {
+    ignoredElements.forEach((element, index) => {
+      element.style.display = previousDisplayValues[index];
+    });
+  }
 }
 
 async function getImageSize(dataUrl: string) {
@@ -259,7 +276,12 @@ export function ReportActionRail({
               title="Google Sheet"
             >
               <Sheet className="size-4 text-indigo-500" aria-hidden="true" />
-              <span>{isCreatingResultSheet ? "내보내는 중..." : "Google Sheet"}</span>
+              <span className="min-w-0 flex-1">
+                {isCreatingResultSheet ? "내보내는 중..." : "Google Sheet"}
+              </span>
+              <span className="rounded-full border border-indigo-100 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-indigo-600">
+                Beta
+              </span>
             </button>
             <button
               type="button"

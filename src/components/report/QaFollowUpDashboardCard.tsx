@@ -22,6 +22,34 @@ function tagClassName(tag: QaReviewTag) {
   return "bg-emerald-50 text-emerald-700 ring-emerald-100";
 }
 
+function normalizeFallbackText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, "");
+}
+
+function isGenericFallbackReviewItem(
+  item: ReturnType<typeof buildQaReviewItems>[number]
+) {
+  const normalizedTitle = normalizeFallbackText(item.title);
+  const normalizedDescription = normalizeFallbackText(item.description);
+  const normalizedText = `${normalizedTitle} ${normalizedDescription}`;
+  const genericFallbackKeywords = [
+    "원문확인필요",
+    "원문확인",
+    "상세확인",
+    "분류불가",
+    "미분류",
+    "기타",
+    "추가확인",
+    "확인필요",
+  ];
+
+  if (item.id.startsWith("generic:unclassified:")) return true;
+
+  return genericFallbackKeywords.some((keyword) =>
+    normalizedText.includes(keyword)
+  );
+}
+
 export function QaFollowUpDashboardCard({
   analysisSummary,
   className = "",
@@ -33,7 +61,10 @@ export function QaFollowUpDashboardCard({
 }) {
   const [showAll, setShowAll] = useState(false);
   const reviewItems = useMemo(
-    () => buildQaReviewItems(analysisSummary),
+    () =>
+      buildQaReviewItems(analysisSummary).filter(
+        (item) => !isGenericFallbackReviewItem(item)
+      ),
     [analysisSummary]
   );
   const defaultItems = useMemo(
@@ -53,7 +84,7 @@ export function QaFollowUpDashboardCard({
             QA 협의/확인 항목
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            QA 코멘트와 잔여 이슈를 기준으로 협의된 내용과 후속 확인 대상을 정리합니다.
+            TC Comment 중 ##로 표시된 협의/후속 확인 항목만 선별해 정리합니다.
           </p>
         </div>
         {hasMoreItems && (

@@ -31,7 +31,7 @@ export function ReportTypeSelector({
           리포트 유형
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          생성할 QA 리포트 유형을 선택하세요.
+          분석 범위에 따라 전체 릴리즈 리포트 또는 단일 기능 리포트를 선택하세요.
         </p>
       </div>
 

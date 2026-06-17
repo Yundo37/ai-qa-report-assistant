@@ -38,7 +38,7 @@ type ReportDashboardHeaderProps = {
   generatedAtText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
-  eyebrow?: string;
+  eyebrow?: string | null;
   title?: string;
   description?: string;
   primaryText?: string;
@@ -164,12 +164,14 @@ export function ReportDashboardHeader({
         }
       >
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-            {eyebrow ?? "QA Release Dashboard"}
-          </p>
+          {eyebrow !== null && (
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+              {eyebrow ?? "QA Release Dashboard"}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-              {title ?? "Overall QA Result Report"}
+              {title ?? "전체 QA 결과 리포트"}
             </h1>
             {badges ?? (
               <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-bold text-violet-700 ring-1 ring-violet-200">
@@ -182,10 +184,11 @@ export function ReportDashboardHeader({
               {primaryText}
             </p>
           )}
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-            {description ??
-              "Google Spreadsheet QA 데이터와 Jira 이슈를 기반으로 전체 릴리즈 QA 상태를 요약합니다."}
-          </p>
+          {description && (
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+              {description}
+            </p>
+          )}
           <dl className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
             {metaItems.map((item) => (
               <div key={item.label} className="flex min-w-0 items-center gap-2">
