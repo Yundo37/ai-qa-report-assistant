@@ -12,13 +12,13 @@ import {
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
-  MessageState,
 } from "@/types/report";
 
 type ReportAssistantPageViewProps = ReportInputPanelProps & {
   analysisSummary: AnalysisSummaryState;
   analysisSummaryRef: RefObject<HTMLElement | null>;
   overallReportCanvasRef: RefObject<HTMLDivElement | null>;
+  featureReportCanvasRef: RefObject<HTMLDivElement | null>;
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
@@ -26,8 +26,6 @@ type ReportAssistantPageViewProps = ReportInputPanelProps & {
   onCreateResultSheet: () => void;
   onStartNewReport: () => void;
   isCreatingResultSheet: boolean;
-  resultSheetMessage: MessageState;
-  resultSheetUrl: string;
   resultSheetToast: {
     type: "success" | "error";
     title: string;
@@ -46,6 +44,7 @@ export function ReportAssistantPageView({
   analysisSummary,
   analysisSummaryRef,
   overallReportCanvasRef,
+  featureReportCanvasRef,
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
@@ -53,8 +52,6 @@ export function ReportAssistantPageView({
   onCreateResultSheet,
   onStartNewReport,
   isCreatingResultSheet,
-  resultSheetMessage,
-  resultSheetUrl,
   resultSheetToast,
   onDismissResultSheetToast,
   reportScopeText,
@@ -64,17 +61,28 @@ export function ReportAssistantPageView({
   onHideInputDashboard,
   ...reportInputPanelProps
 }: ReportAssistantPageViewProps) {
-  const isOverallReportCanvas = analysisSummary?.reportType === "OVERALL";
-  const showActionRail =
-    Boolean(analysisSummary) && isOverallReportCanvas && !isInputDashboardVisible;
+  const isFeatureReportCanvas = analysisSummary?.reportType === "FEATURE";
+  const showActionRail = Boolean(analysisSummary) && !isInputDashboardVisible;
+  const actionRailCanvasRef = isFeatureReportCanvas
+    ? featureReportCanvasRef
+    : overallReportCanvasRef;
+  const actionRailFileNamePrefix = isFeatureReportCanvas
+    ? "feature-qa-report"
+    : "overall-qa-report";
+  const pageBackgroundClassName = isInputDashboardVisible
+    ? "bg-slate-50"
+    : "bg-white";
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main
+      className={`min-h-screen overflow-x-hidden ${pageBackgroundClassName} text-slate-950`}
+    >
       {showActionRail && (
         <ReportActionRail
-          reportCanvasRef={overallReportCanvasRef}
+          reportCanvasRef={actionRailCanvasRef}
           reportVersionText={reportInputPanelProps.reportVersion}
           reportRcText={reportInputPanelProps.reportRcVersion}
+          reportFileNamePrefix={actionRailFileNamePrefix}
           onStartNewReport={onStartNewReport}
           onCreateResultSheet={onCreateResultSheet}
           isCreatingResultSheet={isCreatingResultSheet}
@@ -124,10 +132,10 @@ export function ReportAssistantPageView({
           )}
         </div>
       )}
-      <section className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
+      <section className="mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
         {isInputDashboardVisible ? (
-          <div className="w-full overflow-x-auto pb-2">
-            <div className="mx-auto w-full min-w-[1024px] max-w-[1200px]">
+          <div className="min-w-0 w-full overflow-x-auto pb-2">
+            <div className="mx-auto w-full min-w-[1080px] max-w-[1280px]">
               {analysisSummary && (
                 <div className="mb-6 flex justify-end">
                   <button
@@ -149,16 +157,14 @@ export function ReportAssistantPageView({
             analysisSummary={analysisSummary}
             analysisSummaryRef={analysisSummaryRef}
             overallReportCanvasRef={overallReportCanvasRef}
+            featureReportCanvasRef={featureReportCanvasRef}
             aiAnalysisText={aiAnalysisText}
             aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
             onAnalyze={onAnalyze}
-            onCreateResultSheet={onCreateResultSheet}
-            isCreatingResultSheet={isCreatingResultSheet}
-            resultSheetMessage={resultSheetMessage}
-            resultSheetUrl={resultSheetUrl}
             reportScopeText={reportScopeText}
             reportPeriodText={reportPeriodText}
+            reportTitleText={reportInputPanelProps.reportTitle}
             reportVersionText={reportInputPanelProps.reportVersion}
             reportRcText={reportInputPanelProps.reportRcVersion}
             generatedAtText={generatedAtText}

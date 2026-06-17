@@ -1,36 +1,30 @@
 "use client";
 
 import type { RefObject } from "react";
-import { AiAnalysisPreview } from "@/components/report/AiAnalysisPreview";
-import { FeatureReportPreview } from "@/components/report/FeatureReportPreview";
-import { FeatureReportResultSection } from "@/components/report/FeatureReportResultSection";
+import { FeatureReportDashboard } from "@/components/report/FeatureReportDashboard";
 import { JiraSummarySection } from "@/components/report/JiraSummarySection";
 import { OverallReportPreview } from "@/components/report/OverallReportPreview";
 import { OverallReportDashboard } from "@/components/report/OverallReportDashboard";
 import { OverallReportResultSection } from "@/components/report/OverallReportResultSection";
 import { QaFollowUpList } from "@/components/report/QaFollowUpList";
 import { RemainingIssueList } from "@/components/report/RemainingIssueList";
-import { ResultSheetActionPanel } from "@/components/report/ResultSheetActionPanel";
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
-  MessageState,
 } from "@/types/report";
 
 type AnalysisResultSectionProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   analysisSummaryRef: RefObject<HTMLElement | null>;
   overallReportCanvasRef: RefObject<HTMLDivElement | null>;
+  featureReportCanvasRef: RefObject<HTMLDivElement | null>;
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
   onAnalyze: () => void;
-  onCreateResultSheet: () => void;
-  isCreatingResultSheet: boolean;
-  resultSheetMessage: MessageState;
-  resultSheetUrl: string;
   reportScopeText: string;
   reportPeriodText: string;
+  reportTitleText: string;
   reportVersionText: string;
   reportRcText: string;
   generatedAtText: string;
@@ -40,26 +34,27 @@ export function AnalysisResultSection({
   analysisSummary,
   analysisSummaryRef,
   overallReportCanvasRef,
+  featureReportCanvasRef,
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
   onAnalyze,
-  onCreateResultSheet,
-  isCreatingResultSheet,
-  resultSheetMessage,
-  resultSheetUrl,
   reportScopeText,
   reportPeriodText,
+  reportTitleText,
   reportVersionText,
   reportRcText,
   generatedAtText,
 }: AnalysisResultSectionProps) {
   if (analysisSummary.reportType === "OVERALL") {
     return (
-      <section ref={analysisSummaryRef} className="mt-8 w-full overflow-x-auto">
+      <section
+        ref={analysisSummaryRef}
+        className="mt-8 min-w-0 w-full overflow-x-auto pb-2"
+      >
         <div
           ref={overallReportCanvasRef}
-          className="mx-auto w-full min-w-[1200px] max-w-[1440px]"
+          className="mx-auto w-full min-w-[1080px] max-w-[1320px]"
         >
           <OverallReportDashboard
             analysisSummary={analysisSummary}
@@ -86,27 +81,27 @@ export function AnalysisResultSection({
   }
 
   return (
-    <section ref={analysisSummaryRef} className="mt-8 space-y-6">
-      <AiAnalysisPreview
-        analysisText={aiAnalysisText}
-        isLoading={isAiAnalyzing}
-        onAnalyze={onAnalyze}
-      />
-      <ResultSheetActionPanel
-        reportType={analysisSummary.reportType}
-        onCreateResultSheet={onCreateResultSheet}
-        isCreatingResultSheet={isCreatingResultSheet}
-        resultSheetMessage={resultSheetMessage}
-        resultSheetUrl={resultSheetUrl}
-      />
-      <FeatureReportResultSection
-        analysisSummary={analysisSummary}
-        reportScopeText={reportScopeText}
-      />
-      <JiraSummarySection analysisSummary={analysisSummary} />
-      <FeatureReportPreview analysisSummary={analysisSummary} />
-      <RemainingIssueList issues={analysisSummary.remainingIssues} />
-      <QaFollowUpList analysisSummary={analysisSummary} />
+    <section
+      ref={analysisSummaryRef}
+      className="mt-8 min-w-0 w-full overflow-x-auto pb-2"
+    >
+      <div
+        id="feature-report-canvas"
+        ref={featureReportCanvasRef}
+        className="mx-auto w-full min-w-[1080px] max-w-[1320px]"
+      >
+        <FeatureReportDashboard
+          analysisSummary={analysisSummary}
+          aiAnalysisText={aiAnalysisText}
+          isAiAnalyzing={isAiAnalyzing}
+          onAnalyze={onAnalyze}
+          reportTitleText={reportTitleText}
+          reportPeriodText={reportPeriodText}
+          reportVersionText={reportVersionText}
+          reportRcText={reportRcText}
+          generatedAtText={generatedAtText}
+        />
+      </div>
     </section>
   );
 }

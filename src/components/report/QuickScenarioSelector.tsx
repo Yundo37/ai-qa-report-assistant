@@ -1,11 +1,20 @@
 import type { QuickScenarioSelectorProps } from "@/components/report/reportInputTypes";
 
 export function QuickScenarioSelector({
+  isFeatureReport,
   quickScenarioPresets,
   legacyQuickScenarioPresets,
   applyingQuickScenario,
   onApplyQuickScenario: applyQuickScenario,
 }: QuickScenarioSelectorProps) {
+  const scenarioEntries = Object.entries(quickScenarioPresets);
+  const scenarioGroups = isFeatureReport
+    ? [
+        scenarioEntries.filter(([scenario]) => scenario.startsWith("메인피쳐")),
+        scenarioEntries.filter(([scenario]) => scenario.startsWith("서브피쳐")),
+      ].filter((group) => group.length > 0)
+    : [scenarioEntries];
+
   return (
     <section
       id="quick-scenario-section"
@@ -27,35 +36,42 @@ export function QuickScenarioSelector({
         )}
       </div>
 
-      <div className="flex flex-wrap justify-start gap-2">
-        {Object.entries(quickScenarioPresets).map(([scenario, preset]) => {
-          const isApplying = applyingQuickScenario === scenario;
+      <div className="space-y-2">
+        {scenarioGroups.map((scenarioGroup, groupIndex) => (
+          <div
+            key={groupIndex}
+            className="flex flex-wrap justify-start gap-2"
+          >
+            {scenarioGroup.map(([scenario, preset]) => {
+              const isApplying = applyingQuickScenario === scenario;
 
-          return (
-            <button
-              key={scenario}
-              type="button"
-              onClick={() => applyQuickScenario(scenario, preset)}
-              disabled={Boolean(applyingQuickScenario)}
-              className={`inline-flex h-9 w-fit items-center rounded-full border bg-white px-3.5 py-1.5 text-left text-sm font-semibold leading-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isApplying
-                  ? "border-indigo-500 ring-2 ring-indigo-100"
-                  : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"
-              }`}
-            >
-              <span className="block min-w-0 text-slate-950">
-                <span className="block truncate">
-                  {isApplying ? "Applying..." : scenario}
-                </span>
-                {isApplying && (
-                  <span className="mt-0.5 block truncate text-xs leading-4 text-slate-500">
-                    입력값 적용 중
+              return (
+                <button
+                  key={scenario}
+                  type="button"
+                  onClick={() => applyQuickScenario(scenario, preset)}
+                  disabled={Boolean(applyingQuickScenario)}
+                  className={`inline-flex h-9 w-fit items-center rounded-full border bg-white px-3.5 py-1.5 text-left text-sm font-semibold leading-none transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isApplying
+                      ? "border-indigo-500 ring-2 ring-indigo-100"
+                      : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+                  }`}
+                >
+                  <span className="block min-w-0 text-slate-950">
+                    <span className="block truncate">
+                      {isApplying ? "Applying..." : scenario}
+                    </span>
+                    {isApplying && (
+                      <span className="mt-0.5 block truncate text-xs leading-4 text-slate-500">
+                        입력값 적용 중
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="hidden">

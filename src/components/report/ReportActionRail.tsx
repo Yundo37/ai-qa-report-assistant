@@ -15,6 +15,7 @@ type ReportActionRailProps = {
   reportCanvasRef: RefObject<HTMLDivElement | null>;
   reportVersionText: string;
   reportRcText: string;
+  reportFileNamePrefix?: string;
   onStartNewReport: () => void;
   onCreateResultSheet: () => void;
   isCreatingResultSheet: boolean;
@@ -27,7 +28,8 @@ const REPORT_CAPTURE_BACKGROUND = "#f8fafc";
 function createReportFileName(
   extension: ExportFormat,
   reportVersionText: string,
-  reportRcText: string
+  reportRcText: string,
+  reportFileNamePrefix: string
 ) {
   const versionParts = [reportVersionText, reportRcText]
     .map((value) => value.trim())
@@ -40,7 +42,7 @@ function createReportFileName(
   const dateText = new Date().toISOString().slice(0, 10);
 
   return [
-    "overall-qa-report",
+    reportFileNamePrefix,
     safeVersion || dateText,
     safeVersion ? dateText : "",
   ]
@@ -87,28 +89,31 @@ export function ReportActionRail({
   reportCanvasRef,
   reportVersionText,
   reportRcText,
+  reportFileNamePrefix = "overall-qa-report",
   onStartNewReport,
   onCreateResultSheet,
   isCreatingResultSheet,
 }: ReportActionRailProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [isSavingPdf, setIsSavingPdf] = useState(false);
 
   const isExporting = isCreatingResultSheet || isSavingImage || isSavingPdf;
+  const isMenuOpen = isPinned || isHovered;
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isMenuOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        setIsPinned(false);
       }
     };
     const handlePointerDown = (event: PointerEvent) => {
       if (!panelRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsPinned(false);
       }
     };
 
@@ -119,7 +124,7 @@ export function ReportActionRail({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [isOpen]);
+  }, [isMenuOpen]);
 
   const handleSaveImage = async () => {
     if (isSavingImage) return;
@@ -135,7 +140,12 @@ export function ReportActionRail({
       const dataUrl = await captureReportCanvas(reportCanvas);
       downloadDataUrl(
         dataUrl,
-        createReportFileName("png", reportVersionText, reportRcText)
+        createReportFileName(
+          "png",
+          reportVersionText,
+          reportRcText,
+          reportFileNamePrefix
+        )
       );
     } catch (error) {
       console.error("Report image export failed:", error);
@@ -178,7 +188,14 @@ export function ReportActionRail({
         remainingHeight -= contentHeight;
       }
 
-      pdf.save(createReportFileName("pdf", reportVersionText, reportRcText));
+      pdf.save(
+        createReportFileName(
+          "pdf",
+          reportVersionText,
+          reportRcText,
+          reportFileNamePrefix
+        )
+      );
     } catch (error) {
       console.error("Report PDF export failed:", error);
       window.alert("PDF 저장에 실패했습니다. 이미지 저장을 먼저 이용해주세요.");
@@ -198,19 +215,21 @@ export function ReportActionRail({
       data-report-action-rail="true"
       className="fixed bottom-24 left-2 z-40 flex max-w-[calc(100vw-1rem)] flex-col-reverse items-start gap-3 xl:bottom-28"
       aria-label="Report actions"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <button
         type="button"
         className={mainButtonClass}
-        onClick={() => setIsOpen((value) => !value)}
-        aria-label={isOpen ? "리포트 액션 닫기" : "리포트 액션 열기"}
-        aria-expanded={isOpen}
-        title={isOpen ? "리포트 액션 닫기" : "리포트 액션 열기"}
+        onClick={() => setIsPinned((value) => !value)}
+        aria-label={isPinned ? "리포트 액션 고정 해제" : "리포트 액션 고정"}
+        aria-expanded={isMenuOpen}
+        title={isPinned ? "리포트 액션 고정 해제" : "리포트 액션 고정"}
       >
         <Menu className="size-6 text-white" aria-hidden="true" />
       </button>
 
-      {isOpen && (
+      {isMenuOpen && (
         <aside className="w-[calc(100vw-2rem)] max-w-72 rounded-2xl border border-indigo-100 bg-white/90 p-3 shadow-2xl shadow-indigo-200/40 backdrop-blur sm:w-72">
           <div className="border-b border-indigo-50 px-2 pb-3">
             <p className="text-xs font-bold uppercase tracking-wide text-indigo-500">

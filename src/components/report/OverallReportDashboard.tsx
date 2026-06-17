@@ -2,11 +2,10 @@ import type { ReactNode } from "react";
 import { AiExecutiveSummaryCard } from "@/components/report/AiExecutiveSummaryCard";
 import { DetailedSummarySection } from "@/components/report/DetailedSummarySection";
 import { FeatureQaSummaryTable } from "@/components/report/FeatureQaSummaryTable";
+import { IssueReviewCardsSection } from "@/components/report/IssueReviewCardsSection";
 import { IssuePatternAnalysisCard } from "@/components/report/IssuePatternAnalysisCard";
-import { QaFollowUpDashboardCard } from "@/components/report/QaFollowUpDashboardCard";
 import { RcProgressCard } from "@/components/report/RcProgressCard";
 import { ReleaseRiskSummaryCard } from "@/components/report/ReleaseRiskSummaryCard";
-import { RemainingIssuesDashboardCard } from "@/components/report/RemainingIssuesDashboardCard";
 import { ReportDashboardHeader } from "@/components/report/ReportDashboardHeader";
 import type {
   AiExecutiveSummaryResult,
@@ -68,14 +67,7 @@ export function OverallReportDashboard({
         </div>
       </div>
       <IssuePatternAnalysisCard analysisSummary={analysisSummary} />
-      <div className="grid grid-cols-2 items-stretch gap-5">
-        <div className="min-w-0">
-          <RemainingIssuesDashboardCard analysisSummary={analysisSummary} />
-        </div>
-        <div className="min-w-0">
-          <QaFollowUpDashboardCard analysisSummary={analysisSummary} />
-        </div>
-      </div>
+      <IssueReviewCardsSection analysisSummary={analysisSummary} />
       <DetailedSummarySection>{children}</DetailedSummarySection>
       <footer className="border-t border-slate-200 pt-4 text-xs text-slate-400">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">

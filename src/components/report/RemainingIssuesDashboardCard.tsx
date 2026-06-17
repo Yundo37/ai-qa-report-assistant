@@ -185,13 +185,17 @@ function RemainingIssueTable({
   rows,
   auxiliaryRows = [],
   auxiliaryLabel = "",
+  className = "",
 }: {
   rows: IndexedIssue[];
   auxiliaryRows?: IndexedIssue[];
   auxiliaryLabel?: string;
+  className?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-white">
+    <div
+      className={`overflow-hidden rounded-2xl border border-indigo-100 bg-white ${className}`}
+    >
       <div className="grid grid-cols-[minmax(0,1fr)_82px_82px] px-3 py-2 text-[11px] font-semibold text-slate-400">
         <span>Issue</span>
         <span className="text-center">Priority</span>
@@ -224,8 +228,14 @@ function RemainingIssueTable({
 
 export function RemainingIssuesDashboardCard({
   analysisSummary,
+  toneOverride,
+  className = "",
+  onExpandedChange,
 }: {
   analysisSummary: NonNullable<AnalysisSummaryState>;
+  toneOverride?: QaReleaseStatusTone;
+  className?: string;
+  onExpandedChange?: (expanded: boolean) => void;
 }) {
   const [isAuxiliaryExpanded, setIsAuxiliaryExpanded] = useState(false);
   const remainingPriority = getRemainingPrioritySummary(analysisSummary);
@@ -235,18 +245,22 @@ export function RemainingIssuesDashboardCard({
     analysisSummary.overallQaSummary?.Blocked ??
     analysisSummary.qaTotal.Blocked ??
     0;
-  const tone = getQaReleaseStatusTone({
-    totalTc: totalTestCases,
-    blockedCount,
-    remainingPriority,
-  });
+  const tone =
+    toneOverride ??
+    getQaReleaseStatusTone({
+      totalTc: totalTestCases,
+      blockedCount,
+      remainingPriority,
+    });
   const displayModel = createDisplayModel({ analysisSummary, tone });
   const hasRows = displayModel.rows.length > 0;
   const isStable = tone === "stable";
   const hasAuxiliaryRows = !isStable && displayModel.auxiliaryRows.length > 0;
 
   return (
-    <section className="min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+    <section
+      className={`flex min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm ${className}`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="text-[1.35rem] font-extrabold tracking-tight text-slate-950">
@@ -263,7 +277,13 @@ export function RemainingIssuesDashboardCard({
           {hasAuxiliaryRows && (
             <button
               type="button"
-              onClick={() => setIsAuxiliaryExpanded((value) => !value)}
+              onClick={() =>
+                setIsAuxiliaryExpanded((value) => {
+                  const nextValue = !value;
+                  onExpandedChange?.(nextValue);
+                  return nextValue;
+                })
+              }
               className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-700"
               aria-label={`${displayModel.auxiliaryButtonLabel} ${
                 isAuxiliaryExpanded ? "접기" : "전체 보기"
@@ -278,7 +298,7 @@ export function RemainingIssuesDashboardCard({
       </div>
 
       {analysisSummary.remainingIssues.length === 0 ? (
-        <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+        <p className="mt-4 flex min-h-[180px] flex-1 items-center rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
           현재 남아 있는 잔여 이슈가 없습니다.
         </p>
       ) : isStable ? (
@@ -311,7 +331,7 @@ export function RemainingIssuesDashboardCard({
             </div>
           ) : (
             <div className="mt-4 overflow-hidden rounded-2xl border border-indigo-100 bg-white">
-              <p className="border-t border-slate-100 px-3 py-4 text-sm text-slate-500">
+              <p className="flex min-h-[180px] items-center border-t border-slate-100 px-3 py-4 text-sm text-slate-500">
                 {displayModel.emptyMessage}
               </p>
             </div>

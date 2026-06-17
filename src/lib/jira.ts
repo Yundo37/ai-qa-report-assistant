@@ -406,19 +406,28 @@ export function filterJiraIssuesByLabels(
   labels: string[],
   matchMode: LabelMatchMode
 ) {
-  const normalizedLabels = labels.map((label) => label.trim().toLowerCase());
+  const normalizeLabel = (value: string) =>
+    value.trim().toLowerCase().replace(/\s+/g, "");
+  const normalizedLabels = labels.map(normalizeLabel).filter(Boolean);
 
   return records.filter((record) => {
     const issueLabels = getRecordValue(record, JIRA_LABEL_FIELDS)
-      .split(/[;,]/)
-      .map((label) => label.trim().toLowerCase())
+      .split(/[;,\n]/)
+      .map(normalizeLabel)
       .filter(Boolean);
+    const matchesLabel = (targetLabel: string) =>
+      issueLabels.some(
+        (issueLabel) =>
+          issueLabel === targetLabel ||
+          issueLabel.includes(targetLabel) ||
+          targetLabel.includes(issueLabel)
+      );
 
     if (matchMode === "ALL") {
-      return normalizedLabels.every((label) => issueLabels.includes(label));
+      return normalizedLabels.every(matchesLabel);
     }
 
-    return normalizedLabels.some((label) => issueLabels.includes(label));
+    return normalizedLabels.some(matchesLabel);
   });
 }
 

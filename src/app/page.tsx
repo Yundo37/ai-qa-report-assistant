@@ -813,6 +813,7 @@ export default function Home() {
     useState<ResultSheetToastState | null>(null);
   const analysisSummaryRef = useRef<HTMLElement | null>(null);
   const overallReportCanvasRef = useRef<HTMLDivElement | null>(null);
+  const featureReportCanvasRef = useRef<HTMLDivElement | null>(null);
   const aiAnalysisRequestIdRef = useRef(0);
   const didMountInputResetRef = useRef(false);
   const openedResultSheetUrlRef = useRef("");
@@ -863,7 +864,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!analysisSummary || analysisSummary.reportType !== "OVERALL") return;
+    if (!analysisSummary) return;
     if (!resultSheetMessage) return;
 
     if (resultSheetMessage.type === "success") {
@@ -882,7 +883,10 @@ export default function Home() {
 
       showResultSheetToast({
         type: "success",
-        title: "Google Sheet 생성이 완료되었습니다.",
+        title:
+          analysisSummary.reportType === "OVERALL"
+            ? "Google Sheet 생성이 완료되었습니다."
+            : "결과 시트 생성이 완료되었습니다.",
         description:
           sheetUrl && didOpenNewTab
             ? "새 탭에서 결과 리포트를 열었습니다."
@@ -894,7 +898,10 @@ export default function Home() {
 
     showResultSheetToast({
       type: "error",
-      title: "Google Sheet 생성에 실패했습니다.",
+      title:
+        analysisSummary.reportType === "OVERALL"
+          ? "Google Sheet 생성에 실패했습니다."
+          : "결과 시트 생성에 실패했습니다.",
       description:
         resultSheetMessage.items[0] || "설정 또는 권한을 확인해주세요.",
     });
@@ -1846,6 +1853,7 @@ export default function Home() {
       analysisSummary={analysisSummary}
       analysisSummaryRef={analysisSummaryRef}
       overallReportCanvasRef={overallReportCanvasRef}
+      featureReportCanvasRef={featureReportCanvasRef}
       aiAnalysisText={aiAnalysisText}
       aiExecutiveSummary={aiExecutiveSummary}
       isAiAnalyzing={isAiAnalyzing}
@@ -1853,8 +1861,6 @@ export default function Home() {
       onCreateResultSheet={handleCreateResultSheet}
       onStartNewReport={handleStartNewReport}
       isCreatingResultSheet={isCreatingResultSheet}
-      resultSheetMessage={resultSheetMessage}
-      resultSheetUrl={resultSheetUrl}
       resultSheetToast={resultSheetToast}
       onDismissResultSheetToast={dismissResultSheetToast}
       reportScopeText={reportScopeText}

@@ -24,8 +24,12 @@ function tagClassName(tag: QaReviewTag) {
 
 export function QaFollowUpDashboardCard({
   analysisSummary,
+  className = "",
+  onExpandedChange,
 }: {
   analysisSummary: NonNullable<AnalysisSummaryState>;
+  className?: string;
+  onExpandedChange?: (expanded: boolean) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
   const reviewItems = useMemo(
@@ -40,7 +44,9 @@ export function QaFollowUpDashboardCard({
   const hasMoreItems = reviewItems.length > defaultItems.length;
 
   return (
-    <section className="min-w-0 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+    <section
+      className={`flex min-w-0 flex-col rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm ${className}`}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-950">
@@ -53,7 +59,13 @@ export function QaFollowUpDashboardCard({
         {hasMoreItems && (
           <button
             type="button"
-            onClick={() => setShowAll((value) => !value)}
+            onClick={() =>
+              setShowAll((value) => {
+                const nextValue = !value;
+                onExpandedChange?.(nextValue);
+                return nextValue;
+              })
+            }
             className="w-fit rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-700"
           >
             {showAll ? "접기" : `전체 보기 (${reviewItems.length})`}
@@ -62,7 +74,11 @@ export function QaFollowUpDashboardCard({
       </div>
 
       {reviewItems.length > 0 ? (
-        <ul className="mt-4 space-y-2">
+        <ul
+          className={`mt-4 space-y-2 ${
+            showAll ? "" : "flex-1"
+          }`}
+        >
           {visibleItems.map((item) => (
             <li
               key={item.id}
@@ -94,7 +110,7 @@ export function QaFollowUpDashboardCard({
           ))}
         </ul>
       ) : (
-        <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+        <p className="mt-4 flex min-h-[180px] flex-1 items-center rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
           표시할 QA 확인 항목이 없습니다.
         </p>
       )}

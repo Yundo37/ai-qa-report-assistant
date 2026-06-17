@@ -1,5 +1,6 @@
 import { createOverallDashboardMetrics } from "@/components/report/reportDashboardUtils";
 import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
+import type { QaReleaseStatusTone } from "@/lib/report/qaReleaseStatus";
 import type { AnalysisSummaryState } from "@/types/report";
 
 const STATUS_PANEL_CLASS = {
@@ -75,9 +76,23 @@ function createQaReleaseStatusMessage({
 export function QaReleaseStatusCard({
   analysisSummary,
   rcLabel,
+  statusOverride,
 }: {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   rcLabel?: string;
+  statusOverride?: {
+    tone: QaReleaseStatusTone;
+    label: string;
+    description: string;
+    title?: string;
+    cardClassName?: string;
+    descriptionClassName?: string;
+    metrics?: Array<{
+      label: string;
+      value: string | number;
+      tone?: "neutral" | "stable" | "caution" | "risk";
+    }>;
+  };
 }) {
   const metrics = createOverallDashboardMetrics(analysisSummary);
   const remainingPrioritySummary =
@@ -91,27 +106,32 @@ export function QaReleaseStatusCard({
     highHighestRemainingCount: metrics.highRisk,
     mediumRemainingCount: metrics.mediumRemaining,
     lowRemainingCount,
-    blockedCount: metrics.blocked,
-    nextEventCount: metrics.nextEvent,
+      blockedCount: metrics.blocked,
+      nextEventCount: metrics.nextEvent,
   });
+  const statusTone = statusOverride?.tone ?? metrics.status.tone;
+  const title = statusOverride?.label ?? statusMessage.title;
+  const lines = statusOverride?.description
+    ? [statusOverride.description]
+    : statusMessage.lines;
 
   return (
     <section
       className={`rounded-[1.5rem] border p-4 shadow-sm shadow-indigo-100/40 ${
-        STATUS_PANEL_CLASS[metrics.status.tone]
-      }`}
+        STATUS_PANEL_CLASS[statusTone]
+      } ${statusOverride?.cardClassName ?? ""}`}
     >
       <div className="grid gap-3 md:grid-cols-[160px_64px_minmax(0,1fr)] md:items-center">
         <div className="min-w-0 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            QA Release Status
+            {statusOverride?.title ?? "QA Release Status"}
           </p>
           <h3
             className={`mt-2 text-4xl font-black tracking-tight ${
-              STATUS_TEXT_CLASS[metrics.status.tone]
+              STATUS_TEXT_CLASS[statusTone]
             }`}
           >
-            {statusMessage.title}
+            {title}
           </h3>
         </div>
 
@@ -119,16 +139,47 @@ export function QaReleaseStatusCard({
           <ReportAssetSlot
             type="status"
             className={`size-14 rounded-2xl bg-none shadow-none ring-1 ${
-              STATUS_ICON_CLASS[metrics.status.tone]
+              STATUS_ICON_CLASS[statusTone]
             }`}
             imageClassName="size-12"
           />
         </div>
 
-        <div className="min-w-0 space-y-1 text-sm font-medium leading-6 text-slate-600">
-          {statusMessage.lines.map((line) => (
+        <div
+          className={`min-w-0 space-y-2 text-sm font-medium leading-6 text-slate-600 ${
+            statusOverride?.descriptionClassName ?? ""
+          }`}
+        >
+          {lines.map((line) => (
             <p key={line}>{line}</p>
           ))}
+          {statusOverride?.metrics && statusOverride.metrics.length > 0 && (
+            <dl className="grid grid-cols-3 gap-2 pt-1 text-center">
+              {statusOverride.metrics.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-slate-100 bg-slate-50 px-2 py-2"
+                >
+                  <dt className="text-[11px] font-semibold text-slate-500">
+                    {item.label}
+                  </dt>
+                  <dd
+                    className={`mt-1 text-base font-bold ${
+                      item.tone === "risk"
+                        ? "text-rose-700"
+                        : item.tone === "caution"
+                          ? "text-amber-700"
+                          : item.tone === "stable"
+                            ? "text-emerald-700"
+                            : "text-slate-950"
+                    }`}
+                  >
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </div>
     </section>
