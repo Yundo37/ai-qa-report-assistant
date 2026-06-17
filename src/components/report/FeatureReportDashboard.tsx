@@ -121,6 +121,35 @@ function PassRateGauge({ metrics }: { metrics: FeatureMetrics }) {
   );
 }
 
+function AiLoadingPlaceholder({ reportType }: { reportType: "feature" | "overall" }) {
+  const description =
+    reportType === "feature"
+      ? "QA 결과와 Jira 이슈를 기반으로 기능 리스크와 후속 확인 범위를 정리하고 있습니다."
+      : "전체 QA 결과와 Jira 잔여 이슈를 기반으로 릴리즈 리스크 구조를 분석하고 있습니다.";
+
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-sm leading-6 text-slate-700">
+      <div className="flex items-center gap-3">
+        <span
+          className="size-4 shrink-0 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"
+          aria-hidden="true"
+        />
+        <div>
+          <p className="font-bold text-indigo-700">
+            AI 분석 결과를 준비 중입니다...
+          </p>
+          <p className="mt-1 text-slate-500">{description}</p>
+        </div>
+      </div>
+      <div className="mt-4 space-y-2" aria-hidden="true">
+        <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-indigo-100" />
+        <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-indigo-100" />
+        <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-indigo-100" />
+      </div>
+    </div>
+  );
+}
+
 function FeatureQaStatusCard({ metrics }: { metrics: FeatureMetrics }) {
   return (
     <section className="min-w-0 rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
@@ -317,6 +346,7 @@ export function FeatureReportDashboard({
   analysisSummary,
   aiAnalysisText,
   isAiAnalyzing,
+  onAnalyze,
   onStartNewReport,
   reportTitleText,
   reportPeriodText,
@@ -352,7 +382,9 @@ export function FeatureReportDashboard({
     reviewItems: qaReviewItems,
   });
   const aiFallbackText = `${metrics.status.description}\n\n전체 TC ${metrics.totalTc}건 중 Pass ${metrics.pass}건, Fail ${metrics.fail}건, Blocked ${metrics.blocked}건, Next Event ${metrics.nextEvent}건이 확인되었습니다.`;
-  const displayedAiText = aiAnalysisText.trim() || aiFallbackText;
+  const displayedAiText = isAiAnalyzing
+    ? ""
+    : aiAnalysisText.trim() || aiFallbackText;
   const displayedAiPreviewText = displayedAiText
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim())
@@ -405,45 +437,74 @@ export function FeatureReportDashboard({
       />
 
       <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-            {summaryCommentEyebrow}
-          </p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+              {summaryCommentEyebrow}
+            </p>
             <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
               {summaryCommentTitle}
             </h2>
           </div>
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-          <div className="grid grid-cols-4 gap-2">
-            {aiInsights.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-indigo-100 bg-white px-3 py-2 shadow-sm shadow-indigo-50/40"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 ring-1 ring-indigo-100">
-                    <InsightIcon title={item.title} />
-                  </span>
-                  <p className="min-w-0 text-xs font-bold text-indigo-600">
-                    {item.title}
-                  </p>
-                </div>
-                <p
-                  className={`mt-2 inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${insightBadgeClassName(
-                    item.tone
-                  )}`}
-                >
-                  <span className="truncate">{item.value}</span>
-                </p>
-                <p className="mt-1.5 line-clamp-2 text-xs leading-5 opacity-80">
-                  {item.description}
-                </p>
+          <button
+            type="button"
+            onClick={onAnalyze}
+            disabled={isAiAnalyzing}
+            className="inline-flex min-w-36 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isAiAnalyzing && (
+              <span
+                className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden="true"
+              />
+            )}
+            <span>
+              {isAiAnalyzing
+                ? "AI 분석 중..."
+                : hasAiAnalysis
+                  ? "AI 다시 분석"
+                  : "AI 분석 실행"}
+            </span>
+          </button>
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+          {isAiAnalyzing ? (
+            <AiLoadingPlaceholder reportType="feature" />
+          ) : (
+            <>
+              <div className="grid grid-cols-4 gap-2">
+                {aiInsights.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl border border-indigo-100 bg-white px-3 py-2 shadow-sm shadow-indigo-50/40"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 ring-1 ring-indigo-100">
+                        <InsightIcon title={item.title} />
+                      </span>
+                      <p className="min-w-0 text-xs font-bold text-indigo-600">
+                        {item.title}
+                      </p>
+                    </div>
+                    <p
+                      className={`mt-2 inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${insightBadgeClassName(
+                        item.tone
+                      )}`}
+                    >
+                      <span className="truncate">{item.value}</span>
+                    </p>
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 opacity-80">
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-3 rounded-2xl border border-white bg-white px-3 py-2 shadow-sm shadow-slate-100">
-            <div className="whitespace-pre-line">{displayedAiPreviewText}</div>
-          </div>
+              <div className="mt-3 rounded-2xl border border-white bg-white px-3 py-2 shadow-sm shadow-slate-100">
+                <div className="whitespace-pre-line">{displayedAiPreviewText}</div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -457,9 +518,15 @@ export function FeatureReportDashboard({
       <DetailedSummarySection>
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-950">AI 분석 원문</h3>
-          <div className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
-            {displayedAiText}
-          </div>
+          {isAiAnalyzing ? (
+            <div className="mt-2">
+              <AiLoadingPlaceholder reportType="feature" />
+            </div>
+          ) : (
+            <div className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+              {displayedAiText}
+            </div>
+          )}
         </div>
         <div className="grid gap-3 lg:grid-cols-3">
           <SummaryCard

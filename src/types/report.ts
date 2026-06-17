@@ -31,6 +31,26 @@ export type AiExecutiveSummaryTone =
   | "attention"
   | "risk"
   | "neutral";
+export type AiOverallInsightTone = "stable" | "caution" | "risk" | "neutral";
+
+export type AiOverallInsightCard = {
+  title: string;
+  headline: string;
+  description: string;
+  tone?: AiOverallInsightTone;
+};
+
+export type AiAnalysisSection = {
+  title: string;
+  body: string;
+};
+
+export type AiPriorityCheckItem = {
+  title: string;
+  reason: string;
+  evidence?: string;
+  priority?: "high" | "medium" | "low";
+};
 
 export type AiExecutiveSummaryResult = {
   releaseJudgment: {
@@ -52,6 +72,9 @@ export type AiExecutiveSummaryResult = {
     }>;
   };
   qaCheckpoints: string[];
+  overallInsightCards?: AiOverallInsightCard[];
+  analysisSections?: AiAnalysisSection[];
+  priorityCheckItems?: AiPriorityCheckItem[];
 };
 
 export type SpreadsheetSheetInfo = {
