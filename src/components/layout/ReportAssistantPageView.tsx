@@ -126,20 +126,22 @@ export function ReportAssistantPageView({
       )}
       <section className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
         {isInputDashboardVisible ? (
-          <div className="mx-auto w-full max-w-6xl">
-            {analysisSummary && (
-              <div className="mb-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={onHideInputDashboard}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
-                >
-                  입력 접기
-                </button>
-              </div>
-            )}
-            <InputHeroSection />
-            <ReportInputPanel {...reportInputPanelProps} />
+          <div className="w-full overflow-x-auto pb-2">
+            <div className="mx-auto w-full min-w-[1024px] max-w-[1200px]">
+              {analysisSummary && (
+                <div className="mb-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onHideInputDashboard}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+                  >
+                    입력 접기
+                  </button>
+                </div>
+              )}
+              <InputHeroSection />
+              <ReportInputPanel {...reportInputPanelProps} />
+            </div>
           </div>
         ) : null}
         {analysisSummary && (

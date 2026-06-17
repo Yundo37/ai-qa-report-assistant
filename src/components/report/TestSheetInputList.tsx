@@ -1,3 +1,4 @@
+import { InputVisualIcon } from "@/components/report/InputVisualIcon";
 import { SpreadsheetPreview } from "@/components/report/SpreadsheetPreview";
 import type { TestSheetInputListProps } from "@/components/report/reportInputTypes";
 
@@ -23,9 +24,12 @@ export function TestSheetInputList({
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-800">
-          Test Sheets
-        </label>
+        <div className="mb-2 flex items-center gap-2">
+          <InputVisualIcon variant="test-sheet" className="size-7 rounded-lg" />
+          <label className="block text-sm font-semibold text-slate-800">
+            테스트 시트
+          </label>
+        </div>
         <p className="text-sm leading-6 text-slate-500">
           TC, CL, Smoke Test 등 QA 진행 내용을 확인할 Google Sheet URL을
           입력하세요. TC 또는 CL 문서가 별도 링크로 관리되는 경우 Add를 통해
@@ -103,7 +107,7 @@ export function TestSheetInputList({
           disabled={testSheets.length >= MAX_TEST_SHEETS}
           className="rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-indigo-400 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + Add Test Sheet
+          + 테스트 시트 추가
         </button>
         <span className="text-xs text-slate-500">
           {testSheets.length}/{MAX_TEST_SHEETS}

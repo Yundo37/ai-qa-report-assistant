@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" >
+
+<defs>
+  <linearGradient id="g" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#A78BFA"/>
+    <stop offset="0.52" stop-color="#5B3EF4"/>
+    <stop offset="1" stop-color="#4F46E5"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(28 20) rotate(55) scale(34)">
+    <stop stop-color="#FFFFFF" stop-opacity="0.46"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<path d="M32 5.5L54.1 18.3V45.7L32 58.5L9.9 45.7V18.3L32 5.5Z" fill="url(#g)"/>
+<path d="M32 5.5L54.1 18.3V45.7L32 58.5L9.9 45.7V18.3L32 5.5Z" fill="url(#glow)"/>
+<path d="M32 5.5L54.1 18.3V45.7L32 58.5L9.9 45.7V18.3L32 5.5Z" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="1.4"/>
+<path d="M31.7 17.5C32.9 24 36.8 28.1 43.2 29.3C36.7 30.5 32.8 34.6 31.6 41.2C30.4 34.7 26.3 30.6 19.8 29.4C26.4 28.2 30.5 24.1 31.7 17.5Z" fill="#FFFFFF"/>
+<path d="M46.4 14.8C47 18.1 49.1 20.2 52.4 20.8C49.1 21.4 47 23.5 46.4 26.8C45.8 23.5 43.7 21.4 40.4 20.8C43.7 20.2 45.8 18.1 46.4 14.8Z" fill="#EDE9FE" opacity="0.95"/>
+<path d="M17.8 39.8C18.3 42.4 19.9 44.1 22.6 44.6C19.9 45.1 18.3 46.8 17.8 49.4C17.3 46.8 15.6 45.1 13 44.6C15.6 44.1 17.3 42.4 17.8 39.8Z" fill="#DDD6FE" opacity="0.78"/>
+
+</svg>

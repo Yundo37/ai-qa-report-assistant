@@ -1,5 +1,6 @@
 "use client";
 
+import { InputVisualIcon } from "@/components/report/InputVisualIcon";
 import type { AiAnalysisToggleProps } from "@/components/report/reportInputTypes";
 
 export function AiAnalysisToggle({
@@ -12,23 +13,25 @@ export function AiAnalysisToggle({
     <div className="flex justify-end pt-1">
       <div className="flex flex-col items-end gap-1 text-right">
         <div className="flex items-center gap-2">
+          {isEnabled && (
+            <InputVisualIcon variant="ai-sparkle" className="size-6" />
+          )}
           <span className="text-xs font-bold text-slate-700">AI 분석</span>
           <button
             type="button"
             role="switch"
             aria-checked={isEnabled}
+            aria-label={isEnabled ? "AI 분석 끄기" : "AI 분석 켜기"}
             onClick={() =>
               onAnalysisModeChange(isEnabled ? "BASIC" : "AI_ENHANCED")
             }
-            className={`flex h-6 w-12 shrink-0 items-center rounded-full p-0.5 text-[10px] font-bold transition ${
+            className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition ${
               isEnabled
-                ? "justify-end bg-indigo-600 text-white"
-                : "justify-start bg-slate-300 text-slate-700"
+                ? "justify-end bg-indigo-600"
+                : "justify-start bg-slate-300"
             }`}
           >
-            <span className="grid h-5 min-w-6 place-items-center rounded-full bg-white px-1.5 text-slate-900 shadow-sm">
-              {isEnabled ? "ON" : "OFF"}
-            </span>
+            <span className="block h-5 w-5 rounded-full bg-white shadow-sm" />
           </button>
         </div>
         <span className="text-xs leading-5 text-slate-500">

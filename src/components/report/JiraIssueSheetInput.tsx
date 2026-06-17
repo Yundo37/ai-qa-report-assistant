@@ -1,3 +1,4 @@
+import { InputVisualIcon } from "@/components/report/InputVisualIcon";
 import type { JiraIssueSheetInputProps } from "@/components/report/reportInputTypes";
 
 export function JiraIssueSheetInput({
@@ -7,9 +8,12 @@ export function JiraIssueSheetInput({
 }: JiraIssueSheetInputProps) {
   return (
     <div className="border-t border-slate-200 pt-6">
-      <label className="mb-2 block text-sm font-semibold text-slate-800">
-        Jira Issue Sheet
-      </label>
+      <div className="mb-2 flex items-center gap-2">
+        <InputVisualIcon variant="jira-sheet" className="size-7 rounded-lg" />
+        <label className="block text-sm font-semibold text-slate-800">
+          Jira 이슈 시트
+        </label>
+      </div>
       <p className="mb-3 text-sm leading-6 text-slate-500">
         Jira for Cloud Google Sheets 앱을 통해 불러온 전체 이슈 시트 URL을
         입력하세요.

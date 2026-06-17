@@ -19,14 +19,14 @@ export function JiraPeriodInput({
   return (
     <div>
       <label className="mb-2 block text-sm font-semibold text-slate-800">
-        Jira Analysis Period
+        Jira 분석 기간
       </label>
       <p className="mb-4 text-sm leading-6 text-slate-500">
-        End DateTime을 비워두면 현재 시점까지 분석합니다.
+        종료 일시를 비워두면 현재 시점까지 분석합니다.
       </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <DateTimeInputs
-          label="Start DateTime"
+          label="시작 일시"
           date={jiraAnalysisStartDate}
           hour={jiraAnalysisStartHour}
           minute={jiraAnalysisStartMinute}
@@ -36,7 +36,7 @@ export function JiraPeriodInput({
         />
         <span className="hidden pb-3 text-sm text-slate-400 lg:block">~</span>
         <DateTimeInputs
-          label="End DateTime"
+          label="종료 일시"
           date={jiraAnalysisEndDate}
           hour={jiraAnalysisEndHour}
           minute={jiraAnalysisEndMinute}

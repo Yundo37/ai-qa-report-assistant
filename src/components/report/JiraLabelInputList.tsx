@@ -16,7 +16,7 @@ export function JiraLabelInputList({
     <div>
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
         <label className="block text-sm font-semibold text-slate-800">
-          Jira Reference Labels
+          Jira 참조 라벨
         </label>
         <div className="flex gap-2">
           {(["ANY", "ALL"] as const).map((mode) => (
@@ -66,7 +66,7 @@ export function JiraLabelInputList({
           disabled={jiraLabels.length >= MAX_JIRA_LABELS}
           className="rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-indigo-400 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          + Add Label
+          + 라벨 추가
         </button>
         <span className="text-xs text-slate-500">
           {jiraLabels.length}/{MAX_JIRA_LABELS}

@@ -758,6 +758,7 @@ function createFallbackQaIssueOverview(
 
 export default function Home() {
   const [reportType, setReportType] = useState<ReportType>("OVERALL");
+  const [hasSelectedReportType, setHasSelectedReportType] = useState(false);
   const [reportTitle, setReportTitle] = useState("");
   const [reportVersion, setReportVersion] = useState("");
   const [reportRcVersion, setReportRcVersion] = useState("");
@@ -960,6 +961,7 @@ export default function Home() {
 
     resetReportInputs();
     resetReportState();
+    setHasSelectedReportType(false);
     setApplyingQuickScenario("");
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -990,12 +992,29 @@ export default function Home() {
     setIsCreatingResultSheet(false);
   };
 
-  const handleReportTypeChange = (nextReportType: ReportType) => {
-    if (reportType === nextReportType) return;
+  const scrollToQuickScenarioSection = () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById("quick-scenario-section")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  };
 
-    setReportType(nextReportType);
-    resetReportInputs();
-    resetReportState();
+  const handleReportTypeChange = (nextReportType: ReportType) => {
+    const didChangeReportType = reportType !== nextReportType;
+
+    setHasSelectedReportType(true);
+
+    if (didChangeReportType) {
+      setReportType(nextReportType);
+      resetReportInputs();
+      resetReportState();
+    }
+
+    scrollToQuickScenarioSection();
   };
 
   const applyQuickScenario = async (
@@ -1101,6 +1120,15 @@ export default function Home() {
       } else {
         setJiraIssueSheet({ url: "", isEditing: true });
       }
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.getElementById("generate-report-section")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
+      });
     } catch (error) {
       console.error("Quick Scenario Apply Error:", error);
       setMessage({
@@ -1760,6 +1788,7 @@ export default function Home() {
   return (
     <ReportAssistantPageView
       reportType={reportType}
+      hasSelectedReportType={hasSelectedReportType}
       isFeatureReport={isFeatureReport}
       quickScenarioPresets={activeQuickScenarioPresets}
       legacyQuickScenarioPresets={QUICK_SCENARIO_PRESETS}

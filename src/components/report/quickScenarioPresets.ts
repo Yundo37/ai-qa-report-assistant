@@ -176,8 +176,8 @@ export const QUICK_SCENARIO_PRESETS = {
   "더미:주의필요": CAUTION_DUMMY_SCENARIO,
 } satisfies Record<string, QuickScenarioPreset>;
 export const OVERALL_QUICK_SCENARIO_PRESETS = {
-  "전체 결과": OVERALL_SCENARIO,
-  "전체 결과 : 안정": OVERALL_STABLE_SCENARIO,
+  "전체 결과 : 위험 1": OVERALL_SCENARIO,
+  "전체 결과 : 위험 2": OVERALL_RISK_SCENARIO,
   "전체 결과 : 주의 필요": OVERALL_CAUTION_SCENARIO,
-  "전체 결과 : 위험": OVERALL_RISK_SCENARIO,
+  "전체 결과 : 안정": OVERALL_STABLE_SCENARIO,
 } satisfies Record<string, QuickScenarioPreset>;

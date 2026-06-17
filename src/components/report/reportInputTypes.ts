@@ -32,6 +32,7 @@ export type QuickScenarioPreset = {
 
 export type ReportTypeSelectorProps = {
   reportType: ReportType;
+  hasSelectedReportType: boolean;
   onReportTypeChange: (reportType: ReportType) => void;
 };
 
