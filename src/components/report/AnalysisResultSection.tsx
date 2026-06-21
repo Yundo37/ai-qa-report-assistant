@@ -21,7 +21,6 @@ type AnalysisResultSectionProps = {
   aiAnalysisText: string;
   aiExecutiveSummary: AiExecutiveSummaryResult | null;
   isAiAnalyzing: boolean;
-  onAnalyze: () => void;
   onStartNewReport: () => void;
   reportScopeText: string;
   reportPeriodText: string;
@@ -39,7 +38,6 @@ export function AnalysisResultSection({
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
-  onAnalyze,
   onStartNewReport,
   reportScopeText,
   reportPeriodText,
@@ -98,7 +96,6 @@ export function AnalysisResultSection({
           analysisSummary={analysisSummary}
           aiAnalysisText={aiAnalysisText}
           isAiAnalyzing={isAiAnalyzing}
-          onAnalyze={onAnalyze}
           onStartNewReport={onStartNewReport}
           reportTitleText={reportTitleText}
           reportPeriodText={reportPeriodText}

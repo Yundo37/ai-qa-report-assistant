@@ -48,7 +48,6 @@ export function ReportAssistantPageView({
   aiAnalysisText,
   aiExecutiveSummary,
   isAiAnalyzing,
-  onAnalyze,
   onCreateResultSheet,
   onStartNewReport,
   isCreatingResultSheet,
@@ -161,7 +160,6 @@ export function ReportAssistantPageView({
             aiAnalysisText={aiAnalysisText}
             aiExecutiveSummary={aiExecutiveSummary}
             isAiAnalyzing={isAiAnalyzing}
-            onAnalyze={onAnalyze}
             onStartNewReport={onStartNewReport}
             reportScopeText={reportScopeText}
             reportPeriodText={reportPeriodText}

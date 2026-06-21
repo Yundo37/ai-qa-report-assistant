@@ -25,7 +25,6 @@ type FeatureReportDashboardProps = {
   analysisSummary: NonNullable<AnalysisSummaryState>;
   aiAnalysisText: string;
   isAiAnalyzing: boolean;
-  onAnalyze: () => void;
   onStartNewReport: () => void;
   reportTitleText: string;
   reportPeriodText: string;
@@ -346,7 +345,6 @@ export function FeatureReportDashboard({
   analysisSummary,
   aiAnalysisText,
   isAiAnalyzing,
-  onAnalyze,
   onStartNewReport,
   reportTitleText,
   reportPeriodText,
@@ -446,26 +444,6 @@ export function FeatureReportDashboard({
               {summaryCommentTitle}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onAnalyze}
-            disabled={isAiAnalyzing}
-            className="inline-flex min-w-36 shrink-0 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isAiAnalyzing && (
-              <span
-                className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-                aria-hidden="true"
-              />
-            )}
-            <span>
-              {isAiAnalyzing
-                ? "AI 분석 중..."
-                : hasAiAnalysis
-                  ? "AI 다시 분석"
-                  : "AI 분석 실행"}
-            </span>
-          </button>
         </div>
 
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">

@@ -652,8 +652,11 @@ export function AiExecutiveSummaryCard({
   aiExecutiveSummary,
   isLoading,
 }: AiExecutiveSummaryCardProps) {
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const hasRealAnalysisText = Boolean(analysisText.trim());
+  const analysisDetailKey = analysisText.trim();
+  const [collapsedAnalysisDetailKey, setCollapsedAnalysisDetailKey] = useState<
+    string | null
+  >(null);
+  const hasRealAnalysisText = Boolean(analysisDetailKey);
   const paragraphsByBlock = analysisText
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.trim())
@@ -698,6 +701,8 @@ export function AiExecutiveSummaryCard({
     : ruleBasedExecutiveSummaryViewModel;
   const hasAiExecutiveSummary = Boolean(aiExecutiveSummary);
   const hasCompletedAiAnalysis = hasRealAnalysisText && !isLoading;
+  const isDetailOpen = collapsedAnalysisDetailKey !== analysisDetailKey;
+
   const insightCards = (aiExecutiveSummary?.overallInsightCards ?? []).slice(
     0,
     4
@@ -990,7 +995,11 @@ export function AiExecutiveSummaryCard({
         {hasAnalysis && (
           <button
             type="button"
-            onClick={() => setIsDetailOpen((value) => !value)}
+            onClick={() =>
+              setCollapsedAnalysisDetailKey((currentKey) =>
+                currentKey === analysisDetailKey ? null : analysisDetailKey
+              )
+            }
             className="shrink-0 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50"
           >
             {isDetailOpen ? "전체 AI 요약 접기" : "전체 AI 요약 보기"}
