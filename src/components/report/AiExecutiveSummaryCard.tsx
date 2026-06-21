@@ -1,8 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { AiAnalysisSections } from "@/components/report/ai-summary/AiAnalysisSections";
+import { AiExecutiveSummaryLoading } from "@/components/report/ai-summary/AiExecutiveSummaryLoading";
+import { AiPriorityCheckItems } from "@/components/report/ai-summary/AiPriorityCheckItems";
+import { DeterministicReleaseSummaryPanel } from "@/components/report/ai-summary/DeterministicReleaseSummaryPanel";
+import { OverallAiSummaryPanel } from "@/components/report/ai-summary/OverallAiSummaryPanel";
+import type {
+  InsightTone,
+  SignalTone,
+  SummaryMetricStripItem,
+} from "@/components/report/ai-summary/types";
 import { createOverallDashboardMetrics } from "@/components/report/reportDashboardUtils";
-import { ReportAssetSlot } from "@/components/report/ReportAssetSlot";
 import type {
   AiExecutiveSummaryResult,
   AnalysisSummaryState,
@@ -20,9 +29,6 @@ type AiExecutiveSummaryCardProps = {
   "주요 리스크는 High Priority 잔여 이슈, Blocked 항목, 반복 이슈 패턴에서 확인됩니다. 특히 반복 패턴이 여러 데이터 소스에 걸쳐 나타나는 경우 기능 검증 범위와 후속 확인 항목을 분리해 관리하는 것이 좋습니다.",
   "후속 액션은 주요 잔여 이슈 재확인, Blocked 항목 재검증, Next Event 항목 별도 추적을 중심으로 정리할 수 있습니다. Next Event는 현재 릴리즈 실패 신호가 아니라 차기 대응 및 모니터링 항목으로 분리해 확인합니다.",
 */
-
-type SignalTone = "stable" | "attention" | "risk" | "neutral";
-type InsightTone = "stable" | "caution" | "risk" | "neutral";
 
 type AiExecutiveSummaryViewModel = {
   releaseJudgment: {
@@ -742,7 +748,7 @@ export function AiExecutiveSummaryCard({
     analysisSummary.overallQaSummary?.Total ??
     analysisSummary.qaTotal.Total ??
     0;
-  const metricStripItems = [
+  const metricStripItems: SummaryMetricStripItem[] = [
     {
       label: "전체 TC",
       value: totalTestCases,
@@ -818,156 +824,6 @@ export function AiExecutiveSummaryCard({
     ruleBasedExecutiveSummaryViewModel.patternInsight.patterns.length > 0
       ? ruleBasedExecutiveSummaryViewModel.patternInsight.patterns.slice(0, 3)
       : executiveSummaryViewModel.patternInsight.patterns.slice(0, 3);
-  const deterministicSummaryPanel = (
-    <>
-      <div className="mt-5 grid grid-cols-[1.15fr_1fr_1fr_0.9fr] overflow-hidden rounded-t-3xl border-x border-t border-indigo-100 bg-white/95 shadow-sm">
-        <div className="border-r border-indigo-100/80 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-            릴리즈 판단
-          </p>
-          <p className="mt-4 text-center text-xl font-black tracking-tight text-indigo-700">
-            {softenBlockingTerms(
-              ruleBasedExecutiveSummaryViewModel.releaseJudgment.title
-            )}
-          </p>
-          <p className="mt-3 text-center text-sm font-semibold leading-6 text-slate-800">
-            {softenBlockingTerms(
-              ruleBasedExecutiveSummaryViewModel.releaseJudgment.description
-            )}
-          </p>
-          <div className="mt-5 flex justify-center">
-            <div
-              className="grid size-36 place-items-center rounded-full shadow-inner shadow-indigo-100"
-              style={passRateDonutStyle}
-              aria-label={`통과율 ${passRatePercent}%`}
-            >
-              <div className="flex size-28 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
-                <span className="block text-3xl font-black leading-none text-indigo-700">
-                  {passRatePercent}%
-                </span>
-                <span className="mt-1 block text-[11px] font-semibold leading-none text-slate-500">
-                  통과율
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-r border-indigo-100/80 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-            주요 리스크 신호
-          </p>
-          <ul className="mt-4 space-y-3">
-            {ruleBasedExecutiveSummaryViewModel.riskSignals.map((item) => (
-              <li key={item.title} className="text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block font-semibold leading-5 text-slate-800">
-                      {softenBlockingTerms(item.title)}
-                    </span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-500">
-                      {softenBlockingTerms(item.description)}
-                    </span>
-                  </span>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${signalBadgeClass(
-                      item.tone
-                    )}`}
-                  >
-                    {formatSummaryValue(item.value)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="border-r border-indigo-100/80 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-            반복 패턴 해석
-          </p>
-          {ruleBasedExecutiveSummaryViewModel.patternInsight.patterns.length >
-          0 ? (
-            <>
-              <p className="mt-3 text-sm font-semibold leading-5 text-slate-800">
-                {softenBlockingTerms(
-                  ruleBasedExecutiveSummaryViewModel.patternInsight.title
-                )}
-              </p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">
-                {softenBlockingTerms(
-                  ruleBasedExecutiveSummaryViewModel.patternInsight.description
-                )}
-              </p>
-              <ul className="mt-4 space-y-3">
-                {ruleBasedExecutiveSummaryViewModel.patternInsight.patterns.map(
-                  (item) => (
-                    <li key={item.label} className="text-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="flex min-w-0 items-start gap-2 leading-5 text-slate-700">
-                          <span className="mt-2 size-1.5 shrink-0 rounded-full bg-violet-500" />
-                          <span className="min-w-0">
-                            {softenBlockingTerms(item.label)}
-                          </span>
-                        </span>
-                        <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
-                          {formatSummaryValue(item.value)}
-                        </span>
-                      </div>
-                    </li>
-                  )
-                )}
-              </ul>
-            </>
-          ) : (
-            <p className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-500">
-              {softenBlockingTerms(
-                ruleBasedExecutiveSummaryViewModel.patternInsight.description
-              )}
-            </p>
-          )}
-        </div>
-
-        <div className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-            QA 확인 방향
-          </p>
-          <ul className="mt-4 space-y-3">
-            {fallbackQaDirectionItems.map((item) => (
-              <li key={item} className="flex gap-2 text-sm leading-5">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-indigo-500" />
-                <span className="text-slate-700">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-5 gap-2 rounded-b-3xl border-x border-b border-indigo-100 bg-white/85 p-3 shadow-sm">
-        {metricStripItems.map((item) => (
-          <div
-            key={item.label}
-            className="flex min-w-0 items-center gap-3 rounded-2xl bg-indigo-50/45 px-3 py-2"
-          >
-            <ReportAssetSlot
-              type={item.slotType}
-              className="size-9 rounded-xl bg-white/85 bg-none shadow-sm ring-1 ring-indigo-100"
-              imageClassName="size-7"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-semibold text-slate-500">
-                {item.label}
-              </p>
-              <p className="mt-0.5 text-base font-bold text-slate-950">
-                {item.value.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-
   return (
     <section
       className={`min-w-0 rounded-[2rem] p-5 sm:p-6 ${
@@ -1008,260 +864,56 @@ export function AiExecutiveSummaryCard({
       </div>
 
       {isLoading ? (
-        <div className="mt-5 rounded-2xl border border-indigo-100 bg-white/85 p-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span
-              className="size-4 shrink-0 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"
-              aria-hidden="true"
-            />
-            <div>
-              <p className="text-sm font-semibold text-indigo-700">
-                AI 분석 결과를 준비 중입니다...
-              </p>
-              <p className="mt-1 text-sm leading-6 text-slate-500">
-                전체 QA 결과와 Jira 잔여 이슈를 기반으로 릴리즈 리스크 구조를
-                분석하고 있습니다.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2" aria-hidden="true">
-            <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-indigo-100" />
-            <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-indigo-100" />
-            <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-indigo-100" />
-          </div>
-        </div>
+        <AiExecutiveSummaryLoading />
       ) : !hasRealAnalysisText ? (
-        deterministicSummaryPanel
+        <DeterministicReleaseSummaryPanel
+          fallbackQaDirectionItems={fallbackQaDirectionItems}
+          formatSummaryValue={formatSummaryValue}
+          metricStripItems={metricStripItems}
+          passRateDonutStyle={passRateDonutStyle}
+          passRatePercent={passRatePercent}
+          ruleBasedExecutiveSummaryViewModel={ruleBasedExecutiveSummaryViewModel}
+          signalBadgeClass={signalBadgeClass}
+          softenBlockingTerms={softenBlockingTerms}
+        />
       ) : (
         <>
-          <div className="mt-5 overflow-hidden rounded-[28px] border border-indigo-100 bg-white/90 shadow-sm">
-            <div className="grid grid-cols-[0.31fr_0.69fr]">
-              <div className="flex min-h-[270px] flex-col border-r border-indigo-100/80 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-                    {releaseJudgmentLabel}
-                  </p>
-                  {hasStructuredInsightCards && mainInsightCard && (
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 ${insightToneBadgeClass(
-                        mainInsightCard.tone
-                      )}`}
-                    >
-                      {insightToneLabel(mainInsightCard.tone)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col items-center justify-center gap-3.5 pt-2">
-                  <p className="max-w-[11rem] break-keep text-center text-xl font-black leading-7 tracking-tight text-indigo-700">
-                    {releaseJudgmentTitle}
-                  </p>
-                  <div className="flex justify-center">
-                    <div
-                      className="grid size-28 place-items-center rounded-full shadow-inner shadow-indigo-100"
-                      style={passRateDonutStyle}
-                      aria-label={`통과율 ${passRatePercent}%`}
-                    >
-                      <div className="flex size-20 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
-                        <span className="block text-2xl font-black leading-none text-indigo-700">
-                          {passRatePercent}%
-                        </span>
-                        <span className="mt-1 block text-[11px] font-semibold leading-none text-slate-500">
-                          통과율
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="max-w-[13.5rem] break-keep text-center text-sm font-semibold leading-6 text-slate-700">
-                    {releaseJudgmentDescription}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 p-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                      주요 리스크 신호
-                    </p>
-                    {riskInsightCard?.description && (
-                      <p className="mt-2 break-keep text-xs leading-5 text-slate-500">
-                        {softenBlockingTerms(riskInsightCard.description)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <ul className="grid grid-cols-4 gap-2.5">
-                  {compactRiskSignals.map((item) => (
-                    <li
-                      key={item.title}
-                      className="min-h-[82px] rounded-2xl border border-slate-100 bg-slate-50/70 p-2.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="min-w-0 text-xs font-semibold leading-4 text-slate-800">
-                          {item.title}
-                        </span>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${signalBadgeClass(
-                            item.tone
-                          )}`}
-                        >
-                          {formatSummaryValue(item.value)}
-                        </span>
-                      </div>
-                      <p className="mt-1.5 break-keep text-xs leading-4 text-slate-500">
-                        {item.description}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="grid items-stretch grid-cols-2 gap-3">
-                  <div className="flex h-full flex-col rounded-3xl border border-violet-100 bg-violet-50/30 p-3.5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                      반복 패턴 해석
-                    </p>
-                    <p className="mt-2 line-clamp-2 break-keep text-sm font-semibold leading-5 text-slate-800">
-                      {patternInsightTitle}
-                    </p>
-                    {displayPatternItems.length > 0 ? (
-                      <ul className="mt-3 flex-1 space-y-2">
-                        {displayPatternItems.map((item) => (
-                          <li key={item.label} className="text-sm">
-                            <div className="flex min-h-[38px] items-start justify-between gap-3 rounded-2xl border border-violet-100 bg-white/80 px-3 py-2">
-                              <span className="flex min-w-0 items-start gap-2 leading-5 text-slate-700">
-                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-violet-500" />
-                                <span className="min-w-0">
-                                  {softenBlockingTerms(item.label)}
-                                </span>
-                              </span>
-                              <span className="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-100">
-                                {formatSummaryValue(item.value)}
-                              </span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-3 rounded-2xl border border-slate-100 bg-white/80 px-3 py-3 text-sm leading-6 text-slate-500">
-                        {patternInsightDescription}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex h-full flex-col rounded-3xl border border-indigo-100 bg-indigo-50/30 p-3.5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                      {hasStructuredInsightCards ? "AI 확인 방향" : "QA 확인 방향"}
-                    </p>
-                    <ol className="mt-3 space-y-2">
-                      {topQaDirectionItems.map((item, index) => (
-                        <li
-                          key={item}
-                          className="flex min-h-[38px] items-start gap-3 rounded-2xl border border-indigo-100 bg-white/80 px-3 py-2 text-sm leading-5"
-                        >
-                          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-black text-white">
-                            {index + 1}
-                          </span>
-                          <span className="min-w-0 font-semibold text-slate-700">
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-5 gap-2 border-t border-indigo-100 bg-white/85 p-3">
-              {metricStripItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-indigo-50/45 px-2.5 py-1.5"
-                >
-                  <ReportAssetSlot
-                    type={item.slotType}
-                    className="size-8 rounded-xl bg-white/85 bg-none shadow-sm ring-1 ring-indigo-100"
-                    imageClassName="size-6"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-[11px] font-semibold text-slate-500">
-                      {item.label}
-                    </p>
-                    <p className="mt-0.5 text-base font-bold text-slate-950">
-                      {item.value.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <OverallAiSummaryPanel
+            compactRiskSignals={compactRiskSignals}
+            displayPatternItems={displayPatternItems}
+            formatSummaryValue={formatSummaryValue}
+            hasStructuredInsightCards={hasStructuredInsightCards}
+            insightToneBadgeClass={insightToneBadgeClass}
+            insightToneLabel={insightToneLabel}
+            mainInsightCard={mainInsightCard}
+            metricStripItems={metricStripItems}
+            passRateDonutStyle={passRateDonutStyle}
+            passRatePercent={passRatePercent}
+            patternInsightDescription={patternInsightDescription}
+            patternInsightTitle={patternInsightTitle}
+            releaseJudgmentDescription={releaseJudgmentDescription}
+            releaseJudgmentLabel={releaseJudgmentLabel}
+            releaseJudgmentTitle={releaseJudgmentTitle}
+            riskInsightCard={riskInsightCard}
+            signalBadgeClass={signalBadgeClass}
+            softenBlockingTerms={softenBlockingTerms}
+            topQaDirectionItems={topQaDirectionItems}
+          />
 
           {hasAnalysis && isDetailOpen && (
             <div className="mt-4 space-y-4 rounded-2xl border border-indigo-100 bg-white p-4 text-[15px] leading-8 text-slate-700">
-              {priorityCheckItems.length > 0 && (
-                <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-                  <p className="text-sm font-black text-violet-800">
-                    AI 우선 확인 항목
-                  </p>
-                  <ol className="mt-3 space-y-3">
-                    {priorityCheckItems.map((item, index) => {
-                      const displayEvidence = getDisplayEvidence(item.evidence);
-
-                      return (
-                        <li key={`${item.title}-${index}`} className="flex gap-3">
-                          <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-black text-violet-700 ring-1 ring-violet-100">
-                            {index + 1}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-bold leading-6 text-slate-900">
-                                {softenBlockingTerms(item.title)}
-                              </p>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${priorityBadgeClass(
-                                  item.priority
-                                )}`}
-                              >
-                                {priorityLabel(item.priority)}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-sm leading-6 text-slate-600">
-                              {softenBlockingTerms(item.reason)}
-                            </p>
-                            {displayEvidence && (
-                              <p className="mt-1 text-xs leading-5 text-violet-700">
-                                근거: {displayEvidence}
-                              </p>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              )}
-
-              {fallbackAnalysisSections.length > 0 ? (
-                fallbackAnalysisSections.map((section, index) => (
-                  <section
-                    key={`${section.title}-${index}`}
-                    className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
-                  >
-                    <h3 className="text-sm font-black text-slate-950">
-                      {softenBlockingTerms(section.title)}
-                    </h3>
-                    <p className="mt-2 whitespace-pre-line text-[15px] leading-8 text-slate-700">
-                      {softenBlockingTerms(section.body)}
-                    </p>
-                  </section>
-                ))
-              ) : (
-                paragraphs.map((paragraph, index) => (
-                  <p key={index} className="border-l-4 border-indigo-200 pl-4">
-                    {softenBlockingTerms(paragraph)}
-                  </p>
-                ))
-              )}
+              <AiPriorityCheckItems
+                getDisplayEvidence={getDisplayEvidence}
+                items={priorityCheckItems}
+                priorityBadgeClass={priorityBadgeClass}
+                priorityLabel={priorityLabel}
+                softenBlockingTerms={softenBlockingTerms}
+              />
+              <AiAnalysisSections
+                fallbackAnalysisSections={fallbackAnalysisSections}
+                paragraphs={paragraphs}
+                softenBlockingTerms={softenBlockingTerms}
+              />
             </div>
           )}
         </>
