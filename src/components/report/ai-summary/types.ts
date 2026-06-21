@@ -46,6 +46,8 @@ export type SummaryViewModel = {
   qaCheckpoints: string[];
 };
 
+export type AiExecutiveSummaryViewModel = SummaryViewModel;
+
 export type SummaryAnalysisSection = {
   title: string;
   body: string;
