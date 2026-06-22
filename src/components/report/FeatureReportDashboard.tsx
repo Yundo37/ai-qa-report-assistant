@@ -362,6 +362,7 @@ export function FeatureReportDashboard({
   const periodLabel = reportPeriodText || "기간 미설정";
   const generatedLabel = generatedAtText || "-";
   const hasAiAnalysis = aiAnalysisText.trim().length > 0;
+  const hasAiBranding = isAiAnalyzing || hasAiAnalysis;
   const summaryCommentEyebrow = isAiAnalyzing
     ? "AI 분석"
     : hasAiAnalysis
@@ -440,9 +441,16 @@ export function FeatureReportDashboard({
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
               {summaryCommentEyebrow}
             </p>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
-              {summaryCommentTitle}
-            </h2>
+            <div className="mt-1 flex items-center gap-2">
+              {hasAiBranding && (
+                <span className="grid size-8 place-items-center rounded-full bg-indigo-600 text-sm font-black text-white">
+                  ai
+                </span>
+              )}
+              <h2 className="text-xl font-bold tracking-tight text-slate-950">
+                {summaryCommentTitle}
+              </h2>
+            </div>
           </div>
         </div>
 
