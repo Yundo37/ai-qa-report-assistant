@@ -51,7 +51,7 @@ export function AnalysisResultSection({
       <section
         ref={analysisSummaryRef}
         data-report-result-section="true"
-        className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 sm:-mr-6"
+        className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 first:mt-0 sm:-mr-6"
       >
         <div
           ref={overallReportCanvasRef}
@@ -88,7 +88,7 @@ export function AnalysisResultSection({
     <section
       ref={analysisSummaryRef}
       data-report-result-section="true"
-      className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 sm:-mr-6"
+      className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 first:mt-0 sm:-mr-6"
     >
       <div
         id="feature-report-canvas"

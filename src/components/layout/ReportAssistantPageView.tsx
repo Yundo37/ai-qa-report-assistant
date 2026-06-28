@@ -131,7 +131,13 @@ export function ReportAssistantPageView({
           )}
         </div>
       )}
-      <section className="mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
+      <section
+        className={`mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col px-4 sm:px-6 ${
+          isInputDashboardVisible
+            ? "py-10 lg:py-14"
+            : "pb-10 pt-4 lg:pb-14 lg:pt-6"
+        }`}
+      >
         {isInputDashboardVisible ? (
           <div className="-mr-4 min-w-0 overflow-x-auto pb-2 sm:-mr-6">
             <div className="mx-auto w-full min-w-[1080px] max-w-[1280px]">
