@@ -50,10 +50,12 @@ export function AnalysisResultSection({
     return (
       <section
         ref={analysisSummaryRef}
-        className="mt-8 min-w-0 w-full overflow-x-auto pb-2"
+        data-report-result-section="true"
+        className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 sm:-mr-6"
       >
         <div
           ref={overallReportCanvasRef}
+          data-report-canvas="true"
           className="mx-auto w-full min-w-[1080px] max-w-[1320px]"
         >
           <OverallReportDashboard
@@ -85,11 +87,13 @@ export function AnalysisResultSection({
   return (
     <section
       ref={analysisSummaryRef}
-      className="mt-8 min-w-0 w-full overflow-x-auto pb-2"
+      data-report-result-section="true"
+      className="-mr-4 mt-8 min-w-0 overflow-x-auto border-y border-slate-200/70 bg-slate-50/80 py-4 sm:-mr-6"
     >
       <div
         id="feature-report-canvas"
         ref={featureReportCanvasRef}
+        data-report-canvas="true"
         className="mx-auto w-full min-w-[1080px] max-w-[1320px]"
       >
         <FeatureReportDashboard

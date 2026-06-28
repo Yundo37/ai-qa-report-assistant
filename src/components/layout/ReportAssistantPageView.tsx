@@ -133,7 +133,7 @@ export function ReportAssistantPageView({
       )}
       <section className="mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col px-4 py-10 sm:px-6 lg:py-14">
         {isInputDashboardVisible ? (
-          <div className="min-w-0 w-full overflow-x-auto pb-2">
+          <div className="-mr-4 min-w-0 overflow-x-auto pb-2 sm:-mr-6">
             <div className="mx-auto w-full min-w-[1080px] max-w-[1280px]">
               {analysisSummary && (
                 <div className="mb-6 flex justify-end">
